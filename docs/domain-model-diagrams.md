@@ -496,17 +496,17 @@ graph TB
         direction TB
     end
     
-    Property -.->|PropertyId| TenantRequest : references
-    Tenant -.->|TenantId| TenantRequest : references
-    Worker -.->|WorkerEmail| TenantRequest : references
+    Property -.->|PropertyId| TenantRequest
+    Tenant -.->|TenantId| TenantRequest
+    Worker -.->|WorkerEmail| TenantRequest
     
-    "Domain Services" --> Property : orchestrates
-    "Domain Services" --> TenantRequest : orchestrates
-    "Domain Services" --> Worker : orchestrates
+    "Domain Services" --> Property
+    "Domain Services" --> TenantRequest
+    "Domain Services" --> Worker
     
-    Property --> "Value Objects" : uses
-    TenantRequest --> "Value Objects" : uses
-    Worker --> "Value Objects" : uses
+    Property --> "Value Objects"
+    TenantRequest --> "Value Objects"
+    Worker --> "Value Objects"
 ```
 
 ## 8. Clean Architecture Layers
