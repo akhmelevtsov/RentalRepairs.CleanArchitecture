@@ -455,58 +455,63 @@ flowchart TD
 
 ```mermaid
 graph TB
-    subgraph "Property Aggregate"
-        Property
-        PropertyAddress
-        Tenant
-        direction TB
-    end
-    
-    subgraph "Tenant Request Aggregate"
-        TenantRequest
-        TenantRequestChange
-        ServiceWorkScheduleInfo
-        direction TB
-    end
-    
-    subgraph "Worker Aggregate"
-        Worker
-        WorkAssignment
-        direction TB
-    end
-    
-    subgraph "Domain Services"
-        TenantRequestBusinessService
-        WorkerAssignmentPolicyService
-        RequestTitleGenerator
-        TenantRequestUrgencyPolicy
-        TenantRequestStatusPolicy
-        PropertyDomainService
-        RequestWorkflowManager
-        UnitSchedulingService
-        direction TB
-    end
-    
-    subgraph "Value Objects"
-        PersonContactInfo
-        SchedulingSlot
-        NotificationData
-        PropertyMetrics
-        UnitMixAnalysis
-        direction TB
-    end
-    
-    Property -.->|PropertyId| TenantRequest
-    Tenant -.->|TenantId| TenantRequest
-    Worker -.->|WorkerEmail| TenantRequest
-    
-    "Domain Services" --> Property
-    "Domain Services" --> TenantRequest
-    "Domain Services" --> Worker
-    
-    Property --> "Value Objects"
-    TenantRequest --> "Value Objects"
-    Worker --> "Value Objects"
+  %% Aggregates
+  subgraph PropertyAggregate
+    Property[Property — Aggregate Root]
+    PropertyAddress[PropertyAddress — VO]
+    TenantRef[Tenant — Aggregate Member]
+  end
+
+  subgraph TenantRequestAggregate
+    TenantRequest[TenantRequest — Aggregate Root]
+    TenantRequestChange[TenantRequestChange — Entity]
+    ServiceWorkScheduleInfo[ServiceWorkScheduleInfo — VO]
+  end
+
+  subgraph WorkerAggregate
+    Worker[Worker — Aggregate Root]
+    WorkAssignment[WorkAssignment — Entity]
+  end
+
+  subgraph DomainServices
+    TenantRequestBusinessService[TenantRequestBusinessService]
+    WorkerAssignmentPolicyService[WorkerAssignmentPolicyService]
+    RequestTitleGenerator[RequestTitleGenerator]
+    TenantRequestUrgencyPolicy[TenantRequestUrgencyPolicy]
+    TenantRequestStatusPolicy[TenantRequestStatusPolicy]
+    PropertyDomainService[PropertyDomainService]
+    RequestWorkflowManager[RequestWorkflowManager]
+    UnitSchedulingService[UnitSchedulingService]
+  end
+
+  subgraph ValueObjects
+    PersonContactInfo[PersonContactInfo]
+    SchedulingSlot[SchedulingSlot]
+    NotificationData[NotificationData]
+    PropertyMetrics[PropertyMetrics]
+    UnitMixAnalysis[UnitMixAnalysis]
+  end
+
+  %% References and interactions
+  Property -.->|propertyId| TenantRequest
+  TenantRef -.->|tenantId| TenantRequest
+  Worker -.->|workerEmail| TenantRequest
+
+  DomainServices --> Property
+  DomainServices --> TenantRequest
+  DomainServices --> Worker
+
+  %% Composition
+  Property --> PropertyAddress
+  TenantRequest --> ServiceWorkScheduleInfo
+  Worker --> WorkAssignment
+
+  %% VO usage
+  TenantRequest -.-> SchedulingSlot
+  Worker -.-> PersonContactInfo
+  Property -.-> UnitMixAnalysis
+  Property -.-> PropertyMetrics
+  TenantRequest -.-> NotificationData
 ```
 
 ## 8. Clean Architecture Layers
