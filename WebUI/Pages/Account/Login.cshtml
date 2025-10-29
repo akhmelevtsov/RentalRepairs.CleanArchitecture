@@ -6,7 +6,7 @@
 
 <div class="container">
     <div class="row justify-content-center">
-        <div class="col-md-8 col-lg-6">
+        <div class="col-md-6 col-lg-5">
             <div class="card shadow-sm">
                 <div class="card-body p-4">
                     <div class="text-center mb-4">
@@ -15,161 +15,127 @@
                         <p class="text-muted">Sign in to your account</p>
                     </div>
 
-                    <!-- Tab Navigation -->
-                    <ul class="nav nav-tabs mb-4" id="loginTabs" role="tablist">
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link @(Model.ActiveTab == "admin" ? "active" : "")" 
-                                    id="admin-tab" data-bs-toggle="tab" data-bs-target="#admin" 
-                                    type="button" role="tab">
-                                <i class="fas fa-user-shield me-2"></i>Admin/Superintendent
-                            </button>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link @(Model.ActiveTab == "tenant" ? "active" : "")" 
-                                    id="tenant-tab" data-bs-toggle="tab" data-bs-target="#tenant" 
-                                    type="button" role="tab">
-                                <i class="fas fa-home me-2"></i>Tenant
-                            </button>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link @(Model.ActiveTab == "worker" ? "active" : "")" 
-                                    id="worker-tab" data-bs-toggle="tab" data-bs-target="#worker" 
-                                    type="button" role="tab">
-                                <i class="fas fa-wrench me-2"></i>Worker
-                            </button>
-                        </li>
-                    </ul>
-
-                    <!-- Tab Content -->
-                    <div class="tab-content" id="loginTabsContent">
-                        <!-- Admin/Superintendent Login -->
-                        <div class="tab-pane fade @(Model.ActiveTab == "admin" ? "show active" : "")" 
-                             id="admin" role="tabpanel">
-                            <form method="post" asp-page-handler="AdminLogin">
-                                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
-                                
-                                <div class="mb-3">
-                                    <label asp-for="Login.Email" class="form-label">
-                                        <i class="fas fa-envelope me-2"></i>Email Address
-                                    </label>
-                                    <input asp-for="Login.Email" class="form-control" placeholder="Enter your email" />
-                                    <span asp-validation-for="Login.Email" class="text-danger"></span>
-                                </div>
-                                
-                                <div class="mb-3">
-                                    <label asp-for="Login.Password" class="form-label">
-                                        <i class="fas fa-lock me-2"></i>Password
-                                    </label>
-                                    <input asp-for="Login.Password" class="form-control" placeholder="Enter your password" />
-                                    <span asp-validation-for="Login.Password" class="text-danger"></span>
-                                </div>
-                                
-                                <div class="mb-3 form-check">
-                                    <input asp-for="Login.RememberMe" class="form-check-input" />
-                                    <label asp-for="Login.RememberMe" class="form-check-label">
-                                        Remember me
-                                    </label>
-                                </div>
-                                
-                                <button type="submit" class="btn btn-primary w-100">
-                                    <i class="fas fa-sign-in-alt me-2"></i>Sign In
-                                </button>
-                            </form>
+                    <!-- Unified Login Form -->
+                    <form method="post" id="loginForm">
+                        @Html.AntiForgeryToken()
+                        
+                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3" 
+                             asp-validation-for="Login"></div>
+                        
+                        <div class="mb-3">
+                            <label asp-for="Login.Email" class="form-label">
+                                <i class="fas fa-envelope me-2"></i>Email Address
+                            </label>
+                            <input asp-for="Login.Email" class="form-control" type="email" 
+                                   placeholder="Enter your email" autocomplete="email" />
+                            <span asp-validation-for="Login.Email" class="text-danger"></span>
                         </div>
-
-                        <!-- Tenant Login -->
-                        <div class="tab-pane fade @(Model.ActiveTab == "tenant" ? "show active" : "")" 
-                             id="tenant" role="tabpanel">
-                            <form method="post" asp-page-handler="TenantLogin">
-                                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
-                                
-                                <div class="mb-3">
-                                    <label asp-for="TenantLogin.Email" class="form-label">
-                                        <i class="fas fa-envelope me-2"></i>Email Address
-                                    </label>
-                                    <input asp-for="TenantLogin.Email" class="form-control" placeholder="Enter your email" />
-                                    <span asp-validation-for="TenantLogin.Email" class="text-danger"></span>
-                                </div>
-                                
-                                <div class="row mb-3">
-                                    <div class="col-md-6">
-                                        <label asp-for="TenantLogin.PropertyCode" class="form-label">
-                                            <i class="fas fa-building me-2"></i>Property Code
-                                        </label>
-                                        <input asp-for="TenantLogin.PropertyCode" class="form-control" placeholder="Property code" />
-                                        <span asp-validation-for="TenantLogin.PropertyCode" class="text-danger"></span>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label asp-for="TenantLogin.UnitNumber" class="form-label">
-                                            <i class="fas fa-door-open me-2"></i>Unit Number
-                                        </label>
-                                        <input asp-for="TenantLogin.UnitNumber" class="form-control" placeholder="Unit number" />
-                                        <span asp-validation-for="TenantLogin.UnitNumber" class="text-danger"></span>
-                                    </div>
-                                </div>
-                                
-                                <div class="mb-3 form-check">
-                                    <input asp-for="TenantLogin.RememberMe" class="form-check-input" />
-                                    <label asp-for="TenantLogin.RememberMe" class="form-check-label">
-                                        Remember me
-                                    </label>
-                                </div>
-                                
-                                <button type="submit" class="btn btn-primary w-100">
-                                    <i class="fas fa-sign-in-alt me-2"></i>Sign In as Tenant
-                                </button>
-                            </form>
+                        
+                        <div class="mb-3">
+                            <label asp-for="Login.Password" class="form-label">
+                                <i class="fas fa-lock me-2"></i>Password
+                            </label>
+                            <input asp-for="Login.Password" class="form-control" type="password" 
+                                   placeholder="Enter your password" autocomplete="current-password" />
+                            <span asp-validation-for="Login.Password" class="text-danger"></span>
                         </div>
-
-                        <!-- Worker Login -->
-                        <div class="tab-pane fade @(Model.ActiveTab == "worker" ? "show active" : "")" 
-                             id="worker" role="tabpanel">
-                            <form method="post" asp-page-handler="WorkerLogin">
-                                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
-                                
-                                <div class="mb-3">
-                                    <label asp-for="WorkerLogin.Email" class="form-label">
-                                        <i class="fas fa-envelope me-2"></i>Email Address
-                                    </label>
-                                    <input asp-for="WorkerLogin.Email" class="form-control" placeholder="Enter your email" />
-                                    <span asp-validation-for="WorkerLogin.Email" class="text-danger"></span>
-                                </div>
-                                
-                                <div class="mb-3">
-                                    <label asp-for="WorkerLogin.Specialization" class="form-label">
-                                        <i class="fas fa-wrench me-2"></i>Specialization
-                                    </label>
-                                    <select asp-for="WorkerLogin.Specialization" class="form-select">
-                                        <option value="">Select your specialization</option>
-                                        @foreach (var specialization in Model.WorkerLogin.AvailableSpecializations)
-                                        {
-                                            <option value="@specialization">@specialization</option>
-                                        }
-                                    </select>
-                                    <span asp-validation-for="WorkerLogin.Specialization" class="text-danger"></span>
-                                </div>
-                                
-                                <div class="mb-3 form-check">
-                                    <input asp-for="WorkerLogin.RememberMe" class="form-check-input" />
-                                    <label asp-for="WorkerLogin.RememberMe" class="form-check-label">
-                                        Remember me
-                                    </label>
-                                </div>
-                                
-                                <button type="submit" class="btn btn-primary w-100">
-                                    <i class="fas fa-sign-in-alt me-2"></i>Sign In as Worker
-                                </button>
-                            </form>
+                        
+                        <div class="mb-3 form-check">
+                            <input asp-for="Login.RememberMe" class="form-check-input" type="checkbox" />
+                            <label asp-for="Login.RememberMe" class="form-check-label">
+                                Remember me
+                            </label>
                         </div>
-                    </div>
-
-                    <!-- Hidden fields for return URL -->
-                    @if (!string.IsNullOrEmpty(Model.Login.ReturnUrl))
-                    {
+                        
                         <input type="hidden" asp-for="Login.ReturnUrl" />
-                        <input type="hidden" asp-for="TenantLogin.ReturnUrl" />
-                        <input type="hidden" asp-for="WorkerLogin.ReturnUrl" />
+                        
+                        <button type="submit" class="btn btn-primary w-100" id="signInBtn">
+                            <i class="fas fa-sign-in-alt me-2"></i>Sign In
+                        </button>
+                    </form>
+
+                    <!-- Demo Credentials Display -->
+                    @if (Model.DemoCredentials.ShowCredentials && Model.DemoCredentials.AvailableUsers.Any())
+                    {
+                        <div class="mt-4 p-3 bg-light rounded">
+                            <h6 class="mb-2"><i class="fas fa-info-circle me-2"></i>Development Login Help</h6>
+                            <div class="small text-muted mb-2">
+                                <strong>All accounts use password:</strong> 
+                                <code onclick="fillPassword('@Model.DemoCredentials.DefaultPassword')" style="cursor: pointer;" 
+                                      title="Click to fill password field" class="clickable-credential">@Model.DemoCredentials.DefaultPassword</code>
+                                <small class="text-muted ms-2">(click to fill)</small>
+                            </div>
+                            
+                            @foreach (var group in Model.DemoCredentials.GroupedUsers)
+                            {
+                                <div class="mb-2">
+                                    <strong>@group.RoleDisplayName:</strong><br>
+                                    @foreach (var user in group.Users)
+                                    {
+                                        <div class="ms-2">
+                                            • <code onclick="fillEmail('@user.Email')" style="cursor: pointer;" 
+                                                  title="Click to fill email field" class="clickable-credential">@user.Email</code> - @user.DisplayName
+                                            <button type="button" onclick="fillBothCredentials('@user.Email', '@Model.DemoCredentials.DefaultPassword')" 
+                                                    class="btn btn-outline-primary btn-sm ms-2" title="Fill both email and password">
+                                                <i class="fas fa-magic fa-xs"></i> Quick Fill
+                                            </button>
+                                            @if (user.Claims.Any())
+                                            {
+                                                <br><span class="text-muted ms-3">
+                                                    (@string.Join(", ", user.Claims.Select(c => $"{c.Key}: {c.Value}")))
+                                                </span>
+                                            }
+                                        </div>
+                                    }
+                                </div>
+                            }
+
+                            <div class="mt-3 p-2 bg-success bg-opacity-10 border-start border-success border-3">
+                                <small class="text-dark">
+                                    <strong><i class="fas fa-rocket me-1"></i>Quick Demo Login:</strong> 
+                                    Click any email or the password to auto-fill, or use "Quick Fill" to fill both fields at once.
+                                    The system automatically detects your role and redirects you to the appropriate dashboard.
+                                </small>
+                            </div>
+                        </div>
                     }
+                    else
+                    {
+                        <!-- Fallback Help Section -->
+                        <div class="mt-4 p-3 bg-light rounded">
+                            <h6 class="mb-2"><i class="fas fa-info-circle me-2"></i>Development Login Help</h6>
+                            <div class="small text-muted">
+                                <strong>All accounts use password:</strong> 
+                                <code onclick="fillPassword('Demo123!')" style="cursor: pointer;" 
+                                      title="Click to fill password field" class="clickable-credential">Demo123!</code>
+                                <small class="text-muted ms-2">(click to fill)</small><br>
+                                <strong>Examples:</strong><br>
+                                • <code onclick="fillBothCredentials('admin@demo.com', 'Demo123!')" style="cursor: pointer;" 
+                                       title="Click to fill both fields" class="clickable-credential">admin@demo.com</code> - System Administrator<br>
+                                • <code onclick="fillBothCredentials('tenant1.unit101@sunset.com', 'Demo123!')" style="cursor: pointer;" 
+                                       title="Click to fill both fields" class="clickable-credential">tenant1.unit101@sunset.com</code> - Tenant<br>
+                                • <code onclick="fillBothCredentials('plumber.smith@demo.com', 'Demo123!')" style="cursor: pointer;" 
+                                       title="Click to fill both fields" class="clickable-credential">plumber.smith@demo.com</code> - Worker
+                            </div>
+                            
+                            <div class="mt-2 p-2 bg-info bg-opacity-10 border-start border-info border-3">
+                                <small class="text-dark">
+                                    <strong><i class="fas fa-magic me-1"></i>Smart Login:</strong> 
+                                    Click any credential above to auto-fill the login form!
+                                </small>
+                            </div>
+                        </div>
+                    }
+
+                    <!-- Registration Link (for future use) -->
+                    <div class="text-center mt-4">
+                        <p class="text-muted small">
+                            Don't have an account? 
+                            <a href="/Account/Register" class="text-decoration-none">
+                                <i class="fas fa-user-plus me-1"></i>Register here
+                            </a>
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -178,18 +144,129 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <style>
+        .clickable-credential {
+            transition: all 0.2s ease;
+        }
+        .clickable-credential:hover {
+            background-color: #e3f2fd !important;
+            color: #1976d2 !important;
+            transform: scale(1.05);
+        }
+    </style>
     <script>
-        // Preserve active tab state
         document.addEventListener('DOMContentLoaded', function() {
-            const activeTab = '@Model.ActiveTab';
-            if (activeTab) {
-                const tabButton = document.getElementById(activeTab + '-tab');
-                const tabContent = document.getElementById(activeTab);
-                if (tabButton && tabContent) {
-                    tabButton.classList.add('active');
-                    tabContent.classList.add('show', 'active');
-                }
+            console.log('Unified login page loaded');
+            
+            const form = document.getElementById('loginForm');
+            const submitButton = document.getElementById('signInBtn');
+            
+            if (form && submitButton) {
+                form.addEventListener('submit', function(e) {
+                    console.log('Login form submission started');
+                    
+                    // Check if password field has value before submission
+                    const passwordField = form.querySelector('input[type="password"]');
+                    if (passwordField) {
+                        console.log('Password field value length before submit:', passwordField.value.length);
+                        if (passwordField.value.length === 0) {
+                            console.warn('Password field is empty on submit!');
+                        }
+                    }
+                    
+                    // Disable button to prevent double submission
+                    submitButton.disabled = true;
+                    const originalText = submitButton.innerHTML;
+                    submitButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Signing In...';
+                    
+                    // Re-enable button after timeout if needed
+                    setTimeout(() => {
+                        if (submitButton.disabled) {
+                            submitButton.disabled = false;
+                            submitButton.innerHTML = originalText;
+                            console.log('Re-enabled submit button after timeout');
+                        }
+                    }, 5000);
+                });
             }
+
+            // Debug password field behavior
+            const passwordFields = document.querySelectorAll('input[type="password"]');
+            passwordFields.forEach(field => {
+                field.addEventListener('input', function() {
+                    console.log('Password field input event, length:', this.value.length);
+                });
+                
+                field.addEventListener('change', function() {
+                    console.log('Password field change event, length:', this.value.length);
+                });
+                
+                field.addEventListener('blur', function() {
+                    console.log('Password field blur event, length:', this.value.length);
+                });
+            });
         });
+
+        // Function to fill email field when clicking on demo email
+        function fillEmail(email) {
+            const emailInput = document.querySelector('input[type="email"]');
+            if (emailInput) {
+                emailInput.value = email;
+                emailInput.focus();
+                showFillSuccess('Email filled!');
+            }
+        }
+
+        // Function to fill password field when clicking on demo password
+        function fillPassword(password) {
+            const passwordInput = document.querySelector('input[type="password"]');
+            if (passwordInput) {
+                passwordInput.value = password;
+                passwordInput.focus();
+                showFillSuccess('Password filled!');
+            }
+        }
+
+        // Function to fill both email and password fields
+        function fillBothCredentials(email, password) {
+            const emailInput = document.querySelector('input[type="email"]');
+            const passwordInput = document.querySelector('input[type="password"]');
+            
+            if (emailInput && passwordInput) {
+                emailInput.value = email;
+                passwordInput.value = password;
+                emailInput.focus();
+                showFillSuccess('Both fields filled! Ready to sign in.');
+            }
+        }
+
+        // Function to show success message
+        function showFillSuccess(message) {
+            // Remove any existing success message
+            const existingMessage = document.querySelector('.auto-fill-success');
+            if (existingMessage) {
+                existingMessage.remove();
+            }
+
+            // Create and show new success message
+            const successDiv = document.createElement('div');
+            successDiv.className = 'alert alert-success alert-dismissible fade show auto-fill-success mt-2';
+            successDiv.style.fontSize = '0.875rem';
+            successDiv.innerHTML = `
+                <i class="fas fa-check-circle me-2"></i>${message}
+                <button type="button" class="btn-close btn-close-sm" data-bs-dismiss="alert"></button>
+            `;
+
+            // Insert after the login form
+            const form = document.getElementById('loginForm');
+            form.parentNode.insertBefore(successDiv, form.nextSibling);
+
+            // Auto-remove after 3 seconds
+            setTimeout(() => {
+                if (successDiv && successDiv.parentNode) {
+                    successDiv.remove();
+                }
+            }, 3000);
+        }
     </script>
 }

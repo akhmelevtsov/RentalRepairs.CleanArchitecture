@@ -65,7 +65,7 @@ public class RegisterPropertyViewModel
 /// </summary>
 public class PropertyDetailsViewModel
 {
-    public int Id { get; set; }
+    public Guid Id { get; set; }
     public string Name { get; set; } = string.Empty;
     public string Code { get; set; } = string.Empty;
     public string FullAddress { get; set; } = string.Empty;
@@ -96,7 +96,7 @@ public class PropertyListViewModel
 /// </summary>
 public class PropertySummaryViewModel
 {
-    public int Id { get; set; }
+    public Guid Id { get; set; }
     public string Name { get; set; } = string.Empty;
     public string Code { get; set; } = string.Empty;
     public string City { get; set; } = string.Empty;
@@ -104,4 +104,11 @@ public class PropertySummaryViewModel
     public int TenantCount { get; set; }
     public int ActiveRequestsCount { get; set; }
     public string SuperintendentName { get; set; } = string.Empty;
+    
+    // Enhanced properties for dashboard statistics
+    public int TotalUnits { get; set; }
+    public int OccupiedUnits { get; set; }
+    public int VacantUnits { get; set; }
+    public double OccupancyRate { get; set; }
+    public int ActiveRequests { get; set; }
 }

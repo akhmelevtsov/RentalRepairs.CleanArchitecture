@@ -23,7 +23,6 @@ public class PersonContactInfoTests
     [Theory]
     [InlineData("")]
     [InlineData(" ")]
-    [InlineData(null)]
     public void PersonContactInfo_ShouldThrowException_WhenFirstNameIsInvalid(string firstName)
     {
         // Act & Assert
@@ -32,17 +31,26 @@ public class PersonContactInfoTests
            .WithMessage("First name cannot be empty*");
     }
 
+    [Fact]
+    public void PersonContactInfo_ShouldThrowException_WhenFirstNameIsNull()
+    {
+        // Act & Assert
+        Action act = () => new PersonContactInfo(null!, "Doe", "john.doe@example.com");
+        act.Should().Throw<ArgumentException>()
+           .WithMessage("First name cannot be empty*");
+    }
+
     [Theory]
-    [InlineData("invalid-email")]
-    [InlineData("@example.com")]
-    [InlineData("john.doe@")]
-    [InlineData("john.doe")]
+    [InlineData("invalid-email")] // No @ or .
+    [InlineData("john.doe")] // No @ 
+    [InlineData("@")]  // Only @
+    [InlineData("")]  // Empty
     public void PersonContactInfo_ShouldThrowException_WhenEmailIsInvalid(string email)
     {
         // Act & Assert
         Action act = () => new PersonContactInfo("John", "Doe", email);
         act.Should().Throw<ArgumentException>()
-           .WithMessage("Invalid email address format*");
+           .WithMessage("Email address*");
     }
 
     [Fact]

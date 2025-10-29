@@ -3,18 +3,19 @@ using System.ComponentModel.DataAnnotations;
 namespace RentalRepairs.WebUI.Models;
 
 /// <summary>
-/// Presentation model for user authentication
+/// Unified login view model - all users authenticate with email/password only
+/// System determines role and parameters automatically
 /// </summary>
 public class LoginViewModel
 {
     [Required(ErrorMessage = "Email is required")]
-    [Display(Name = "Email")]
     [EmailAddress(ErrorMessage = "Please enter a valid email address")]
+    [Display(Name = "Email Address")]
     public string Email { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Password is required")]
-    [Display(Name = "Password")]
     [DataType(DataType.Password)]
+    [Display(Name = "Password")]
     public string Password { get; set; } = string.Empty;
 
     [Display(Name = "Remember me")]
@@ -24,61 +25,7 @@ public class LoginViewModel
 }
 
 /// <summary>
-/// Presentation model for tenant authentication
-/// </summary>
-public class TenantLoginViewModel
-{
-    [Required(ErrorMessage = "Email is required")]
-    [Display(Name = "Email")]
-    [EmailAddress(ErrorMessage = "Please enter a valid email address")]
-    public string Email { get; set; } = string.Empty;
-
-    [Required(ErrorMessage = "Property code is required")]
-    [Display(Name = "Property Code")]
-    public string PropertyCode { get; set; } = string.Empty;
-
-    [Required(ErrorMessage = "Unit number is required")]
-    [Display(Name = "Unit Number")]
-    public string UnitNumber { get; set; } = string.Empty;
-
-    [Display(Name = "Remember me")]
-    public bool RememberMe { get; set; }
-
-    public string? ReturnUrl { get; set; }
-}
-
-/// <summary>
-/// Presentation model for worker authentication
-/// </summary>
-public class WorkerLoginViewModel
-{
-    [Required(ErrorMessage = "Email is required")]
-    [Display(Name = "Email")]
-    [EmailAddress(ErrorMessage = "Please enter a valid email address")]
-    public string Email { get; set; } = string.Empty;
-
-    [Required(ErrorMessage = "Specialization is required")]
-    [Display(Name = "Specialization")]
-    public string Specialization { get; set; } = string.Empty;
-
-    [Display(Name = "Remember me")]
-    public bool RememberMe { get; set; }
-
-    public string? ReturnUrl { get; set; }
-
-    public List<string> AvailableSpecializations { get; set; } = new()
-    {
-        "Plumbing",
-        "Electrical",
-        "HVAC",
-        "General Maintenance",
-        "Carpentry",
-        "Painting"
-    };
-}
-
-/// <summary>
-/// Presentation model for dashboard summary
+/// Enhanced dashboard view model with role detection
 /// </summary>
 public class DashboardViewModel
 {
@@ -108,6 +55,14 @@ public class DashboardViewModel
     public int TotalSystemRequests { get; set; }
     public int ActiveWorkers { get; set; }
     public List<PropertySummaryViewModel> RecentProperties { get; set; } = new();
+    
+    // Enhanced System admin dashboard with unit statistics
+    public int TotalSystemUnits { get; set; }
+    public int TotalOccupiedUnits { get; set; }
+    public int TotalVacantUnits { get; set; }
+    public double SystemOccupancyRate { get; set; }
+    public int ActiveSystemRequests { get; set; }
+    public int TotalSystemRequestsAllTime { get; set; }
 }
 
 /// <summary>
@@ -131,4 +86,49 @@ public class NavigationItem
     public string Icon { get; set; } = string.Empty;
     public bool IsActive { get; set; }
     public List<NavigationItem> SubItems { get; set; } = new();
+}
+
+// Legacy view models - kept for backward compatibility during transition
+// TODO: Remove these after all references are updated
+
+/// <summary>
+/// DEPRECATED: Use unified LoginViewModel instead
+/// </summary>
+[Obsolete("Use unified LoginViewModel instead")]
+public class TenantLoginViewModel
+{
+    public string Email { get; set; } = string.Empty;
+    public string Password { get; set; } = string.Empty;
+    public string PropertyCode { get; set; } = string.Empty;
+    public string UnitNumber { get; set; } = string.Empty;
+    public bool RememberMe { get; set; }
+    public string? ReturnUrl { get; set; }
+    
+    // Property for simplified login mode (no longer used)
+    public bool UseSimplifiedLogin { get; set; } = true;
+}
+
+/// <summary>
+/// DEPRECATED: Use unified LoginViewModel instead
+/// </summary>
+[Obsolete("Use unified LoginViewModel instead")]
+public class WorkerLoginViewModel
+{
+    public string Email { get; set; } = string.Empty;
+    public string Password { get; set; } = string.Empty;
+    public string Specialization { get; set; } = string.Empty;
+    public bool RememberMe { get; set; }
+    public string? ReturnUrl { get; set; }
+
+    public List<string> AvailableSpecializations { get; set; } = new()
+    {
+        "Plumbing",
+        "Electrical", 
+        "HVAC",
+        "General Maintenance",
+        "Carpentry",
+        "Painting",
+        "Locksmith",
+        "Appliance Repair"
+    };
 }

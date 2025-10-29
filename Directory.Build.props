@@ -1,0 +1,28 @@
+<Project>
+  
+  <!-- Global package version management to eliminate warnings -->
+  <PropertyGroup>
+    <EntityFrameworkVersion>8.0.11</EntityFrameworkVersion>
+    <MicrosoftExtensionsVersion>8.0.0</MicrosoftExtensionsVersion>
+    <SqlClientVersion>5.2.1</SqlClientVersion>
+  </PropertyGroup>
+
+  <!-- Central package management for Entity Framework -->
+  <ItemGroup>
+    <PackageReference Update="Microsoft.EntityFrameworkCore" Version="$(EntityFrameworkVersion)" />
+    <PackageReference Update="Microsoft.EntityFrameworkCore.SqlServer" Version="$(EntityFrameworkVersion)" />
+    <PackageReference Update="Microsoft.EntityFrameworkCore.InMemory" Version="$(EntityFrameworkVersion)" />
+    <PackageReference Update="Microsoft.EntityFrameworkCore.Tools" Version="$(EntityFrameworkVersion)" />
+    <PackageReference Update="Microsoft.EntityFrameworkCore.Design" Version="$(EntityFrameworkVersion)" />
+    <PackageReference Update="Microsoft.Extensions.Caching.Memory" Version="$(MicrosoftExtensionsVersion)" />
+    <PackageReference Update="Microsoft.Data.SqlClient" Version="$(SqlClientVersion)" />
+  </ItemGroup>
+
+  <!-- Suppress specific warnings globally for cleaner build output -->
+  <PropertyGroup>
+    <NoWarn>$(NoWarn);NU1603;NU1605;NU1903</NoWarn>
+    <WarningsAsErrors />
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+</Project>

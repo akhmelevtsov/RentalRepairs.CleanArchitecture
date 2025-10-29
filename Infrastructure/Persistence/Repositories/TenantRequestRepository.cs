@@ -3,160 +3,151 @@ using RentalRepairs.Domain.Entities;
 using RentalRepairs.Domain.Enums;
 using RentalRepairs.Domain.Repositories;
 using RentalRepairs.Domain.Specifications;
-using RentalRepairs.Infrastructure.Persistence;
 
 namespace RentalRepairs.Infrastructure.Persistence.Repositories;
 
-public class TenantRequestRepository : ITenantRequestRepository
+/// <summary>
+/// ? Fixed TenantRequestRepository - inherits from BaseRepository and properly implements interface
+/// Updated to use Guid-based entities and implements all required interface methods
+/// Fixed to work with domain entities that use foreign keys instead of navigation properties
+/// </summary>
+public class TenantRequestRepository : BaseRepository<TenantRequest>, ITenantRequestRepository
 {
-    private readonly ApplicationDbContext _context;
-
-    public TenantRequestRepository(ApplicationDbContext context)
+    public TenantRequestRepository(ApplicationDbContext context) : base(context)
     {
-        _context = context;
     }
 
-    public async Task<TenantRequest?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
+    #region ITenantRequestRepository Core Methods
+
+    /// <summary>
+    /// ? Get tenant request by unique code
+    /// </summary>
+    public async Task<TenantRequest?> GetByCodeAsync(string code, CancellationToken cancellationToken = default)
     {
-        return await _context.TenantRequests
-            .Include(tr => tr.Tenant)
-                .ThenInclude(t => t.Property)
-            .FirstOrDefaultAsync(tr => tr.Id == id, cancellationToken);
+        return await Context.TenantRequests
+            .FirstOrDefaultAsync(tr => tr.Code == code, cancellationToken);
     }
 
-    public async Task<IEnumerable<TenantRequest>> GetAllAsync(CancellationToken cancellationToken = default)
+    /// <summary>
+    /// ? Check if tenant request exists by code (renamed to avoid ambiguity with base ExistsAsync)
+    /// </summary>
+    public async Task<bool> ExistsByCodeAsync(string requestCode, CancellationToken cancellationToken = default)
     {
-        return await _context.TenantRequests
-            .Include(tr => tr.Tenant)
-                .ThenInclude(t => t.Property)
-            .ToListAsync(cancellationToken);
-    }
-
-    public async Task<IEnumerable<TenantRequest>> GetBySpecificationAsync(ISpecification<TenantRequest> specification, CancellationToken cancellationToken = default)
-    {
-        return await ApplySpecification(specification)
-            .ToListAsync(cancellationToken);
-    }
-
-    public async Task<IEnumerable<TenantRequest>> GetByStatusAsync(TenantRequestStatus status, CancellationToken cancellationToken = default)
-    {
-        return await _context.TenantRequests
-            .Include(tr => tr.Tenant)
-                .ThenInclude(t => t.Property)
-            .Where(tr => tr.Status == status)
-            .ToListAsync(cancellationToken);
-    }
-
-    public async Task<IEnumerable<TenantRequest>> GetPendingRequestsAsync(CancellationToken cancellationToken = default)
-    {
-        return await _context.TenantRequests
-            .Include(tr => tr.Tenant)
-                .ThenInclude(t => t.Property)
-            .Where(tr => tr.Status == TenantRequestStatus.Submitted || tr.Status == TenantRequestStatus.Scheduled)
-            .ToListAsync(cancellationToken);
-    }
-
-    public async Task<IEnumerable<TenantRequest>> GetOverdueRequestsAsync(CancellationToken cancellationToken = default)
-    {
-        var cutoffDate = DateTime.UtcNow.AddDays(-7); // Consider requests older than 7 days as overdue
-        return await _context.TenantRequests
-            .Include(tr => tr.Tenant)
-                .ThenInclude(t => t.Property)
-            .Where(tr => tr.Status == TenantRequestStatus.Scheduled && tr.CreatedAt < cutoffDate)
-            .ToListAsync(cancellationToken);
-    }
-
-    public async Task<IEnumerable<TenantRequest>> GetByUrgencyLevelAsync(string urgencyLevel, CancellationToken cancellationToken = default)
-    {
-        return await _context.TenantRequests
-            .Include(tr => tr.Tenant)
-                .ThenInclude(t => t.Property)
-            .Where(tr => tr.UrgencyLevel == urgencyLevel)
-            .ToListAsync(cancellationToken);
-    }
-
-    public async Task<IEnumerable<TenantRequest>> GetByWorkerEmailAsync(string workerEmail, CancellationToken cancellationToken = default)
-    {
-        // Since AssignedWorkerEmail doesn't exist as a persistent property, 
-        // this method will return empty for now. Can be enhanced with domain events or separate tracking
-        return new List<TenantRequest>();
-    }
-
-    public async Task<IEnumerable<TenantRequest>> GetByPropertyIdAsync(int propertyId, CancellationToken cancellationToken = default)
-    {
-        return await _context.TenantRequests
-            .Include(tr => tr.Tenant)
-                .ThenInclude(t => t.Property)
-            .Where(tr => tr.Tenant.Property.Id == propertyId)
-            .ToListAsync(cancellationToken);
-    }
-
-    public async Task<IEnumerable<TenantRequest>> GetByTenantIdAsync(int tenantId, CancellationToken cancellationToken = default)
-    {
-        return await _context.TenantRequests
-            .Include(tr => tr.Tenant)
-                .ThenInclude(t => t.Property)
-            .Where(tr => tr.Tenant.Id == tenantId)
-            .ToListAsync(cancellationToken);
-    }
-
-    public async Task<bool> ExistsAsync(string requestCode, CancellationToken cancellationToken = default)
-    {
-        return await _context.TenantRequests
+        return await Context.TenantRequests
             .AnyAsync(tr => tr.Code == requestCode, cancellationToken);
     }
 
+    #endregion
+
+    #region Status-Based Queries
+
+    /// <summary>
+    /// ? Get all tenant requests with specific status
+    /// </summary>
+    public async Task<IEnumerable<TenantRequest>> GetByStatusAsync(TenantRequestStatus status, CancellationToken cancellationToken = default)
+    {
+        return await Context.TenantRequests
+            .Where(tr => tr.Status == status)
+            .OrderBy(tr => tr.CreatedAt)
+            .ToListAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// ? Count tenant requests by status
+    /// </summary>
     public async Task<int> CountByStatusAsync(TenantRequestStatus status, CancellationToken cancellationToken = default)
     {
-        return await _context.TenantRequests
+        return await Context.TenantRequests
             .CountAsync(tr => tr.Status == status, cancellationToken);
     }
 
-    public async Task AddAsync(TenantRequest tenantRequest, CancellationToken cancellationToken = default)
+    /// <summary>
+    /// ? Get all pending (submitted) tenant requests
+    /// </summary>
+    public async Task<IEnumerable<TenantRequest>> GetPendingRequestsAsync(CancellationToken cancellationToken = default)
     {
-        await _context.TenantRequests.AddAsync(tenantRequest, cancellationToken);
+        return await Context.TenantRequests
+            .Where(tr => tr.Status == TenantRequestStatus.Submitted)
+            .OrderBy(tr => tr.CreatedAt)
+            .ToListAsync(cancellationToken);
     }
 
-    public void Update(TenantRequest tenantRequest)
+    #endregion
+
+    #region Entity Relationship Queries
+
+    /// <summary>
+    /// ? Fixed: Use Guid for tenantId parameter
+    /// </summary>
+    public async Task<IEnumerable<TenantRequest>> GetByTenantIdAsync(Guid tenantId, CancellationToken cancellationToken = default)
     {
-        _context.TenantRequests.Update(tenantRequest);
+        return await Context.TenantRequests
+            .Where(tr => tr.TenantId == tenantId)
+            .OrderByDescending(tr => tr.CreatedAt)
+            .ToListAsync(cancellationToken);
     }
 
-    public void Remove(TenantRequest tenantRequest)
+    /// <summary>
+    /// ? Fixed: Use Guid for propertyId parameter and work with direct foreign key
+    /// </summary>
+    public async Task<IEnumerable<TenantRequest>> GetByPropertyIdAsync(Guid propertyId, CancellationToken cancellationToken = default)
     {
-        _context.TenantRequests.Remove(tenantRequest);
+        return await Context.TenantRequests
+            .Where(tr => tr.PropertyId == propertyId)
+            .OrderByDescending(tr => tr.CreatedAt)
+            .ToListAsync(cancellationToken);
     }
 
-    public async Task SaveChangesAsync(CancellationToken cancellationToken = default)
+    /// <summary>
+    /// ? Get all tenant requests assigned to specific worker
+    /// </summary>
+    public async Task<IEnumerable<TenantRequest>> GetByWorkerEmailAsync(string workerEmail, CancellationToken cancellationToken = default)
     {
-        await _context.SaveChangesAsync(cancellationToken);
+        return await Context.TenantRequests
+            .Where(tr => tr.AssignedWorkerEmail == workerEmail)
+            .OrderByDescending(tr => tr.CreatedAt)
+            .ToListAsync(cancellationToken);
     }
 
-    private IQueryable<TenantRequest> ApplySpecification(ISpecification<TenantRequest> specification)
+    #endregion
+
+    #region Business Logic Queries
+
+    /// <summary>
+    /// ? Get tenant requests by urgency level
+    /// </summary>
+    public async Task<IEnumerable<TenantRequest>> GetByUrgencyLevelAsync(string urgencyLevel, CancellationToken cancellationToken = default)
     {
-        var query = _context.TenantRequests.AsQueryable();
-
-        if (specification.Criteria != null)
-        {
-            query = query.Where(specification.Criteria);
-        }
-
-        // Apply includes
-        query = specification.Includes.Aggregate(query, (current, include) => current.Include(include));
-
-        // Apply string includes
-        query = specification.IncludeStrings.Aggregate(query, (current, include) => current.Include(include));
-
-        // Apply ordering
-        if (specification.OrderBy != null)
-        {
-            query = query.OrderBy(specification.OrderBy);
-        }
-        else if (specification.OrderByDescending != null)
-        {
-            query = query.OrderByDescending(specification.OrderByDescending);
-        }
-
-        return query;
+        return await Context.TenantRequests
+            .Where(tr => tr.UrgencyLevel == urgencyLevel)
+            .OrderByDescending(tr => tr.CreatedAt)
+            .ToListAsync(cancellationToken);
     }
+
+    /// <summary>
+    /// ? Get overdue tenant requests older than specified threshold
+    /// Fixed: Single clear method with explicit parameter
+    /// </summary>
+    public async Task<IEnumerable<TenantRequest>> GetOverdueRequestsAsync(int daysThreshold, CancellationToken cancellationToken = default)
+    {
+        var cutoffDate = DateTime.UtcNow.AddDays(-daysThreshold);
+        return await Context.TenantRequests
+            .Where(tr => tr.Status == TenantRequestStatus.Submitted && tr.CreatedAt <= cutoffDate)
+            .OrderBy(tr => tr.CreatedAt)
+            .ToListAsync(cancellationToken);
+    }
+
+    #endregion
+
+    #region Specification Pattern
+
+    /// <summary>
+    /// ? Get tenant requests using specification pattern for complex queries
+    /// </summary>
+    public async Task<IEnumerable<TenantRequest>> GetBySpecificationAsync(ISpecification<TenantRequest> specification, CancellationToken cancellationToken = default)
+    {
+        return await ApplySpecification(specification).ToListAsync(cancellationToken);
+    }
+
+    #endregion
 }

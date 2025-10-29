@@ -1,4 +1,3 @@
-using RentalRepairs.Domain.Services;
 using RentalRepairs.Domain.Entities;
 using RentalRepairs.Domain.ValueObjects;
 using Xunit;
@@ -8,33 +7,20 @@ namespace RentalRepairs.Domain.Tests.Services;
 
 public class WorkerAssignmentServiceTests
 {
-    private readonly WorkerAssignmentService _service;
-
-    public WorkerAssignmentServiceTests()
-    {
-        // For unit tests focusing on pure functions
-        _service = new WorkerAssignmentService(null!, null!);
-    }
-
     [Theory]
     [InlineData("Plumbing issue", "Leaky faucet", "Plumbing")]
     [InlineData("Electrical problem", "Outlet not working", "Electrical")]
     [InlineData("Heating not working", "HVAC system down", "HVAC")]
-    [InlineData("Door handle broken", "Door needs fixing", "General Maintenance")]
-    // Note: These are returning HVAC due to substring matching ("repair" contains "air")
-    // This will be fixed in a later phase when we improve the algorithm
+    [InlineData("Door handle broken", "Door needs fixing", "Carpentry")] // Fix: "door" maps to Carpentry
     [InlineData("Window issues", "Broken window pane", "General Maintenance")]
-    [InlineData("Paint touch up", "Wall needs touch up", "General Maintenance")]
+    [InlineData("Paint touch up", "Wall needs paint", "Painting")]
     public void DetermineRequiredSpecialization_ShouldReturnCorrectSpecialization(
         string title, 
         string description, 
         string expectedSpecialization)
     {
-        // Arrange
-        var request = CreateTestRequest(title, description);
-
-        // Act
-        var specialization = _service.DetermineRequiredSpecialization(request);
+        // Act - Use Worker's static method
+        var specialization = Worker.DetermineRequiredSpecialization(title, description);
 
         // Assert
         specialization.Should().Be(expectedSpecialization);
@@ -43,11 +29,8 @@ public class WorkerAssignmentServiceTests
     [Fact]
     public void DetermineRequiredSpecialization_ShouldReturnGeneralMaintenance_ForUnknownKeywords()
     {
-        // Arrange
-        var request = CreateTestRequest("Random issue", "Something unclear");
-
-        // Act
-        var specialization = _service.DetermineRequiredSpecialization(request);
+        // Act - Use Worker's static method
+        var specialization = Worker.DetermineRequiredSpecialization("Random issue", "Something unclear");
 
         // Assert
         specialization.Should().Be("General Maintenance");
@@ -57,38 +40,38 @@ public class WorkerAssignmentServiceTests
     [InlineData("Water leak in bathroom", "Plumbing")]
     [InlineData("Power outlet sparking", "Electrical")]
     [InlineData("Air conditioning broken", "HVAC")]
-    [InlineData("Door handle broken", "General Maintenance")]
+    [InlineData("Window handle broken", "General Maintenance")] // Fix: Use window instead of door to avoid carpentry
     public void DetermineRequiredSpecialization_ShouldBeCaseInsensitive(
         string description, 
         string expectedSpecialization)
     {
-        // Arrange
-        var request = CreateTestRequest("Issue", description.ToUpperInvariant());
-
-        // Act
-        var specialization = _service.DetermineRequiredSpecialization(request);
+        // Act - Use Worker's static method with uppercase input
+        var specialization = Worker.DetermineRequiredSpecialization("ISSUE", description.ToUpperInvariant());
 
         // Assert
         specialization.Should().Be(expectedSpecialization);
     }
 
     [Fact]
-    public void DetermineRequiredSpecialization_KnownSubstringIssues()
+    public void DetermineRequiredSpecialization_ShouldHandleEmptyInput()
     {
-        // These demonstrate the current substring matching limitations
-        // that will be addressed in future iterations
+        // Act - Use Worker's static method with empty input
+        var specialization = Worker.DetermineRequiredSpecialization("", "");
+
+        // Assert
+        specialization.Should().Be("General Maintenance");
+    }
+
+    [Fact]
+    public void DetermineRequiredSpecialization_ShouldPrioritizeKeywords()
+    {
+        // Test keyword prioritization in the algorithm
+        var plumbingSpecialization = Worker.DetermineRequiredSpecialization("Water heater repair", "Electric water heater leaking");
+        var electricalSpecialization = Worker.DetermineRequiredSpecialization("Light switch", "Electrical outlet power issue");
         
-        var airInRepairRequest = CreateTestRequest("Window repair", "Broken window pane");
-        var specialization = _service.DetermineRequiredSpecialization(airInRepairRequest);
-        
-        // Currently returns HVAC because "repair" contains "air"
-        specialization.Should().Be("HVAC");
-        
-        var wallRepairRequest = CreateTestRequest("Paint touch up", "Wall needs repair");
-        var wallSpecialization = _service.DetermineRequiredSpecialization(wallRepairRequest);
-        
-        // Currently returns HVAC for same reason
-        wallSpecialization.Should().Be("HVAC");
+        // Should prioritize plumbing keywords (water, leak) over electrical
+        plumbingSpecialization.Should().Be("Plumbing");
+        electricalSpecialization.Should().Be("Electrical");
     }
 
     private static TenantRequest CreateTestRequest(string title, string description)

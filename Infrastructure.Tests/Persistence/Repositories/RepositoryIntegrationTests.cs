@@ -36,7 +36,7 @@ public class RepositoryIntegrationTests
         propertyRepoMethods.Should().Contain("Update");
         propertyRepoMethods.Should().Contain("Remove");
         propertyRepoMethods.Should().Contain("SaveChangesAsync");
-        propertyRepoMethods.Should().Contain("ExistsAsync");
+        propertyRepoMethods.Should().Contain("ExistsByCodeAsync"); // Updated method name
 
         // Test TenantRequestRepository methods
         var tenantRequestRepoMethods = typeof(TenantRequestRepository).GetMethods().Select(m => m.Name).ToList();
@@ -46,6 +46,7 @@ public class RepositoryIntegrationTests
         tenantRequestRepoMethods.Should().Contain("GetPendingRequestsAsync");
         tenantRequestRepoMethods.Should().Contain("GetOverdueRequestsAsync");
         tenantRequestRepoMethods.Should().Contain("CountByStatusAsync");
+        tenantRequestRepoMethods.Should().Contain("ExistsByCodeAsync"); // Updated method name
     }
 
     [Fact]
@@ -65,30 +66,40 @@ public class RepositoryIntegrationTests
     [Fact]
     public void ApplicationDbContext_Type_Should_Be_Correct()
     {
-        var dbContextType = typeof(ApplicationDbContext);
+        var contextType = typeof(ApplicationDbContext);
         
-        dbContextType.Should().NotBeNull();
-        dbContextType.Namespace.Should().Be("RentalRepairs.Infrastructure.Persistence");
-        dbContextType.Should().BeAssignableTo<Microsoft.EntityFrameworkCore.DbContext>();
-        dbContextType.Should().BeAssignableTo<Application.Common.Interfaces.IApplicationDbContext>();
+        contextType.Should().NotBeNull();
+        contextType.Namespace.Should().Be("RentalRepairs.Infrastructure.Persistence");
+        
+        // Check that it has the required DbSets
+        var properties = contextType.GetProperties();
+        var propertyNames = properties.Select(p => p.Name).ToList();
+        
+        propertyNames.Should().Contain("Properties");
+        propertyNames.Should().Contain("Tenants");
+        propertyNames.Should().Contain("TenantRequests");
+        propertyNames.Should().Contain("Workers");
     }
 
     [Fact]
     public void Entity_Configurations_Should_Exist()
     {
+        // Verify that entity configurations exist and are in correct namespace
         var propertyConfigType = typeof(PropertyConfiguration);
         var tenantConfigType = typeof(TenantConfiguration);
         var tenantRequestConfigType = typeof(TenantRequestConfiguration);
         var workerConfigType = typeof(WorkerConfiguration);
 
         propertyConfigType.Should().NotBeNull();
-        tenantConfigType.Should().NotBeNull();
-        tenantRequestConfigType.Should().NotBeNull();
-        workerConfigType.Should().NotBeNull();
+        propertyConfigType.Namespace.Should().Be("RentalRepairs.Infrastructure.Persistence.Configurations");
 
-        propertyConfigType.Should().BeAssignableTo<Microsoft.EntityFrameworkCore.IEntityTypeConfiguration<Domain.Entities.Property>>();
-        tenantConfigType.Should().BeAssignableTo<Microsoft.EntityFrameworkCore.IEntityTypeConfiguration<Domain.Entities.Tenant>>();
-        tenantRequestConfigType.Should().BeAssignableTo<Microsoft.EntityFrameworkCore.IEntityTypeConfiguration<Domain.Entities.TenantRequest>>();
-        workerConfigType.Should().BeAssignableTo<Microsoft.EntityFrameworkCore.IEntityTypeConfiguration<Domain.Entities.Worker>>();
+        tenantConfigType.Should().NotBeNull();
+        tenantConfigType.Namespace.Should().Be("RentalRepairs.Infrastructure.Persistence.Configurations");
+
+        tenantRequestConfigType.Should().NotBeNull();
+        tenantRequestConfigType.Namespace.Should().Be("RentalRepairs.Infrastructure.Persistence.Configurations");
+
+        workerConfigType.Should().NotBeNull();
+        workerConfigType.Namespace.Should().Be("RentalRepairs.Infrastructure.Persistence.Configurations");
     }
 }

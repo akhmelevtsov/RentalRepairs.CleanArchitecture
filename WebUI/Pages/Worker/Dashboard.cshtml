@@ -1,0 +1,110 @@
+@page
+@model RentalRepairs.WebUI.Pages.Worker.DashboardModel
+@{
+    ViewData["Title"] = "Worker Dashboard";
+}
+
+<div class="container py-4">
+    <!-- Welcome Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <h2 class="h4 mb-1">
+                                <i class="fas fa-tools me-2"></i>Worker Dashboard
+                            </h2>
+                            <p class="mb-0">
+                                <strong>@Model.WorkerName</strong> - @Model.Specialization Specialist
+                            </p>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-hard-hat fa-3x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Work Management -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-clipboard-check me-2"></i>My Assignments
+                    </h5>
+                </div>
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-clipboard-check fa-3x text-primary"></i>
+                    </div>
+                    <p class="card-text text-muted">View your assigned work orders</p>
+                    <a href="/Worker/Assignments" class="btn btn-primary">
+                        <i class="fas fa-tasks me-2"></i>View Work Orders
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-search me-2"></i>Available Work
+                    </h5>
+                </div>
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-search fa-3x text-info"></i>
+                    </div>
+                    <p class="card-text text-muted">Browse available requests in your specialization</p>
+                    <a href="/Worker/Available" class="btn btn-info">
+                        <i class="fas fa-search me-2"></i>Find Work
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-history me-2"></i>Work History
+                    </h5>
+                </div>
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-history fa-3x text-success"></i>
+                    </div>
+                    <p class="card-text text-muted">Review your completed work</p>
+                    <a href="/Worker/History" class="btn btn-success">
+                        <i class="fas fa-check me-2"></i>View History
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Work Status -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-wrench me-2"></i>@Model.Specialization Work Center
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-center py-4 text-muted">
+                        <i class="fas fa-tools fa-2x mb-3"></i>
+                        <p>Welcome to your work dashboard, <strong>@Model.WorkerName</strong></p>
+                        <p>Manage your assignments and find new work opportunities in <strong>@Model.Specialization</strong>.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

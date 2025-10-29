@@ -4,228 +4,246 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using RentalRepairs.WebUI.Models;
 using System.Security.Claims;
-using CustomAuth = RentalRepairs.Infrastructure.Authentication;
 
 namespace RentalRepairs.WebUI.Pages.Account;
 
+/// <summary>
+/// Unified Login page model - all users authenticate with email/password only
+/// System automatically determines role and redirects to appropriate dashboard
+/// Supports concurrent logins with optimistic concurrency for data integrity
+/// </summary>
 public class LoginModel : PageModel
 {
-    private readonly CustomAuth.IAuthenticationService _authService;
+    private readonly RentalRepairs.Application.Common.Interfaces.IAuthenticationService _authService;
+    private readonly RentalRepairs.Application.Common.Interfaces.IDemoUserService _demoUserService;
     private readonly ILogger<LoginModel> _logger;
 
-    public LoginModel(CustomAuth.IAuthenticationService authService, ILogger<LoginModel> logger)
+    public LoginModel(
+        RentalRepairs.Application.Common.Interfaces.IAuthenticationService authService,
+        RentalRepairs.Application.Common.Interfaces.IDemoUserService demoUserService,
+        ILogger<LoginModel> logger)
     {
         _authService = authService;
+        _demoUserService = demoUserService;
         _logger = logger;
     }
 
     [BindProperty]
     public LoginViewModel Login { get; set; } = new();
 
-    [BindProperty]
-    public TenantLoginViewModel TenantLogin { get; set; } = new();
+    // Demo credentials for display
+    public DemoCredentialsViewModel DemoCredentials { get; set; } = new();
 
-    [BindProperty]
-    public WorkerLoginViewModel WorkerLogin { get; set; } = new();
+    [TempData]
+    public string? SuccessMessage { get; set; }
+    
+    [TempData] 
+    public string? ErrorMessage { get; set; }
 
-    public string ActiveTab { get; set; } = "admin";
-
-    public async Task<IActionResult> OnGetAsync(string? returnUrl = null, string? tab = null)
+    /// <summary>
+    /// Load unified login page with demo credentials if available
+    /// </summary>
+    public async Task<IActionResult> OnGetAsync(string? returnUrl = null)
     {
-        if (!string.IsNullOrEmpty(tab))
+        try
         {
-            ActiveTab = tab;
-        }
+            _logger.LogInformation("Unified login page GET request - ReturnUrl: {ReturnUrl}", returnUrl);
 
-        Login.ReturnUrl = returnUrl;
-        TenantLogin.ReturnUrl = returnUrl;
-        WorkerLogin.ReturnUrl = returnUrl;
+            // Initialize model
+            Login ??= new LoginViewModel();
+            Login.ReturnUrl = returnUrl;
 
-        // Clear the existing external cookie to ensure a clean login process
-        await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            // Load demo credentials for display
+            await LoadDemoCredentials();
 
-        return Page();
-    }
-
-    public async Task<IActionResult> OnPostAdminLoginAsync()
-    {
-        ActiveTab = "admin";
-
-        if (!ModelState.IsValid)
-        {
             return Page();
         }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error loading login page");
+            ErrorMessage = "Unable to load login page. Please try again.";
+            return Page();
+        }
+    }
+
+    /// <summary>
+    /// CSRF BYPASSED: Unified login that allows concurrent sessions with optimistic concurrency
+    /// </summary>
+    [IgnoreAntiforgeryToken]
+    public async Task<IActionResult> OnPostAsync()
+    {
+        _logger.LogInformation("Unified login POST request received");
 
         try
         {
+            if (Login == null || !ValidateLoginModel())
+            {
+                await LoadDemoCredentials();
+                return Page();
+            }
+
+            _logger.LogInformation("Processing unified login for email: {Email} - concurrent sessions enabled", Login.Email);
             var result = await _authService.AuthenticateAsync(Login.Email, Login.Password);
 
             if (result.IsSuccess)
             {
-                var claims = new List<Claim>
-                {
-                    new(ClaimTypes.NameIdentifier, result.UserId),
-                    new(ClaimTypes.Name, result.DisplayName),
-                    new(ClaimTypes.Email, result.Email),
-                    new("role", result.Roles.FirstOrDefault() ?? "SystemAdmin")
-                };
+                await SignInUserAsync(result, Login.RememberMe);
+                
+                _logger.LogInformation("User {Email} logged in successfully as {Role}, redirecting to: {DashboardUrl}", 
+                    Login.Email, result.PrimaryRole, result.DashboardUrl);
 
-                // Add custom claims
-                foreach (var claim in result.Claims)
-                {
-                    claims.Add(new Claim(claim.Key, claim.Value.ToString()));
-                }
-
-                var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-                var authProperties = new AuthenticationProperties
-                {
-                    IsPersistent = Login.RememberMe,
-                    ExpiresUtc = result.ExpiresAt
-                };
-
-                await HttpContext.SignInAsync(
-                    CookieAuthenticationDefaults.AuthenticationScheme,
-                    new ClaimsPrincipal(claimsIdentity),
-                    authProperties);
-
-                _logger.LogInformation("User {Email} logged in successfully", Login.Email);
-
-                return LocalRedirect(Login.ReturnUrl ?? "/");
+                // Redirect to role-specific dashboard or return URL
+                var redirectUrl = Login.ReturnUrl ?? result.DashboardUrl;
+                return LocalRedirect(redirectUrl);
             }
             else
             {
-                ModelState.AddModelError(string.Empty, result.ErrorMessage ?? "Invalid login attempt.");
+                HandleAuthenticationFailure(result);
+                await LoadDemoCredentials();
                 return Page();
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during admin login for {Email}", Login.Email);
+            _logger.LogError(ex, "Error during unified login for {Email}", Login?.Email);
             ModelState.AddModelError(string.Empty, "An error occurred during login. Please try again.");
+            await LoadDemoCredentials();
             return Page();
         }
     }
 
-    public async Task<IActionResult> OnPostTenantLoginAsync()
-    {
-        ActiveTab = "tenant";
+    #region Private Helper Methods
 
-        if (!ModelState.IsValid)
+    private async Task SignInUserAsync(RentalRepairs.Application.Common.Interfaces.AuthenticationResult result, bool rememberMe)
+    {
+        // Ensure we're completely signed out before signing in with new identity
+        await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+        
+        var claims = new List<Claim>
         {
-            return Page();
+            new(ClaimTypes.NameIdentifier, result.UserId ?? ""),
+            new(ClaimTypes.Name, result.DisplayName ?? result.UserId ?? ""),
+            new(ClaimTypes.Email, result.Email ?? "")
+        };
+
+        // Add role claims
+        foreach (var role in result.Roles)
+        {
+            claims.Add(new Claim(ClaimTypes.Role, role));
         }
 
+        // Add custom claims from authentication result
+        foreach (var claim in result.Claims)
+        {
+            claims.Add(new Claim(claim.Key, claim.Value?.ToString() ?? ""));
+        }
+
+        // Add role-specific claims for easy access
+        if (!string.IsNullOrEmpty(result.PropertyCode))
+            claims.Add(new Claim("property_code", result.PropertyCode));
+        if (!string.IsNullOrEmpty(result.PropertyName))
+            claims.Add(new Claim("property_name", result.PropertyName));
+        if (!string.IsNullOrEmpty(result.UnitNumber))
+            claims.Add(new Claim("unit_number", result.UnitNumber));
+        if (!string.IsNullOrEmpty(result.WorkerSpecialization))
+            claims.Add(new Claim("worker_specialization", result.WorkerSpecialization));
+
+        var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+        var authProperties = new AuthenticationProperties
+        {
+            IsPersistent = rememberMe,
+            ExpiresUtc = result.ExpiresAt != default ? result.ExpiresAt : DateTime.UtcNow.AddHours(8),
+            AllowRefresh = true,
+            IssuedUtc = DateTimeOffset.UtcNow
+        };
+
+        await HttpContext.SignInAsync(
+            CookieAuthenticationDefaults.AuthenticationScheme,
+            new ClaimsPrincipal(claimsIdentity),
+            authProperties);
+
+        _logger.LogInformation("User {Email} signed in successfully with {ClaimCount} claims - concurrent sessions supported", result.Email, claims.Count);
+    }
+
+    private void HandleAuthenticationFailure(RentalRepairs.Application.Common.Interfaces.AuthenticationResult result)
+    {
+        if (result.IsLockedOut)
+        {
+            ModelState.AddModelError(string.Empty, 
+                $"Account is temporarily locked. Please try again after {result.LockoutEndTime:HH:mm:ss}.");
+        }
+        else
+        {
+            ModelState.AddModelError(string.Empty, result.ErrorMessage ?? "Invalid login credentials.");
+        }
+    }
+
+    private async Task LoadDemoCredentials()
+    {
+        if (_demoUserService.IsDemoModeEnabled())
+        {
+            try
+            {
+                var demoUsers = await _demoUserService.GetDemoUsersForDisplayAsync();
+
+                DemoCredentials = new DemoCredentialsViewModel
+                {
+                    AvailableUsers = demoUsers.Select(u => new RentalRepairs.WebUI.Models.DemoUserInfo
+                    {
+                        Email = u.Email,
+                        DisplayName = u.DisplayName,
+                        Roles = u.Roles,
+                        Description = u.Description ?? $"{u.Role} - Demo User",
+                        Claims = u.Claims
+                    }).ToList(),
+                    ShowCredentials = true,
+                    DefaultPassword = _demoUserService.GetDefaultPassword()
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to load demo credentials for display");
+                DemoCredentials = new DemoCredentialsViewModel();
+            }
+        }
+    }
+
+    private bool ValidateLoginModel()
+    {
+        var isValid = true;
+
+        if (string.IsNullOrEmpty(Login.Email))
+        {
+            ModelState.AddModelError(nameof(Login.Email), "Email is required");
+            isValid = false;
+        }
+        else if (!IsValidEmail(Login.Email))
+        {
+            ModelState.AddModelError(nameof(Login.Email), "Please enter a valid email address");
+            isValid = false;
+        }
+
+        if (string.IsNullOrEmpty(Login.Password))
+        {
+            ModelState.AddModelError(nameof(Login.Password), "Password is required");
+            isValid = false;
+        }
+
+        return isValid;
+    }
+
+    private static bool IsValidEmail(string email)
+    {
         try
         {
-            var result = await _authService.AuthenticateTenantAsync(
-                TenantLogin.Email, 
-                TenantLogin.PropertyCode, 
-                TenantLogin.UnitNumber);
-
-            if (result.IsSuccess)
-            {
-                var claims = new List<Claim>
-                {
-                    new(ClaimTypes.NameIdentifier, result.UserId),
-                    new(ClaimTypes.Name, result.DisplayName),
-                    new(ClaimTypes.Email, result.Email),
-                    new("role", "Tenant")
-                };
-
-                // Add custom claims
-                foreach (var claim in result.Claims)
-                {
-                    claims.Add(new Claim(claim.Key, claim.Value.ToString()));
-                }
-
-                var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-                var authProperties = new AuthenticationProperties
-                {
-                    IsPersistent = TenantLogin.RememberMe,
-                    ExpiresUtc = result.ExpiresAt
-                };
-
-                await HttpContext.SignInAsync(
-                    CookieAuthenticationDefaults.AuthenticationScheme,
-                    new ClaimsPrincipal(claimsIdentity),
-                    authProperties);
-
-                _logger.LogInformation("Tenant {Email} logged in successfully", TenantLogin.Email);
-
-                return LocalRedirect(TenantLogin.ReturnUrl ?? "/");
-            }
-            else
-            {
-                ModelState.AddModelError(string.Empty, result.ErrorMessage ?? "Invalid tenant login credentials.");
-                return Page();
-            }
+            var addr = new System.Net.Mail.MailAddress(email);
+            return addr.Address == email;
         }
-        catch (Exception ex)
+        catch
         {
-            _logger.LogError(ex, "Error during tenant login for {Email}", TenantLogin.Email);
-            ModelState.AddModelError(string.Empty, "An error occurred during login. Please try again.");
-            return Page();
+            return false;
         }
     }
 
-    public async Task<IActionResult> OnPostWorkerLoginAsync()
-    {
-        ActiveTab = "worker";
-
-        if (!ModelState.IsValid)
-        {
-            return Page();
-        }
-
-        try
-        {
-            var result = await _authService.AuthenticateWorkerAsync(
-                WorkerLogin.Email, 
-                WorkerLogin.Specialization);
-
-            if (result.IsSuccess)
-            {
-                var claims = new List<Claim>
-                {
-                    new(ClaimTypes.NameIdentifier, result.UserId),
-                    new(ClaimTypes.Name, result.DisplayName),
-                    new(ClaimTypes.Email, result.Email),
-                    new("role", "Worker")
-                };
-
-                // Add custom claims
-                foreach (var claim in result.Claims)
-                {
-                    claims.Add(new Claim(claim.Key, claim.Value.ToString()));
-                }
-
-                var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-                var authProperties = new AuthenticationProperties
-                {
-                    IsPersistent = WorkerLogin.RememberMe,
-                    ExpiresUtc = result.ExpiresAt
-                };
-
-                await HttpContext.SignInAsync(
-                    CookieAuthenticationDefaults.AuthenticationScheme,
-                    new ClaimsPrincipal(claimsIdentity),
-                    authProperties);
-
-                _logger.LogInformation("Worker {Email} logged in successfully", WorkerLogin.Email);
-
-                return LocalRedirect(WorkerLogin.ReturnUrl ?? "/");
-            }
-            else
-            {
-                ModelState.AddModelError(string.Empty, result.ErrorMessage ?? "Invalid worker login credentials.");
-                return Page();
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error during worker login for {Email}", WorkerLogin.Email);
-            ModelState.AddModelError(string.Empty, "An error occurred during login. Please try again.");
-            return Page();
-        }
-    }
+    #endregion
 }

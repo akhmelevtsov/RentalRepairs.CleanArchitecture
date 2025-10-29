@@ -1,22 +1,26 @@
 using Microsoft.Extensions.Diagnostics.HealthChecks;
-using RentalRepairs.Infrastructure.Persistence;
+using RentalRepairs.Application.Common.Interfaces;
 
 namespace RentalRepairs.WebUI.HealthChecks;
 
 /// <summary>
 /// Application-specific health check that validates key services
+/// Updated to use Application layer interfaces instead of direct Infrastructure dependencies
 /// </summary>
 public class ApplicationHealthCheck : IHealthCheck
 {
-    private readonly ApplicationDbContext _context;
+    private readonly IApplicationDbContext? _context;
+    private readonly ICurrentUserService? _currentUserService;
     private readonly ILogger<ApplicationHealthCheck> _logger;
 
     public ApplicationHealthCheck(
-        ApplicationDbContext context,
-        ILogger<ApplicationHealthCheck> logger)
+        ILogger<ApplicationHealthCheck> logger,
+        IApplicationDbContext? context = null,
+        ICurrentUserService? currentUserService = null)
     {
-        _context = context;
         _logger = logger;
+        _context = context;
+        _currentUserService = currentUserService;
     }
 
     public async Task<HealthCheckResult> CheckHealthAsync(
@@ -25,16 +29,42 @@ public class ApplicationHealthCheck : IHealthCheck
     {
         try
         {
-            // Check database connectivity by trying to open connection
-            await _context.Database.CanConnectAsync(cancellationToken);
-            
-            // Check basic application services
             var checks = new Dictionary<string, object>
             {
-                ["database_connection"] = "healthy",
-                ["application_services"] = "healthy",
                 ["timestamp"] = DateTime.UtcNow
             };
+
+            // Check database connectivity if available
+            if (_context != null)
+            {
+                try
+                {
+                    await _context.SaveChangesAsync(cancellationToken);
+                    checks["database_connection"] = "healthy";
+                }
+                catch
+                {
+                    checks["database_connection"] = "unavailable";
+                }
+            }
+            else
+            {
+                checks["database_connection"] = "not_configured";
+            }
+
+            // Check application services
+            if (_currentUserService != null)
+            {
+                var isAuthenticated = _currentUserService.IsAuthenticated;
+                checks["user_service"] = "healthy";
+                checks["authentication_available"] = isAuthenticated;
+            }
+            else
+            {
+                checks["user_service"] = "not_configured";
+            }
+
+            checks["application_services"] = "healthy";
 
             _logger.LogInformation("Application health check completed successfully");
             

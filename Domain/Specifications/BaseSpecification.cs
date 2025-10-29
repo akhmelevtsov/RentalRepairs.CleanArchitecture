@@ -54,7 +54,7 @@ public abstract class BaseSpecification<T> : ISpecification<T>
 
     public virtual bool IsSatisfiedBy(T entity)
     {
-        var compiled = Criteria.Compile();
+        Func<T, bool> compiled = Criteria.Compile();
         return compiled(entity);
     }
 }

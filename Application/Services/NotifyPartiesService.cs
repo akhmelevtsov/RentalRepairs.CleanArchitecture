@@ -1,182 +1,323 @@
 using RentalRepairs.Application.Interfaces;
+using RentalRepairs.Domain.Entities;
+using RentalRepairs.Domain.ValueObjects;
 using Microsoft.Extensions.Logging;
 
 namespace RentalRepairs.Application.Services;
 
+/// <summary>
+/// Implementation of INotifyPartiesService for domain event-driven notifications
+/// </summary>
 public class NotifyPartiesService : INotifyPartiesService
 {
     private readonly ILogger<NotifyPartiesService> _logger;
-    private readonly ITenantRequestService _tenantRequestService;
-    private readonly IPropertyService _propertyService;
-    private readonly IWorkerService _workerService;
 
-    public NotifyPartiesService(
-        ILogger<NotifyPartiesService> logger,
-        ITenantRequestService tenantRequestService,
-        IPropertyService propertyService,
-        IWorkerService workerService)
+    public NotifyPartiesService(ILogger<NotifyPartiesService> logger)
     {
         _logger = logger;
-        _tenantRequestService = tenantRequestService;
-        _propertyService = propertyService;
-        _workerService = workerService;
     }
 
-    public async Task NotifyTenantRequestSubmittedAsync(int tenantRequestId, CancellationToken cancellationToken = default)
+    #region Tenant Request Event Methods
+
+    public async Task NotifyTenantOfRequestCreationAsync(TenantRequest tenantRequest, CancellationToken cancellationToken = default)
     {
-        var request = await _tenantRequestService.GetTenantRequestByIdAsync(tenantRequestId, cancellationToken);
-        var tenant = await _propertyService.GetTenantByIdAsync(request.TenantId, cancellationToken);
+        var subject = $"Request Created: {tenantRequest.Title}";
+        var message = $"Dear {tenantRequest.TenantFullName},\n\nYour maintenance request has been created successfully.\n\nRequest Code: {tenantRequest.Code}\nTitle: {tenantRequest.Title}\nDescription: {tenantRequest.Description}\nUrgency: {tenantRequest.UrgencyLevel}\n\nYou can submit it for review when ready.\n\nThank you.";
         
-        var subject = $"Request Submitted: {request.Title}";
-        var message = $"Dear {tenant.ContactInfo.FullName},\n\nYour maintenance request has been submitted successfully.\n\nRequest Details:\n- Title: {request.Title}\n- Description: {request.Description}\n- Urgency: {request.UrgencyLevel}\n\nWe will review your request and schedule the necessary work.\n\nThank you.";
+        await SendNotificationAsync(tenantRequest.TenantEmail, subject, message, cancellationToken);
         
-        await SendCustomNotificationAsync(tenant.ContactInfo.EmailAddress, subject, message, cancellationToken);
-        
-        _logger.LogInformation("Tenant notification sent for submitted request {TenantRequestId}", tenantRequestId);
+        _logger.LogInformation("Tenant notification sent for request creation {RequestCode}", tenantRequest.Code);
     }
 
-    public async Task NotifyTenantWorkScheduledAsync(int tenantRequestId, CancellationToken cancellationToken = default)
+    public async Task NotifyTenantOfRequestSubmissionAsync(TenantRequest tenantRequest, CancellationToken cancellationToken = default)
     {
-        var request = await _tenantRequestService.GetTenantRequestByIdAsync(tenantRequestId, cancellationToken);
-        var tenant = await _propertyService.GetTenantByIdAsync(request.TenantId, cancellationToken);
+        var subject = $"Request Submitted: {tenantRequest.Title}";
+        var message = $"Dear {tenantRequest.TenantFullName},\n\nYour maintenance request has been submitted for review.\n\nRequest Code: {tenantRequest.Code}\nTitle: {tenantRequest.Title}\nUrgency: {tenantRequest.UrgencyLevel}\n\nWe will review and schedule the necessary work.\n\nThank you.";
         
-        var subject = $"Work Scheduled: {request.Title}";
-        var message = $"Dear {tenant.ContactInfo.FullName},\n\nYour maintenance request has been scheduled.\n\nScheduled Date: {request.ScheduledDate:yyyy-MM-dd}\nWork Order: {request.WorkOrderNumber}\nAssigned Worker: {request.AssignedWorkerEmail}\n\nPlease ensure someone is available to provide access.\n\nThank you.";
+        await SendNotificationAsync(tenantRequest.TenantEmail, subject, message, cancellationToken);
         
-        await SendCustomNotificationAsync(tenant.ContactInfo.EmailAddress, subject, message, cancellationToken);
-        
-        _logger.LogInformation("Tenant notification sent for scheduled work {TenantRequestId}", tenantRequestId);
+        _logger.LogInformation("Tenant notification sent for request submission {RequestCode}", tenantRequest.Code);
     }
 
-    public async Task NotifyTenantWorkCompletedAsync(int tenantRequestId, CancellationToken cancellationToken = default)
+    public async Task NotifyTenantOfRequestScheduledAsync(TenantRequest tenantRequest, CancellationToken cancellationToken = default)
     {
-        var request = await _tenantRequestService.GetTenantRequestByIdAsync(tenantRequestId, cancellationToken);
-        var tenant = await _propertyService.GetTenantByIdAsync(request.TenantId, cancellationToken);
+        var subject = $"Work Scheduled: {tenantRequest.Title}";
+        var message = $"Dear {tenantRequest.TenantFullName},\n\nYour maintenance request has been scheduled.\n\nScheduled Date: {tenantRequest.ScheduledDate:yyyy-MM-dd}\nWork Order: {tenantRequest.WorkOrderNumber}\nAssigned Worker: {tenantRequest.AssignedWorkerEmail}\n\nPlease ensure access is available.\n\nThank you.";
         
-        var subject = $"Work Completed: {request.Title}";
-        var message = $"Dear {tenant.ContactInfo.FullName},\n\nYour maintenance request has been completed.\n\nCompletion Notes: {request.CompletionNotes}\nCompleted Successfully: {(request.WorkCompletedSuccessfully == true ? "Yes" : "No")}\n\nIf you have any concerns, please contact us.\n\nThank you.";
+        await SendNotificationAsync(tenantRequest.TenantEmail, subject, message, cancellationToken);
         
-        await SendCustomNotificationAsync(tenant.ContactInfo.EmailAddress, subject, message, cancellationToken);
-        
-        _logger.LogInformation("Tenant notification sent for completed work {TenantRequestId}", tenantRequestId);
+        _logger.LogInformation("Tenant notification sent for scheduled work {RequestCode}", tenantRequest.Code);
     }
 
-    public async Task NotifyTenantRequestClosedAsync(int tenantRequestId, CancellationToken cancellationToken = default)
+    public async Task NotifyTenantOfScheduledWorkAsync(TenantRequest tenantRequest, ServiceWorkScheduleInfo scheduleInfo, CancellationToken cancellationToken = default)
     {
-        var request = await _tenantRequestService.GetTenantRequestByIdAsync(tenantRequestId, cancellationToken);
-        var tenant = await _propertyService.GetTenantByIdAsync(request.TenantId, cancellationToken);
+        var subject = $"Work Scheduled: {tenantRequest.Title}";
+        var message = $"Dear {tenantRequest.TenantFullName},\n\nYour maintenance request has been scheduled.\n\nScheduled Date: {scheduleInfo.GetFormattedServiceDate()}\nWork Order: {scheduleInfo.WorkOrderNumber}\nAssigned Worker: {scheduleInfo.WorkerEmail}\n\nPlease ensure someone is available to provide access.\n\nThank you.";
         
-        var subject = $"Request Closed: {request.Title}";
-        var message = $"Dear {tenant.ContactInfo.FullName},\n\nYour maintenance request has been closed.\n\nClosure Notes: {request.ClosureNotes}\n\nThank you for your patience.\n\nBest regards.";
+        await SendNotificationAsync(tenantRequest.TenantEmail, subject, message, cancellationToken);
         
-        await SendCustomNotificationAsync(tenant.ContactInfo.EmailAddress, subject, message, cancellationToken);
-        
-        _logger.LogInformation("Tenant notification sent for closed request {TenantRequestId}", tenantRequestId);
+        _logger.LogInformation("Tenant notification sent for scheduled work {RequestCode} with worker {WorkerEmail}", tenantRequest.Code, scheduleInfo.WorkerEmail);
     }
 
-    public async Task NotifySuperintendentNewRequestAsync(int tenantRequestId, CancellationToken cancellationToken = default)
+    public async Task NotifyTenantOfRequestCompletedAsync(TenantRequest tenantRequest, CancellationToken cancellationToken = default)
     {
-        var request = await _tenantRequestService.GetTenantRequestByIdAsync(tenantRequestId, cancellationToken);
-        var tenant = await _propertyService.GetTenantByIdAsync(request.TenantId, cancellationToken);
-        var property = await _propertyService.GetPropertyByIdAsync(tenant.PropertyId, cancellationToken);
+        var subject = $"Work Completed: {tenantRequest.Title}";
+        var message = $"Dear {tenantRequest.TenantFullName},\n\nYour maintenance request has been completed.\n\nCompletion Status: {(tenantRequest.WorkCompletedSuccessfully == true ? "Successful" : "Issues Encountered")}\nCompletion Notes: {tenantRequest.CompletionNotes}\n\nIf you have any concerns, please contact us.\n\nThank you.";
         
-        var subject = $"New Maintenance Request: {property.Name} - Unit {tenant.UnitNumber}";
-        var message = $"Dear {property.Superintendent.FullName},\n\nA new maintenance request has been submitted.\n\nProperty: {property.Name} ({property.Code})\nUnit: {tenant.UnitNumber}\nTenant: {tenant.ContactInfo.FullName}\n\nRequest Details:\n- Title: {request.Title}\n- Description: {request.Description}\n- Urgency: {request.UrgencyLevel}\n\nPlease review and schedule the necessary work.\n\nThank you.";
+        await SendNotificationAsync(tenantRequest.TenantEmail, subject, message, cancellationToken);
         
-        await SendCustomNotificationAsync(property.Superintendent.EmailAddress, subject, message, cancellationToken);
-        
-        _logger.LogInformation("Superintendent notification sent for new request {TenantRequestId}", tenantRequestId);
+        _logger.LogInformation("Tenant notification sent for completed work {RequestCode}", tenantRequest.Code);
     }
 
-    public async Task NotifySuperintendentRequestOverdueAsync(int tenantRequestId, CancellationToken cancellationToken = default)
+    public async Task NotifyTenantOfWorkCompletionAsync(TenantRequest tenantRequest, bool successful, string? notes, CancellationToken cancellationToken = default)
     {
-        var request = await _tenantRequestService.GetTenantRequestByIdAsync(tenantRequestId, cancellationToken);
-        var tenant = await _propertyService.GetTenantByIdAsync(request.TenantId, cancellationToken);
-        var property = await _propertyService.GetPropertyByIdAsync(tenant.PropertyId, cancellationToken);
+        var subject = $"Work {(successful ? "Completed" : "Attempted")}: {tenantRequest.Title}";
+        var status = successful ? "has been completed successfully" : "encountered issues during completion";
+        var message = $"Dear {tenantRequest.TenantFullName},\n\nYour maintenance request {status}.\n\nRequest Code: {tenantRequest.Code}\nWork Order: {tenantRequest.WorkOrderNumber}\nStatus: {(successful ? "Successful" : "Issues Encountered")}\nNotes: {notes}\n\n{(successful ? "Thank you for your patience." : "We will follow up to resolve any remaining issues.")}\n\nBest regards.";
         
-        var subject = $"OVERDUE Request: {property.Name} - Unit {tenant.UnitNumber}";
-        var message = $"Dear {property.Superintendent.FullName},\n\nThe following maintenance request is overdue:\n\nProperty: {property.Name} ({property.Code})\nUnit: {tenant.UnitNumber}\nRequest: {request.Title}\nUrgency: {request.UrgencyLevel}\n\nPlease prioritize scheduling this work.\n\nThank you.";
+        await SendNotificationAsync(tenantRequest.TenantEmail, subject, message, cancellationToken);
         
-        await SendCustomNotificationAsync(property.Superintendent.EmailAddress, subject, message, cancellationToken);
-        
-        _logger.LogInformation("Superintendent notification sent for overdue request {TenantRequestId}", tenantRequestId);
+        _logger.LogInformation("Tenant notification sent for work completion {RequestCode}: {Status}", tenantRequest.Code, successful ? "Successful" : "Failed");
     }
 
-    public async Task NotifySuperintendentWorkCompletedAsync(int tenantRequestId, CancellationToken cancellationToken = default)
+    public async Task NotifyTenantOfRequestClosureAsync(TenantRequest tenantRequest, string? closureNotes, CancellationToken cancellationToken = default)
     {
-        var request = await _tenantRequestService.GetTenantRequestByIdAsync(tenantRequestId, cancellationToken);
-        var tenant = await _propertyService.GetTenantByIdAsync(request.TenantId, cancellationToken);
-        var property = await _propertyService.GetPropertyByIdAsync(tenant.PropertyId, cancellationToken);
+        var subject = $"Request Closed: {tenantRequest.Title}";
+        var message = $"Dear {tenantRequest.TenantFullName},\n\nYour maintenance request has been closed.\n\nRequest Code: {tenantRequest.Code}\nClosure Notes: {closureNotes}\n\nThank you for your patience throughout this process.\n\nBest regards.";
         
-        var subject = $"Work Completed: {property.Name} - Unit {tenant.UnitNumber}";
-        var message = $"Dear {property.Superintendent.FullName},\n\nMaintenance work has been completed:\n\nProperty: {property.Name} ({property.Code})\nUnit: {tenant.UnitNumber}\nRequest: {request.Title}\nWorker: {request.AssignedWorkerEmail}\nCompleted Successfully: {(request.WorkCompletedSuccessfully == true ? "Yes" : "No")}\n\nCompletion Notes: {request.CompletionNotes}\n\nThank you.";
+        await SendNotificationAsync(tenantRequest.TenantEmail, subject, message, cancellationToken);
         
-        await SendCustomNotificationAsync(property.Superintendent.EmailAddress, subject, message, cancellationToken);
-        
-        _logger.LogInformation("Superintendent notification sent for completed work {TenantRequestId}", tenantRequestId);
+        _logger.LogInformation("Tenant notification sent for closed request {RequestCode}", tenantRequest.Code);
     }
 
-    public async Task NotifyWorkerWorkScheduledAsync(int tenantRequestId, string workerEmail, CancellationToken cancellationToken = default)
+    public async Task NotifyTenantOfRequestDeclinationAsync(TenantRequest tenantRequest, string reason, CancellationToken cancellationToken = default)
     {
-        var request = await _tenantRequestService.GetTenantRequestByIdAsync(tenantRequestId, cancellationToken);
-        var tenant = await _propertyService.GetTenantByIdAsync(request.TenantId, cancellationToken);
-        var property = await _propertyService.GetPropertyByIdAsync(tenant.PropertyId, cancellationToken);
-        var worker = await _workerService.GetWorkerByEmailAsync(workerEmail, cancellationToken);
+        var subject = $"Request Declined: {tenantRequest.Title}";
+        var message = $"Dear {tenantRequest.TenantFullName},\n\nWe regret to inform you that your maintenance request has been declined.\n\nRequest Code: {tenantRequest.Code}\nReason: {reason}\n\nIf you have questions or wish to discuss this decision, please contact us.\n\nThank you.";
         
-        var subject = $"Work Assignment: {property.Name} - Unit {tenant.UnitNumber}";
-        var message = $"Dear {worker.ContactInfo.FullName},\n\nYou have been assigned to a maintenance request:\n\nProperty: {property.Name} ({property.Code})\nAddress: {property.Address.FullAddress}\nUnit: {tenant.UnitNumber}\nTenant: {tenant.ContactInfo.FullName}\nContact: {tenant.ContactInfo.MobilePhone}\n\nRequest Details:\n- Title: {request.Title}\n- Description: {request.Description}\n- Urgency: {request.UrgencyLevel}\n- Scheduled Date: {request.ScheduledDate:yyyy-MM-dd}\n- Work Order: {request.WorkOrderNumber}\n\nPlease contact the tenant to arrange access.\n\nThank you.";
+        await SendNotificationAsync(tenantRequest.TenantEmail, subject, message, cancellationToken);
         
-        await SendCustomNotificationAsync(workerEmail, subject, message, cancellationToken);
-        
-        _logger.LogInformation("Worker notification sent for scheduled work {TenantRequestId} to {WorkerEmail}", tenantRequestId, workerEmail);
+        _logger.LogInformation("Tenant notification sent for declined request {RequestCode}", tenantRequest.Code);
     }
 
-    public async Task NotifyWorkerWorkReminderAsync(int tenantRequestId, string workerEmail, CancellationToken cancellationToken = default)
+    #endregion
+
+    #region Superintendent Notification Methods
+
+    public async Task NotifySuperintendentOfNewRequestAsync(TenantRequest tenantRequest, CancellationToken cancellationToken = default)
     {
-        var request = await _tenantRequestService.GetTenantRequestByIdAsync(tenantRequestId, cancellationToken);
-        var worker = await _workerService.GetWorkerByEmailAsync(workerEmail, cancellationToken);
+        var subject = $"New Request: {tenantRequest.PropertyName} - Unit {tenantRequest.TenantUnit}";
+        var message = $"Dear {tenantRequest.SuperintendentFullName},\n\nA new maintenance request has been created.\n\nProperty: {tenantRequest.PropertyName}\nUnit: {tenantRequest.TenantUnit}\nTenant: {tenantRequest.TenantFullName}\n\nRequest Details:\n- Code: {tenantRequest.Code}\n- Title: {tenantRequest.Title}\n- Description: {tenantRequest.Description}\n- Urgency: {tenantRequest.UrgencyLevel}\n\nPlease review when convenient.\n\nThank you.";
         
-        var subject = $"Work Reminder: {request.Title}";
-        var message = $"Dear {worker.ContactInfo.FullName},\n\nThis is a reminder about your scheduled maintenance work:\n\nRequest: {request.Title}\nScheduled Date: {request.ScheduledDate:yyyy-MM-dd}\nWork Order: {request.WorkOrderNumber}\n\nPlease ensure you complete this work on schedule.\n\nThank you.";
+        await SendNotificationAsync(tenantRequest.SuperintendentEmail, subject, message, cancellationToken);
         
-        await SendCustomNotificationAsync(workerEmail, subject, message, cancellationToken);
-        
-        _logger.LogInformation("Worker reminder sent for {TenantRequestId} to {WorkerEmail}", tenantRequestId, workerEmail);
+        _logger.LogInformation("Superintendent notification sent for new request {RequestCode}", tenantRequest.Code);
     }
 
-    public async Task SendCustomNotificationAsync(string recipientEmail, string subject, string message, CancellationToken cancellationToken = default)
+    public async Task NotifySuperintendentOfPendingRequestAsync(TenantRequest tenantRequest, CancellationToken cancellationToken = default)
     {
-        // In a real implementation, this would integrate with an email service
+        var subject = $"Pending Review: {tenantRequest.PropertyName} - Unit {tenantRequest.TenantUnit}";
+        var message = $"Dear {tenantRequest.SuperintendentFullName},\n\nA maintenance request is pending your review.\n\nProperty: {tenantRequest.PropertyName}\nUnit: {tenantRequest.TenantUnit}\nTenant: {tenantRequest.TenantFullName}\nUrgency: {tenantRequest.UrgencyLevel}\n\nRequest: {tenantRequest.Title}\nSubmitted: {tenantRequest.CreatedAt:yyyy-MM-dd}\n\nPlease review and schedule the necessary work.\n\nThank you.";
+        
+        await SendNotificationAsync(tenantRequest.SuperintendentEmail, subject, message, cancellationToken);
+        
+        _logger.LogInformation("Superintendent notification sent for pending request {RequestCode}", tenantRequest.Code);
+    }
+
+    public async Task NotifySuperintendentOfUrgentRequestAsync(TenantRequest tenantRequest, CancellationToken cancellationToken = default)
+    {
+        var subject = $"URGENT: {tenantRequest.PropertyName} - Unit {tenantRequest.TenantUnit}";
+        var message = $"Dear {tenantRequest.SuperintendentFullName},\n\nAn URGENT maintenance request requires immediate attention.\n\nProperty: {tenantRequest.PropertyName}\nUnit: {tenantRequest.TenantUnit}\nTenant: {tenantRequest.TenantFullName}\nContact: {tenantRequest.TenantEmail}\n\nRequest Details:\n- Title: {tenantRequest.Title}\n- Description: {tenantRequest.Description}\n- Urgency: {tenantRequest.UrgencyLevel}\n\nPlease prioritize this request for immediate scheduling.\n\nThank you.";
+        
+        await SendNotificationAsync(tenantRequest.SuperintendentEmail, subject, message, cancellationToken);
+        
+        _logger.LogWarning("Urgent superintendent notification sent for request {RequestCode}", tenantRequest.Code);
+    }
+
+    public async Task NotifySuperintendentOfRequestScheduledAsync(TenantRequest tenantRequest, CancellationToken cancellationToken = default)
+    {
+        var subject = $"Work Scheduled: {tenantRequest.PropertyName} - Unit {tenantRequest.TenantUnit}";
+        var message = $"Dear {tenantRequest.SuperintendentFullName},\n\nMaintenance work has been scheduled.\n\nProperty: {tenantRequest.PropertyName}\nUnit: {tenantRequest.TenantUnit}\nRequest: {tenantRequest.Title}\n\nScheduled Date: {tenantRequest.ScheduledDate:yyyy-MM-dd}\nWork Order: {tenantRequest.WorkOrderNumber}\nAssigned Worker: {tenantRequest.AssignedWorkerEmail}\n\nThe tenant has been notified.\n\nThank you.";
+        
+        await SendNotificationAsync(tenantRequest.SuperintendentEmail, subject, message, cancellationToken);
+        
+        _logger.LogInformation("Superintendent notification sent for scheduled work {RequestCode}", tenantRequest.Code);
+    }
+
+    public async Task NotifySuperintendentOfScheduledWorkAsync(TenantRequest tenantRequest, ServiceWorkScheduleInfo scheduleInfo, CancellationToken cancellationToken = default)
+    {
+        var subject = $"Work Scheduled: {tenantRequest.PropertyName} - Unit {tenantRequest.TenantUnit}";
+        var message = $"Dear {tenantRequest.SuperintendentFullName},\n\nMaintenance work has been scheduled.\n\nProperty: {tenantRequest.PropertyName}\nUnit: {tenantRequest.TenantUnit}\nRequest: {tenantRequest.Title}\n\nScheduled Date: {scheduleInfo.GetFormattedServiceDate()}\nWork Order: {scheduleInfo.WorkOrderNumber}\nAssigned Worker: {scheduleInfo.WorkerEmail}\n\nThe tenant and worker have been notified.\n\nThank you.";
+        
+        await SendNotificationAsync(tenantRequest.SuperintendentEmail, subject, message, cancellationToken);
+        
+        _logger.LogInformation("Superintendent notification sent for scheduled work {RequestCode} with worker {WorkerEmail}", tenantRequest.Code, scheduleInfo.WorkerEmail);
+    }
+
+    public async Task NotifySuperintendentOfRequestCompletedAsync(TenantRequest tenantRequest, CancellationToken cancellationToken = default)
+    {
+        var subject = $"Work Completed: {tenantRequest.PropertyName} - Unit {tenantRequest.TenantUnit}";
+        var message = $"Dear {tenantRequest.SuperintendentFullName},\n\nMaintenance work has been completed.\n\nProperty: {tenantRequest.PropertyName}\nUnit: {tenantRequest.TenantUnit}\nRequest: {tenantRequest.Title}\nWorker: {tenantRequest.AssignedWorkerEmail}\n\nStatus: {(tenantRequest.WorkCompletedSuccessfully == true ? "Successful" : "Issues Encountered")}\nNotes: {tenantRequest.CompletionNotes}\n\nThank you.";
+        
+        await SendNotificationAsync(tenantRequest.SuperintendentEmail, subject, message, cancellationToken);
+        
+        _logger.LogInformation("Superintendent notification sent for completed work {RequestCode}", tenantRequest.Code);
+    }
+
+    public async Task NotifySuperintendentOfWorkCompletionAsync(TenantRequest tenantRequest, bool successful, string? notes, CancellationToken cancellationToken = default)
+    {
+        var subject = $"Work {(successful ? "Completed" : "Issues")}: {tenantRequest.PropertyName} - Unit {tenantRequest.TenantUnit}";
+        var message = $"Dear {tenantRequest.SuperintendentFullName},\n\nMaintenance work has {(successful ? "been completed successfully" : "encountered issues")}.\n\nProperty: {tenantRequest.PropertyName}\nUnit: {tenantRequest.TenantUnit}\nRequest: {tenantRequest.Title}\nWorker: {tenantRequest.AssignedWorkerEmail}\n\nStatus: {(successful ? "Successful" : "Issues Encountered")}\nNotes: {notes}\n\n{(successful ? "Thank you." : "Please review and determine next steps.")}\n\nBest regards.";
+        
+        await SendNotificationAsync(tenantRequest.SuperintendentEmail, subject, message, cancellationToken);
+        
+        _logger.LogInformation("Superintendent notification sent for work completion {RequestCode}: {Status}", tenantRequest.Code, successful ? "Successful" : "Failed");
+    }
+
+    public async Task NotifySuperintendentOfWorkFailureAsync(TenantRequest tenantRequest, string? notes, CancellationToken cancellationToken = default)
+    {
+        var subject = $"Work Failed: {tenantRequest.PropertyName} - Unit {tenantRequest.TenantUnit}";
+        var message = $"Dear {tenantRequest.SuperintendentFullName},\n\nMaintenance work has failed and requires attention.\n\nProperty: {tenantRequest.PropertyName}\nUnit: {tenantRequest.TenantUnit}\nRequest: {tenantRequest.Title}\nWorker: {tenantRequest.AssignedWorkerEmail}\n\nFailure Notes: {notes}\n\nPlease review and reschedule or assign alternative resources.\n\nThank you.";
+        
+        await SendNotificationAsync(tenantRequest.SuperintendentEmail, subject, message, cancellationToken);
+        
+        _logger.LogWarning("Superintendent notification sent for work failure {RequestCode}", tenantRequest.Code);
+    }
+
+    public async Task NotifySuperintendentOfRequestClosureAsync(TenantRequest tenantRequest, string? closureNotes, CancellationToken cancellationToken = default)
+    {
+        var subject = $"Request Closed: {tenantRequest.PropertyName} - Unit {tenantRequest.TenantUnit}";
+        var message = $"Dear {tenantRequest.SuperintendentFullName},\n\nA maintenance request has been closed.\n\nProperty: {tenantRequest.PropertyName}\nUnit: {tenantRequest.TenantUnit}\nRequest: {tenantRequest.Title}\n\nClosure Notes: {closureNotes}\n\nThank you.";
+        
+        await SendNotificationAsync(tenantRequest.SuperintendentEmail, subject, message, cancellationToken);
+        
+        _logger.LogInformation("Superintendent notification sent for closed request {RequestCode}", tenantRequest.Code);
+    }
+
+    #endregion
+
+    #region Worker Notification Methods
+
+    public async Task NotifyWorkerOfWorkAssignmentAsync(TenantRequest tenantRequest, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrEmpty(tenantRequest.AssignedWorkerEmail))
+            return;
+
+        var subject = $"Work Assignment: {tenantRequest.PropertyName} - Unit {tenantRequest.TenantUnit}";
+        var message = $"Dear Worker,\n\nYou have been assigned to a maintenance request:\n\nProperty: {tenantRequest.PropertyName}\nUnit: {tenantRequest.TenantUnit}\nTenant: {tenantRequest.TenantFullName}\nTenant Contact: {tenantRequest.TenantEmail}\n\nRequest Details:\n- Title: {tenantRequest.Title}\n- Description: {tenantRequest.Description}\n- Urgency: {tenantRequest.UrgencyLevel}\n- Scheduled Date: {tenantRequest.ScheduledDate:yyyy-MM-dd}\n- Work Order: {tenantRequest.WorkOrderNumber}\n\nPlease contact the tenant to arrange access.\n\nThank you.";
+        
+        await SendNotificationAsync(tenantRequest.AssignedWorkerEmail, subject, message, cancellationToken);
+        
+        _logger.LogInformation("Worker notification sent for assignment {RequestCode} to {WorkerEmail}", tenantRequest.Code, tenantRequest.AssignedWorkerEmail);
+    }
+
+    public async Task NotifyWorkerOfWorkAssignmentAsync(TenantRequest tenantRequest, ServiceWorkScheduleInfo scheduleInfo, CancellationToken cancellationToken = default)
+    {
+        var subject = $"Work Assignment: {tenantRequest.PropertyName} - Unit {tenantRequest.TenantUnit}";
+        var message = $"Dear Worker,\n\nYou have been assigned to a maintenance request:\n\nProperty: {tenantRequest.PropertyName}\nProperty Phone: {tenantRequest.PropertyPhone}\nUnit: {tenantRequest.TenantUnit}\nTenant: {tenantRequest.TenantFullName}\nTenant Contact: {tenantRequest.TenantEmail}\n\nRequest Details:\n- Title: {tenantRequest.Title}\n- Description: {tenantRequest.Description}\n- Urgency: {tenantRequest.UrgencyLevel}\n- Scheduled Date: {scheduleInfo.GetFormattedServiceDate()}\n- Work Order: {scheduleInfo.WorkOrderNumber}\n\nPlease contact the tenant to arrange access and complete the work as scheduled.\n\nThank you.";
+        
+        await SendNotificationAsync(scheduleInfo.WorkerEmail, subject, message, cancellationToken);
+        
+        _logger.LogInformation("Worker notification sent for assignment {RequestCode} to {WorkerEmail} on {ServiceDate}", tenantRequest.Code, scheduleInfo.WorkerEmail, scheduleInfo.GetFormattedServiceDate());
+    }
+
+    public async Task NotifyWorkerOfWorkCompletionAsync(TenantRequest tenantRequest, CancellationToken cancellationToken = default)
+    {
+        // This method might be used for work completion confirmations or follow-ups
+        // Implementation depends on business requirements
+        await Task.CompletedTask;
+        
+        _logger.LogInformation("Worker completion notification processed for {RequestCode}", tenantRequest.Code);
+    }
+
+    #endregion
+
+    #region Stub Implementations for Other Interface Methods
+    // These would be implemented based on specific business requirements
+
+    public async Task NotifyWorkerOfRegistrationAsync(Worker worker, CancellationToken cancellationToken = default)
+    {
+        var subject = "Welcome to RentalRepairs";
+        var message = $"Dear {worker.ContactInfo.GetFullName()},\n\nWelcome to our maintenance team!\n\nSpecialization: {worker.Specialization ?? "General Maintenance"}\n\nYou will receive work assignments via email.\n\nThank you.";
+        
+        await SendNotificationAsync(worker.ContactInfo.EmailAddress, subject, message, cancellationToken);
+        
+        _logger.LogInformation("Worker registration notification sent to {WorkerEmail}", worker.ContactInfo.EmailAddress);
+    }
+
+    public async Task NotifyWorkerOfSpecializationChangeAsync(Worker worker, string? oldSpecialization, string newSpecialization, CancellationToken cancellationToken = default)
+    {
+        var subject = "Specialization Updated";
+        var message = $"Dear {worker.ContactInfo.GetFullName()},\n\nYour specialization has been updated:\n\nPrevious: {oldSpecialization ?? "None"}\nNew: {newSpecialization}\n\nYou may receive different types of work assignments.\n\nThank you.";
+        
+        await SendNotificationAsync(worker.ContactInfo.EmailAddress, subject, message, cancellationToken);
+        
+        _logger.LogInformation("Worker specialization change notification sent to {WorkerEmail}", worker.ContactInfo.EmailAddress);
+    }
+
+    public async Task NotifyWorkerOfStatusChangeAsync(Worker worker, bool isActive, CancellationToken cancellationToken = default)
+    {
+        var subject = isActive ? "Status: Active" : "Status: Inactive";
+        var message = $"Dear {worker.ContactInfo.GetFullName()},\n\nYour status has been changed to: {(isActive ? "Active" : "Inactive")}\n\n{(isActive ? "You will now receive work assignments." : "You will not receive new work assignments.")}\n\nThank you.";
+        
+        await SendNotificationAsync(worker.ContactInfo.EmailAddress, subject, message, cancellationToken);
+        
+        _logger.LogInformation("Worker status change notification sent to {WorkerEmail}: {Status}", worker.ContactInfo.EmailAddress, isActive ? "Active" : "Inactive");
+    }
+
+    public async Task NotifyWorkerOfDeactivationAsync(Worker worker, string reason, CancellationToken cancellationToken = default)
+    {
+        var subject = "Account Deactivated";
+        var message = $"Dear {worker.ContactInfo.GetFullName()},\n\nYour worker account has been deactivated.\n\nReason: {reason}\n\nPlease contact administration if you have questions.\n\nThank you.";
+        
+        await SendNotificationAsync(worker.ContactInfo.EmailAddress, subject, message, cancellationToken);
+        
+        _logger.LogInformation("Worker deactivation notification sent to {WorkerEmail}", worker.ContactInfo.EmailAddress);
+    }
+
+    // Placeholder implementations for remaining interface methods
+    public Task UpdateWorkerScheduleAsync(Worker worker, WorkAssignment assignment, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    public Task UpdateWorkerAvailabilityAsync(Worker worker, WorkAssignment assignment, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    public Task RecordWorkerPerformanceAsync(Worker worker, WorkAssignment assignment, bool successful, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    public Task HandleWorkerDeactivationReassignmentsAsync(Worker worker, CancellationToken cancellationToken = default) => Task.CompletedTask;
+
+    public Task NotifySuperintendentOfPropertyRegistrationAsync(Property property, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    public Task NotifyTenantsOfSuperintendentChangeAsync(Property property, PersonContactInfo oldSuperintendent, PersonContactInfo newSuperintendent, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    public Task NotifyNewSuperintendentOfAssignmentAsync(Property property, PersonContactInfo newSuperintendent, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    public Task ArchiveOldSuperintendentAccessAsync(Property property, PersonContactInfo oldSuperintendent, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    public Task TransferSuperintendentResponsibilitiesAsync(Property property, PersonContactInfo oldSuperintendent, PersonContactInfo newSuperintendent, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    public Task NotifySuperintendentOfUnitAddedAsync(Property property, string unitNumber, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    public Task NotifySuperintendentOfUnitRemovedAsync(Property property, string unitNumber, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    public Task InitializePropertyResourcesAsync(Property property, CancellationToken cancellationToken = default) => Task.CompletedTask;
+
+    public Task NotifyTenantOfRegistrationAsync(Tenant tenant, Property property, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    public Task NotifyTenantOfContactInfoChangeAsync(Tenant tenant, PersonContactInfo oldContactInfo, PersonContactInfo newContactInfo, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    public Task NotifySuperintendentOfNewTenantAsync(Tenant tenant, Property property, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    public Task NotifySuperintendentOfTenantContactChangeAsync(Tenant tenant, PersonContactInfo oldContactInfo, PersonContactInfo newContactInfo, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    public Task UpdateActiveRequestsWithNewContactInfoAsync(Tenant tenant, PersonContactInfo newContactInfo, CancellationToken cancellationToken = default) => Task.CompletedTask;
+
+    public Task NotifyAdministratorsOfNewPropertyAsync(Property property, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    public Task NotifyAdministratorsOfNewWorkerAsync(Worker worker, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    public Task NotifyAdministratorsOfWorkerSpecializationChangeAsync(Worker worker, string? oldSpecialization, string newSpecialization, CancellationToken cancellationToken = default) => Task.CompletedTask;
+
+    public Task UpdatePropertyOccupancyAsync(Property property, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    public Task UpdatePropertyCapacityAsync(Property property, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    public Task UpdateWorkforceCapacityAsync(Worker worker, bool isActive, CancellationToken cancellationToken = default) => Task.CompletedTask;
+
+    #endregion
+
+    #region Helper Methods
+
+    private async Task SendNotificationAsync(string recipientEmail, string subject, string message, CancellationToken cancellationToken = default)
+    {
+        // In a real implementation, this would integrate with an email service provider
         // For now, we'll just log the notification
         _logger.LogInformation("Sending notification to {RecipientEmail}: {Subject}", recipientEmail, subject);
         _logger.LogDebug("Notification message: {Message}", message);
         
         // Simulate async email sending
-        await Task.Delay(100, cancellationToken);
+        await Task.Delay(10, cancellationToken);
     }
 
-    public async Task NotifyPropertyRegisteredAsync(int propertyId, CancellationToken cancellationToken = default)
-    {
-        var property = await _propertyService.GetPropertyByIdAsync(propertyId, cancellationToken);
-        
-        var subject = $"Property Registered: {property.Name}";
-        var message = $"Dear {property.Superintendent.FullName},\n\nYour property has been successfully registered in our system:\n\nProperty: {property.Name}\nCode: {property.Code}\nAddress: {property.Address.FullAddress}\nUnits: {string.Join(", ", property.Units)}\n\nYou can now start managing tenant requests for this property.\n\nThank you.";
-        
-        await SendCustomNotificationAsync(property.Superintendent.EmailAddress, subject, message, cancellationToken);
-        
-        _logger.LogInformation("Property registration notification sent for {PropertyId}", propertyId);
-    }
-
-    public async Task NotifyTenantRegisteredAsync(int tenantId, CancellationToken cancellationToken = default)
-    {
-        var tenant = await _propertyService.GetTenantByIdAsync(tenantId, cancellationToken);
-        var property = await _propertyService.GetPropertyByIdAsync(tenant.PropertyId, cancellationToken);
-        
-        var subject = $"Welcome to {property.Name}";
-        var message = $"Dear {tenant.ContactInfo.FullName},\n\nWelcome to {property.Name}!\n\nYour unit: {tenant.UnitNumber}\nProperty address: {property.Address.FullAddress}\nProperty phone: {property.PhoneNumber}\n\nYou can now submit maintenance requests through our system.\nFor urgent matters, please contact the superintendent at {property.Superintendent.EmailAddress}.\n\nWelcome to your new home!";
-        
-        await SendCustomNotificationAsync(tenant.ContactInfo.EmailAddress, subject, message, cancellationToken);
-        
-        _logger.LogInformation("Tenant registration notification sent for {TenantId}", tenantId);
-    }
+    #endregion
 }

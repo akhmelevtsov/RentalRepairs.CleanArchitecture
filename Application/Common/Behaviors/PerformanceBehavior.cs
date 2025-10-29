@@ -1,39 +1,61 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
-using System.Diagnostics;
 
 namespace RentalRepairs.Application.Common.Behaviors;
 
+/// <summary>
+/// Performance monitoring behavior for tracking slow requests and failures.
+/// Follows Clean Architecture patterns with comprehensive logging and error handling.
+/// </summary>
 public class PerformanceBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
-    where TRequest : IRequest<TResponse>
+    where TRequest : notnull
 {
-    private readonly Stopwatch _timer;
-    private readonly ILogger<TRequest> _logger;
+    private readonly ILogger<PerformanceBehavior<TRequest, TResponse>> _logger;
 
-    public PerformanceBehavior(ILogger<TRequest> logger)
+    public PerformanceBehavior(ILogger<PerformanceBehavior<TRequest, TResponse>> logger)
     {
-        _timer = new Stopwatch();
         _logger = logger;
     }
 
     public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
     {
-        _timer.Start();
+        var requestName = typeof(TRequest).Name;
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
 
-        var response = await next();
-
-        _timer.Stop();
-
-        var elapsedMilliseconds = _timer.ElapsedMilliseconds;
-
-        if (elapsedMilliseconds > 500)
+        try
         {
-            var requestName = typeof(TRequest).Name;
+            var response = await next();
+            stopwatch.Stop();
 
-            _logger.LogWarning("RentalRepairs Long Running Request: {Name} ({ElapsedMilliseconds} milliseconds) {@Request}",
-                requestName, elapsedMilliseconds, request);
+            if (stopwatch.ElapsedMilliseconds > 500) // Log slow requests
+            {
+                _logger.LogWarning(
+                    "Slow request detected: {RequestName} took {ElapsedMilliseconds}ms {@Request}",
+                    requestName,
+                    stopwatch.ElapsedMilliseconds,
+                    request);
+            }
+            else if (stopwatch.ElapsedMilliseconds > 100) // Log moderately slow requests at debug level
+            {
+                _logger.LogDebug(
+                    "Request completed: {RequestName} took {ElapsedMilliseconds}ms",
+                    requestName,
+                    stopwatch.ElapsedMilliseconds);
+            }
+
+            return response;
         }
-
-        return response;
+        catch (Exception ex)
+        {
+            stopwatch.Stop();
+            
+            _logger.LogError(ex,
+                "Request {RequestName} failed after {ElapsedMilliseconds}ms {@Request}",
+                requestName,
+                stopwatch.ElapsedMilliseconds,
+                request);
+            
+            throw;
+        }
     }
 }

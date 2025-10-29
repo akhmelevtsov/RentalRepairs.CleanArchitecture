@@ -1,0 +1,122 @@
+@page "/Account/DemoStatus"
+@model RentalRepairs.WebUI.Pages.Account.DemoStatusModel
+@{
+    ViewData["Title"] = "Demo Status - Concurrent Login Support";
+}
+
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card shadow">
+                <div class="card-header bg-info text-white">
+                    <h4 class="card-title mb-1">
+                        <i class="fas fa-users me-2"></i>Demo Account Status
+                    </h4>
+                    <p class="card-subtitle mb-0 text-white-50">
+                        All demo accounts support concurrent logins - multiple users can access the same account simultaneously
+                    </p>
+                </div>
+
+                <div class="card-body">
+                    @if (Model.DemoAccounts?.Any() == true)
+                    {
+                        <div class="alert alert-success mb-4">
+                            <h6 class="alert-heading">
+                                <i class="fas fa-check-circle me-2"></i>Concurrent Login Support Enabled
+                            </h6>
+                            <p class="mb-0">
+                                All demo accounts now support concurrent logins. Multiple users can access the same account simultaneously.
+                                Data integrity is maintained through optimistic concurrency control.
+                            </p>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th><i class="fas fa-user me-1"></i>Account</th>
+                                        <th><i class="fas fa-user-tag me-1"></i>Role</th>
+                                        <th><i class="fas fa-info-circle me-1"></i>Description</th>
+                                        <th><i class="fas fa-sign-in-alt me-1"></i>Access</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var account in Model.DemoAccounts)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <div class="flex-shrink-0 me-3">
+                                                        <div class="bg-success rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                                                            <i class="fas fa-check text-white small"></i>
+                                                        </div>
+                                                    </div>
+                                                    <div>
+                                                        <div class="fw-bold">@account.DisplayName</div>
+                                                        <small class="text-muted">@account.Email</small>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                @foreach (var role in account.Roles)
+                                                {
+                                                    <span class="badge bg-primary me-1">@role</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                <small class="text-muted">@account.Description</small>
+                                            </td>
+                                            <td>
+                                                <a href="/Account/Login" class="btn btn-success btn-sm">
+                                                    <i class="fas fa-sign-in-alt me-1"></i>
+                                                    Login Available
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <div class="alert alert-info">
+                                    <h6 class="alert-heading">
+                                        <i class="fas fa-info-circle me-2"></i>Concurrent Login Information
+                                    </h6>
+                                    <ul class="mb-2">
+                                        <li><strong>Concurrent Access:</strong> Multiple users can login with the same demo account simultaneously</li>
+                                        <li><strong>Data Integrity:</strong> Optimistic concurrency prevents data conflicts during updates</li>
+                                        <li><strong>Password:</strong> All demo accounts use password <code>Demo123!</code></li>
+                                        <li><strong>Session Management:</strong> No artificial session limits - login from any device/browser</li>
+                                    </ul>
+                                    <p class="mb-0">
+                                        <strong>Note:</strong> When multiple users modify the same data, the system will detect conflicts and ask for confirmation before overwriting changes.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-warning">
+                            <h6 class="alert-heading">
+                                <i class="fas fa-exclamation-triangle me-2"></i>No Demo Accounts Available
+                            </h6>
+                            <p class="mb-0">Demo mode may be disabled or no demo accounts are configured.</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Auto-refresh every 30 seconds
+        setTimeout(function() {
+            window.location.reload();
+        }, 30000);
+    </script>
+}

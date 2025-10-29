@@ -1,6 +1,4 @@
-using FluentAssertions;
 using RentalRepairs.WebUI.Models;
-using Xunit;
 
 namespace RentalRepairs.WebUI.Tests.Models;
 

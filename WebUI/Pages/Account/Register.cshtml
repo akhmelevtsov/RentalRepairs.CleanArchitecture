@@ -1,0 +1,237 @@
+@page "/Account/Register"
+@model RentalRepairs.WebUI.Pages.Account.RegisterModel
+@{
+    ViewData["Title"] = "User Registration";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">
+                    <i class="fas fa-user-plus"></i>
+                    User Registration
+                </h4>
+                <small class="text-muted">Create user accounts for the application</small>
+            </div>
+            <div class="card-body">
+                @if (Model.IsRegistrationDisabled)
+                {
+                    <!-- Demo Mode Warning -->
+                    <div class="alert alert-warning" role="alert">
+                        <h6 class="alert-heading">
+                            <i class="fas fa-exclamation-triangle me-2"></i>Registration Disabled
+                        </h6>
+                        <p class="mb-2">User registration is disabled in demo mode to prevent unauthorized account creation.</p>
+                        <p class="mb-0">
+                            <small>
+                                <strong>For testing:</strong> Use the existing demo accounts shown below.
+                            </small>
+                        </p>
+                    </div>
+                }
+
+                <form method="post">
+                    <div asp-validation-summary="All" class="alert alert-danger" role="alert"></div>
+
+                    <fieldset @(Model.IsRegistrationDisabled ? "disabled" : "")>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="Register.Email" class="form-label">Email Address</label>
+                                    <input asp-for="Register.Email" class="form-control" placeholder="user@company.com" />
+                                    <span asp-validation-for="Register.Email" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="Register.DisplayName" class="form-label">Display Name</label>
+                                    <input asp-for="Register.DisplayName" class="form-control" placeholder="John Doe" />
+                                    <span asp-validation-for="Register.DisplayName" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="Register.Password" class="form-label">Password</label>
+                                    <input asp-for="Register.Password" class="form-control" type="password" />
+                                    <span asp-validation-for="Register.Password" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="Register.ConfirmPassword" class="form-label">Confirm Password</label>
+                                    <input asp-for="Register.ConfirmPassword" class="form-control" type="password" />
+                                    <span asp-validation-for="Register.ConfirmPassword" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Register.SelectedRole" class="form-label">User Role</label>
+                            <select asp-for="Register.SelectedRole" class="form-select" id="roleSelect">
+                                <option value="">Select a role...</option>
+                                <option value="SystemAdmin">System Administrator</option>
+                                <option value="PropertySuperintendent">Property Superintendent</option>
+                                <option value="Tenant">Tenant</option>
+                                <option value="Worker">Maintenance Worker</option>
+                            </select>
+                            <span asp-validation-for="Register.SelectedRole" class="text-danger"></span>
+                        </div>
+
+                        <!-- Role-specific fields -->
+                        <div id="tenantFields" class="role-specific-fields" style="display: none;">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label asp-for="Register.PropertyCode" class="form-label">Property Code</label>
+                                        <input asp-for="Register.PropertyCode" class="form-control" placeholder="SUN001" />
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label asp-for="Register.PropertyName" class="form-label">Property Name</label>
+                                        <input asp-for="Register.PropertyName" class="form-control" placeholder="Sunset Apartments" />
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label asp-for="Register.UnitNumber" class="form-label">Unit Number</label>
+                                        <input asp-for="Register.UnitNumber" class="form-control" placeholder="101" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="workerFields" class="role-specific-fields" style="display: none;">
+                            <div class="mb-3">
+                                <label asp-for="Register.WorkerSpecialization" class="form-label">Specialization</label>
+                                <select asp-for="Register.WorkerSpecialization" class="form-select">
+                                    <option value="">Select specialization...</option>
+                                    <option value="Plumbing">Plumbing</option>
+                                    <option value="Electrical">Electrical</option>
+                                    <option value="HVAC">HVAC</option>
+                                    <option value="General Maintenance">General Maintenance</option>
+                                    <option value="Carpentry">Carpentry</option>
+                                    <option value="Painting">Painting</option>
+                                    <option value="Locksmith">Locksmith</option>
+                                    <option value="Appliance Repair">Appliance Repair</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div id="superintendentFields" class="role-specific-fields" style="display: none;">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label asp-for="Register.PropertyCode" class="form-label">Property Code</label>
+                                        <input asp-for="Register.PropertyCode" class="form-control" placeholder="SUN001" />
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label asp-for="Register.PropertyName" class="form-label">Property Name</label>
+                                        <input asp-for="Register.PropertyName" class="form-control" placeholder="Sunset Apartments" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="/Account/Login" class="btn btn-outline-secondary me-md-2">
+                            <i class="fas fa-arrow-left"></i>
+                            Back to Login
+                        </a>
+                        <button type="submit" 
+                                class="btn btn-primary @(Model.IsRegistrationDisabled ? "disabled" : "")"
+                                @(Model.IsRegistrationDisabled ? "disabled" : "")>
+                            <i class="fas fa-user-plus"></i>
+                            Register User
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        @if (Model.ExistingDemoUsers.Any())
+        {
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-users"></i>
+                        @(Model.IsDemoModeEnabled ? "Available Demo Accounts" : "Existing Users")
+                    </h5>
+                    <small class="text-muted">
+                        @(Model.IsDemoModeEnabled ? "Demo accounts available for testing" : "Current registered users")
+                    </small>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Email</th>
+                                    <th>Display Name</th>
+                                    <th>Role</th>
+                                    <th>Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var user in Model.ExistingDemoUsers)
+                                {
+                                    <tr>
+                                        <td><code>@user.Email</code></td>
+                                        <td>@user.DisplayName</td>
+                                        <td>
+                                            @foreach (var role in user.Roles)
+                                            {
+                                                <span class="badge bg-secondary me-1">@role</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            @if (!string.IsNullOrWhiteSpace(user.Description))
+                                            {
+                                                <small class="text-muted">@user.Description</small>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const roleSelect = document.getElementById('roleSelect');
+            const roleFields = document.querySelectorAll('.role-specific-fields');
+            
+            if (roleSelect && !roleSelect.disabled) {
+                roleSelect.addEventListener('change', function() {
+                    // Hide all role-specific fields
+                    roleFields.forEach(field => field.style.display = 'none');
+                    
+                    // Show relevant fields based on selected role
+                    const selectedRole = this.value;
+                    if (selectedRole === 'Tenant') {
+                        document.getElementById('tenantFields').style.display = 'block';
+                    } else if (selectedRole === 'Worker') {
+                        document.getElementById('workerFields').style.display = 'block';
+                    } else if (selectedRole === 'PropertySuperintendent') {
+                        document.getElementById('superintendentFields').style.display = 'block';
+                    }
+                });
+            }
+        });
+    </script>
+}

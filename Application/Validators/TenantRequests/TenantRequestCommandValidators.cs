@@ -1,64 +1,97 @@
 using FluentValidation;
 using RentalRepairs.Application.Commands.TenantRequests;
+using RentalRepairs.Application.Commands.TenantRequests.ReportWorkCompleted;
+using RentalRepairs.Application.Commands.TenantRequests.ScheduleServiceWork;
 
 namespace RentalRepairs.Application.Validators.TenantRequests;
 
+/// <summary>
+/// ? Consolidated validator for TenantRequest commands with proper Guid validation
+/// </summary>
 public class CreateTenantRequestCommandValidator : AbstractValidator<CreateTenantRequestCommand>
 {
     public CreateTenantRequestCommandValidator()
     {
         RuleFor(x => x.TenantId)
-            .GreaterThan(0).WithMessage("Valid tenant ID is required");
+            .NotEqual(Guid.Empty)
+            .WithMessage("TenantId must be a valid Guid");
 
         RuleFor(x => x.Title)
-            .NotEmpty().WithMessage("Request title is required")
-            .MaximumLength(200).WithMessage("Title must not exceed 200 characters");
+            .NotEmpty()
+            .WithMessage("Title is required")
+            .MaximumLength(200)
+            .WithMessage("Title cannot exceed 200 characters");
 
         RuleFor(x => x.Description)
-            .NotEmpty().WithMessage("Request description is required")
-            .MaximumLength(1000).WithMessage("Description must not exceed 1000 characters");
+            .MaximumLength(1000)
+            .WithMessage("Description cannot exceed 1000 characters");
 
         RuleFor(x => x.UrgencyLevel)
-            .NotEmpty().WithMessage("Urgency level is required")
-            .Must(BeValidUrgencyLevel).WithMessage("Invalid urgency level. Valid values are: Low, Normal, High, Critical");
+            .NotEmpty()
+            .WithMessage("UrgencyLevel is required")
+            .Must(BeValidUrgencyLevel)
+            .WithMessage("UrgencyLevel must be one of: Low, Normal, High, Critical, Emergency");
+
+        RuleFor(x => x.PropertyId)
+            .NotEqual(Guid.Empty)
+            .WithMessage("PropertyId must be a valid Guid");
+
+        RuleFor(x => x.TenantEmail)
+            .NotEmpty()
+            .WithMessage("TenantEmail is required")
+            .EmailAddress()
+            .WithMessage("TenantEmail must be a valid email address");
     }
 
     private static bool BeValidUrgencyLevel(string urgencyLevel)
     {
-        var validLevels = new[] { "Low", "Normal", "High", "Critical" };
+        var validLevels = new[] { "Low", "Normal", "High", "Critical", "Emergency" };
         return validLevels.Contains(urgencyLevel);
     }
 }
 
+/// <summary>
+/// ? Validator for scheduling service work
+/// </summary>
 public class ScheduleServiceWorkCommandValidator : AbstractValidator<ScheduleServiceWorkCommand>
 {
     public ScheduleServiceWorkCommandValidator()
     {
         RuleFor(x => x.TenantRequestId)
-            .GreaterThan(0).WithMessage("Valid tenant request ID is required");
+            .NotEqual(Guid.Empty)
+            .WithMessage("TenantRequestId must be a valid Guid");
 
         RuleFor(x => x.ScheduledDate)
-            .GreaterThan(DateTime.UtcNow).WithMessage("Scheduled date must be in the future");
+            .GreaterThan(DateTime.UtcNow)
+            .WithMessage("ScheduledDate must be in the future");
 
         RuleFor(x => x.WorkerEmail)
-            .NotEmpty().WithMessage("Worker email is required")
-            .EmailAddress().WithMessage("Invalid email format");
+            .NotEmpty()
+            .WithMessage("WorkerEmail is required")
+            .EmailAddress()
+            .WithMessage("WorkerEmail must be a valid email address");
 
         RuleFor(x => x.WorkOrderNumber)
-            .NotEmpty().WithMessage("Work order number is required")
-            .MaximumLength(50).WithMessage("Work order number must not exceed 50 characters");
+            .NotEmpty()
+            .WithMessage("WorkOrderNumber is required")
+            .MaximumLength(50)
+            .WithMessage("WorkOrderNumber cannot exceed 50 characters");
     }
 }
 
+/// <summary>
+/// ? Validator for reporting work completion
+/// </summary>
 public class ReportWorkCompletedCommandValidator : AbstractValidator<ReportWorkCompletedCommand>
 {
     public ReportWorkCompletedCommandValidator()
     {
         RuleFor(x => x.TenantRequestId)
-            .GreaterThan(0).WithMessage("Valid tenant request ID is required");
+            .NotEqual(Guid.Empty)
+            .WithMessage("TenantRequestId must be a valid Guid");
 
         RuleFor(x => x.CompletionNotes)
-            .NotEmpty().WithMessage("Completion notes are required")
-            .MaximumLength(1000).WithMessage("Completion notes must not exceed 1000 characters");
+            .MaximumLength(500)
+            .WithMessage("CompletionNotes cannot exceed 500 characters");
     }
 }

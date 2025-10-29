@@ -20,8 +20,9 @@
                     </a>
                 </li>
                 <li>
-                    <form method="post" asp-page="/Account/Logout" class="d-inline">
-                        <button type="submit" class="dropdown-item">
+                    <form method="post" asp-page="/Account/Logout" class="d-inline" id="logoutForm">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="dropdown-item" id="logoutButton">
                             <i class="fas fa-sign-out-alt me-2"></i>Logout
                         </button>
                     </form>
@@ -40,3 +41,21 @@ else
         </li>
     </ul>
 }
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const logoutForm = document.getElementById('logoutForm');
+        const logoutButton = document.getElementById('logoutButton');
+        
+        if (logoutForm && logoutButton) {
+            logoutForm.addEventListener('submit', function(e) {
+                // Disable the button and show loading state
+                logoutButton.disabled = true;
+                logoutButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Signing out...';
+                
+                // Don't prevent default - let the form submit
+                console.log('Logout form submitted');
+            });
+        }
+    });
+</script>

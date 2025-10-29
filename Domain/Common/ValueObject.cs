@@ -2,16 +2,16 @@ namespace RentalRepairs.Domain.Common;
 
 public abstract class ValueObject
 {
-    protected static bool EqualOperator(ValueObject left, ValueObject right)
+    protected static bool EqualOperator(ValueObject? left, ValueObject? right)
     {
         if (ReferenceEquals(left, null) ^ ReferenceEquals(right, null))
         {
             return false;
         }
-        return ReferenceEquals(left, right) || left!.Equals(right!);
+        return ReferenceEquals(left, right) || (left?.Equals(right) ?? false);
     }
 
-    protected static bool NotEqualOperator(ValueObject left, ValueObject right)
+    protected static bool NotEqualOperator(ValueObject? left, ValueObject? right)
     {
         return !(EqualOperator(left, right));
     }
@@ -37,12 +37,12 @@ public abstract class ValueObject
             .Aggregate((x, y) => x ^ y);
     }
 
-    public static bool operator ==(ValueObject one, ValueObject two)
+    public static bool operator ==(ValueObject? one, ValueObject? two)
     {
         return EqualOperator(one, two);
     }
 
-    public static bool operator !=(ValueObject one, ValueObject two)
+    public static bool operator !=(ValueObject? one, ValueObject? two)
     {
         return NotEqualOperator(one, two);
     }

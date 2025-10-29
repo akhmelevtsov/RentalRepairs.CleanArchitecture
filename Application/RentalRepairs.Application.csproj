@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
@@ -7,15 +7,47 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Services\Authorization\**" />
+    <Compile Remove="Services\RequestManagement\**" />
+    <Compile Remove="Services\StatusManagement\**" />
+    <Compile Remove="Services\TenantRequestDetailsService\**" />
+    <Compile Remove="Services\TenantRequestSubmissionService\**" />
+    <Compile Remove="Services\WorkerAssignmentService\**" />
+    <Compile Remove="Services\WorkerAssignment\**" />
+    <EmbeddedResource Remove="Services\Authorization\**" />
+    <EmbeddedResource Remove="Services\RequestManagement\**" />
+    <EmbeddedResource Remove="Services\StatusManagement\**" />
+    <EmbeddedResource Remove="Services\TenantRequestDetailsService\**" />
+    <EmbeddedResource Remove="Services\TenantRequestSubmissionService\**" />
+    <EmbeddedResource Remove="Services\WorkerAssignmentService\**" />
+    <EmbeddedResource Remove="Services\WorkerAssignment\**" />
+    <None Remove="Services\Authorization\**" />
+    <None Remove="Services\RequestManagement\**" />
+    <None Remove="Services\StatusManagement\**" />
+    <None Remove="Services\TenantRequestDetailsService\**" />
+    <None Remove="Services\TenantRequestSubmissionService\**" />
+    <None Remove="Services\WorkerAssignmentService\**" />
+    <None Remove="Services\WorkerAssignment\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="FluentValidation" Version="11.8.0" />
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.8.0" />
     <PackageReference Include="Mapster" Version="7.4.0" />
     <PackageReference Include="MediatR" Version="12.2.0" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.11" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.2" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.2" />
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="8.0.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Domain\RentalRepairs.Domain.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Common\Extensions\" />
   </ItemGroup>
 
 </Project>

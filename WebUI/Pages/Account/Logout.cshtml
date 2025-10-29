@@ -1,0 +1,26 @@
+@page
+@model RentalRepairs.WebUI.Pages.Account.LogoutModel
+@{
+    ViewData["Title"] = "Logout";
+}
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body text-center">
+                    <i class="fas fa-spinner fa-spin fa-3x text-primary mb-3"></i>
+                    <h3>Signing Out...</h3>
+                    <p>Please wait while we sign you out.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // This page should redirect immediately, but if it doesn't, redirect after 3 seconds
+    setTimeout(function() {
+        window.location.href = '@Url.Page("/Account/Login")';
+    }, 3000);
+</script>

@@ -21,8 +21,6 @@ public class MockEmailService : IEmailService
 
     public async Task SendEmailAsync(EmailInfo emailInfo, CancellationToken cancellationToken = default)
     {
-        await Task.CompletedTask; // Simulate async operation
-
         if (emailInfo == null)
         {
             _logger.LogWarning("Attempted to send null email");
@@ -34,9 +32,7 @@ public class MockEmailService : IEmailService
 
         _logger.LogInformation("Mock email sent to {RecipientEmail} with subject '{Subject}'", 
             emailInfo.RecipientEmail, emailInfo.Subject);
-        _logger.LogDebug("Email body: {Body}", emailInfo.Body);
 
-        // Optionally write to file for development debugging
         if (_logger.IsEnabled(LogLevel.Debug))
         {
             var emailLog = $"""
@@ -53,6 +49,9 @@ public class MockEmailService : IEmailService
             
             _logger.LogDebug("{EmailLog}", emailLog);
         }
+
+        // Simulate async operation
+        await Task.Delay(50, cancellationToken);
     }
 
     public async Task SendBulkEmailAsync(IEnumerable<EmailInfo> emails, CancellationToken cancellationToken = default)

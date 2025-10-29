@@ -1,7 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using RentalRepairs.Domain.Entities;
-using RentalRepairs.Domain.Enums;
 
 namespace RentalRepairs.Infrastructure.Persistence.Configurations;
 
@@ -12,6 +11,11 @@ public class TenantRequestConfiguration : IEntityTypeConfiguration<TenantRequest
         builder.ToTable("TenantRequests");
 
         builder.HasKey(tr => tr.Id);
+        
+        // Configure Guid ID
+        builder.Property(tr => tr.Id)
+            .IsRequired()
+            .ValueGeneratedNever(); // Guid generated in domain
 
         builder.Property(tr => tr.Code)
             .IsRequired()
@@ -26,7 +30,7 @@ public class TenantRequestConfiguration : IEntityTypeConfiguration<TenantRequest
 
         builder.Property(tr => tr.Description)
             .IsRequired()
-            .HasMaxLength(2000);
+            .HasMaxLength(1000); // Updated to match domain constant
 
         builder.Property(tr => tr.UrgencyLevel)
             .IsRequired()
@@ -37,18 +41,80 @@ public class TenantRequestConfiguration : IEntityTypeConfiguration<TenantRequest
             .HasConversion<string>()
             .HasMaxLength(20);
 
-        builder.Property(tr => tr.ServiceWorkOrderCount)
-            .IsRequired();
+        builder.Property(tr => tr.IsEmergency)
+            .IsRequired()
+            .HasDefaultValue(false);
 
-        // Configure the explicit TenantId foreign key property
+        // Configure explicit foreign key properties
         builder.Property(tr => tr.TenantId)
             .IsRequired();
+            
+        builder.Property(tr => tr.PropertyId)
+            .IsRequired();
 
-        // Configure the relationship to Tenant
-        builder.HasOne(tr => tr.Tenant)
-            .WithMany()
-            .HasForeignKey(tr => tr.TenantId)
-            .OnDelete(DeleteBehavior.Restrict);
+        // Configure denormalized fields from domain model
+        builder.Property(tr => tr.TenantFullName)
+            .IsRequired()
+            .HasMaxLength(200);
+
+        builder.Property(tr => tr.TenantEmail)
+            .IsRequired()
+            .HasMaxLength(255);
+
+        builder.Property(tr => tr.TenantUnit)
+            .IsRequired()
+            .HasMaxLength(20);
+
+        builder.Property(tr => tr.PropertyName)
+            .IsRequired()
+            .HasMaxLength(200);
+
+        builder.Property(tr => tr.PropertyPhone)
+            .IsRequired()
+            .HasMaxLength(20);
+
+        builder.Property(tr => tr.SuperintendentFullName)
+            .IsRequired()
+            .HasMaxLength(200);
+
+        builder.Property(tr => tr.SuperintendentEmail)
+            .IsRequired()
+            .HasMaxLength(255);
+
+        // Configure worker assignment properties
+        builder.Property(tr => tr.ScheduledDate)
+            .IsRequired(false);
+
+        builder.Property(tr => tr.AssignedWorkerEmail)
+            .HasMaxLength(256)
+            .IsRequired(false);
+
+        builder.Property(tr => tr.AssignedWorkerName)
+            .HasMaxLength(200)
+            .IsRequired(false);
+
+        builder.Property(tr => tr.WorkOrderNumber)
+            .HasMaxLength(50)
+            .IsRequired(false);
+
+        builder.Property(tr => tr.CompletedDate)
+            .IsRequired(false);
+
+        builder.Property(tr => tr.WorkCompletedSuccessfully)
+            .IsRequired(false);
+
+        builder.Property(tr => tr.CompletionNotes)
+            .HasMaxLength(2000)
+            .IsRequired(false);
+
+        builder.Property(tr => tr.ClosureNotes)
+            .HasMaxLength(2000)
+            .IsRequired(false);
+
+        // Configure tenant preferences
+        builder.Property(tr => tr.PreferredContactTime)
+            .HasMaxLength(100)
+            .IsRequired(false);
 
         // Configure indexes for common queries
         builder.HasIndex(tr => tr.Status)
@@ -60,25 +126,25 @@ public class TenantRequestConfiguration : IEntityTypeConfiguration<TenantRequest
         builder.HasIndex(tr => tr.TenantId)
             .HasDatabaseName("IX_TenantRequests_TenantId");
 
+        builder.HasIndex(tr => tr.PropertyId)
+            .HasDatabaseName("IX_TenantRequests_PropertyId");
+
         builder.HasIndex(tr => tr.CreatedAt)
             .HasDatabaseName("IX_TenantRequests_CreatedAt");
 
-        // Configure domain events to be ignored
+        builder.HasIndex(tr => tr.AssignedWorkerEmail)
+            .HasDatabaseName("IX_TenantRequests_AssignedWorkerEmail");
+
+        builder.HasIndex(tr => tr.ScheduledDate)
+            .HasDatabaseName("IX_TenantRequests_ScheduledDate");
+
+        builder.HasIndex(tr => tr.WorkOrderNumber)
+            .HasDatabaseName("IX_TenantRequests_WorkOrderNumber");
+
+        builder.HasIndex(tr => tr.IsEmergency)
+            .HasDatabaseName("IX_TenantRequests_IsEmergency");
+
+        // Configure domain events to be ignored (handled by base configuration)  
         builder.Ignore(tr => tr.DomainEvents);
-
-        // Ignore computed properties - these are calculated from navigation properties
-        builder.Ignore(tr => tr.TenantFullName);
-        builder.Ignore(tr => tr.PropertyName);
-        builder.Ignore(tr => tr.SuperintendentFullName);
-        builder.Ignore(tr => tr.PropertyId);
-        builder.Ignore(tr => tr.TenantIdentifier); // Updated property name
-        builder.Ignore(tr => tr.TenantUnit);
-        builder.Ignore(tr => tr.PropertyNoReplyEmail);
-        builder.Ignore(tr => tr.TenantEmail);
-        builder.Ignore(tr => tr.PropertyPhone);
-        builder.Ignore(tr => tr.SuperintendentEmail);
-
-        // Ignore the request changes collection - will be configured separately if needed
-        builder.Ignore(tr => tr.RequestChanges);
     }
 }

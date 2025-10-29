@@ -1,0 +1,369 @@
+@page "{requestId:guid}"
+@model AssignWorkerModel
+@{
+    ViewData["Title"] = "Assign Worker";
+}
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Error/Success Messages -->
+            @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+            {
+                <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Error:</strong> @Model.ErrorMessage
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            }
+
+            @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+            {
+                <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+                    <i class="fas fa-check-circle me-2"></i>
+                    <strong>Success:</strong> @Model.SuccessMessage
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            }
+
+            <!-- Model State Errors -->
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    <strong>Please correct the following errors:</strong>
+                    <ul class="mb-0 mt-2">
+                        @foreach (var modelError in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                        {
+                            <li>@modelError.ErrorMessage</li>
+                        }
+                    </ul>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            }
+
+            @if (Model.AssignmentContext != null)
+            {
+                <div class="card shadow">
+                    <div class="card-header bg-primary text-white">
+                        <h3 class="mb-0">
+                            <i class="fas fa-user-cog me-2"></i>Assign Worker to Request
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <!-- Request Information -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0 text-dark fw-bold">Request Details</h5>
+                            </div>
+                            <div class="card-body bg-light">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <p><strong>Request ID:</strong> #@Model.AssignmentContext.Request.Id</p>
+                                        <p><strong>Title:</strong> @Model.AssignmentContext.Request.Title</p>
+                                        <p><strong>Status:</strong> 
+                                            <span class="badge bg-primary">@Model.AssignmentContext.Request.Status</span>
+                                        </p>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <p><strong>Tenant:</strong> @Model.AssignmentContext.Request.TenantEmail</p>
+                                        <p><strong>Urgency:</strong> 
+                                            <span class="badge @(Model.AssignmentContext.IsEmergencyRequest ? "bg-danger" : "bg-info")">
+                                                @Model.AssignmentContext.Request.UrgencyLevel
+                                            </span>
+                                        </p>
+                                        <p><strong>Created:</strong> @Model.AssignmentContext.Request.CreatedDate.ToString("MMM dd, yyyy")</p>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-12">
+                                        <p><strong>Description:</strong></p>
+                                        <p class="border p-2 rounded bg-white">@Model.AssignmentContext.Request.Description</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Assignment Form -->
+                        <form method="post" asp-antiforgery="true" id="assignmentForm">
+                            <div asp-validation-summary="ModelOnly" class="text-danger mb-4"></div>
+                            
+                            <input type="hidden" asp-for="AssignmentRequest.RequestId" />
+                            
+                            @* Preserve ReturnUrl in form *@
+                            @if (!string.IsNullOrEmpty(ViewData["ReturnUrl"] as string))
+                            {
+                                <input type="hidden" name="returnUrl" value="@ViewData["ReturnUrl"]" />
+                            }
+                            
+                            <div class="mb-3">
+                                <label asp-for="AssignmentRequest.WorkerEmail" class="form-label text-dark fw-bold">
+                                    <i class="fas fa-user me-2"></i>Select Worker <span class="text-danger">*</span>
+                                </label>
+                                @if (Model.AssignmentContext.AvailableWorkers?.Any() == true)
+                                {
+                                    <select asp-for="AssignmentRequest.WorkerEmail" class="form-select" id="workerSelect">
+                                        <option value="">-- Select a Worker --</option>
+                                        @foreach (var worker in Model.AssignmentContext.AvailableWorkers)
+                                        {
+                                            <option value="@worker.Email" data-specialization="@worker.Specialization">
+                                                @worker.FullName (@worker.Specialization) - @worker.ActiveAssignmentsCount assignments
+                                            </option>
+                                        }
+                                    </select>
+                                    <span asp-validation-for="AssignmentRequest.WorkerEmail" class="text-danger"></span>
+                                    <div class="form-text">
+                                        Select an available worker with appropriate specialization for this type of work.
+                                    </div>
+                                }
+                                else
+                                {
+                                    <select asp-for="AssignmentRequest.WorkerEmail" class="form-select" id="workerSelect" disabled>
+                                        <option value="">-- No suitable workers available --</option>
+                                    </select>
+                                    <div class="alert alert-warning mt-2">
+                                        <i class="fas fa-exclamation-triangle me-2"></i>
+                                        <strong>No suitable workers available</strong><br>
+                                        No workers are currently available for assignment. Please try again later or contact system administrator.
+                                    </div>
+                                    <span asp-validation-for="AssignmentRequest.WorkerEmail" class="text-danger"></span>
+                                }
+                            </div>
+
+                            <div class="mb-3">
+                                <label asp-for="AssignmentRequest.ScheduledDate" class="form-label text-dark fw-bold">
+                                    <i class="fas fa-calendar me-2"></i>Scheduled Date <span class="text-danger">*</span>
+                                </label>
+                                <input asp-for="AssignmentRequest.ScheduledDate" class="form-control" type="date" 
+                                       min="@DateTime.Today.AddDays(1).ToString("yyyy-MM-dd")" id="dateSelect" />
+                                <span asp-validation-for="AssignmentRequest.ScheduledDate" class="text-danger"></span>
+                                <div class="form-text">
+                                    Select the date for the maintenance work.
+                                </div>
+                                
+                                @if (Model.AssignmentContext.SuggestedDates?.Any() == true)
+                                {
+                                    <div class="mt-2">
+                                        <small class="text-muted">Suggested dates:</small><br>
+                                        @foreach (var suggestedDate in Model.AssignmentContext.SuggestedDates.Take(3))
+                                        {
+                                            <button type="button" class="btn btn-outline-secondary btn-sm me-1 mt-1" 
+                                                    onclick="document.getElementById('dateSelect').value = '@suggestedDate.ToString("yyyy-MM-dd")'; checkWorkerAvailability();">
+                                                @suggestedDate.ToString("MMM dd")
+                                            </button>
+                                        }
+                                    </div>
+                                }
+                            </div>
+
+                            <!-- Worker Availability Status -->
+                            <div class="mb-3" id="availabilitySection" style="display: none;">
+                                <label class="form-label text-dark fw-bold">
+                                    <i class="fas fa-calendar-check me-2"></i>Worker Availability Status
+                                </label>
+                                <div id="availabilityContainer">
+                                    <div class="text-muted">
+                                        <i class="fas fa-spinner fa-spin me-2"></i>Checking availability...
+                                    </div>
+                                </div>
+                                <div class="form-text">
+                                    The system will check if the selected worker is available on the chosen date.
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label asp-for="AssignmentRequest.WorkOrderNumber" class="form-label text-dark fw-bold">
+                                    <i class="fas fa-file-alt me-2"></i>Work Order Number <span class="text-danger">*</span>
+                                </label>
+                                <input asp-for="AssignmentRequest.WorkOrderNumber" class="form-control" placeholder="e.g., WO-2025-001" />
+                                <span asp-validation-for="AssignmentRequest.WorkOrderNumber" class="text-danger"></span>
+                                <div class="form-text">
+                                    Enter a unique work order number for tracking purposes.
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label asp-for="AssignmentRequest.Notes" class="form-label text-dark fw-bold">
+                                    <i class="fas fa-sticky-note me-2"></i>Additional Notes
+                                </label>
+                                <textarea asp-for="AssignmentRequest.Notes" class="form-control" rows="3" 
+                                          placeholder="Any special instructions for the worker..."></textarea>
+                                <span asp-validation-for="AssignmentRequest.Notes" class="text-danger"></span>
+                            </div>
+
+                            <div class="d-flex justify-content-between">
+                                @{
+                                    var returnUrl = ViewData["ReturnUrl"] as string;
+                                }
+                                
+                                @if (!string.IsNullOrEmpty(returnUrl))
+                                {
+                                    <a href="@returnUrl" class="btn btn-outline-secondary">
+                                        <i class="fas fa-arrow-left me-2"></i>Cancel
+                                    </a>
+                                }
+                                else if (User.IsInRole("PropertySuperintendent"))
+                                {
+                                    <a href="/TenantRequests/Manage" class="btn btn-outline-secondary">
+                                        <i class="fas fa-arrow-left me-2"></i>Cancel
+                                    </a>
+                                }
+                                else
+                                {
+                                    <a asp-page="/Index" class="btn btn-outline-secondary">
+                                        <i class="fas fa-arrow-left me-2"></i>Cancel
+                                    </a>
+                                }
+                                
+                                @if (Model.AssignmentContext.IsEmergencyRequest)
+                                {
+                                    <button type="submit" class="btn btn-danger" id="assignButton" 
+                                            disabled="@(Model.AssignmentContext.AvailableWorkers?.Any() != true)">
+                                        <i class="fas fa-exclamation-triangle me-2"></i>Emergency Assign Worker
+                                    </button>
+                                }
+                                else
+                                {
+                                    <button type="submit" class="btn btn-primary" id="assignButton" 
+                                            disabled="@(Model.AssignmentContext.AvailableWorkers?.Any() != true)">
+                                        <i class="fas fa-user-check me-2"></i>Assign Worker
+                                    </button>
+                                }
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Unable to load request information.</strong> 
+                    Please try again or contact support if the problem persists.
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        let currentRequestId = '@Model.AssignmentRequest.RequestId';
+        
+        // Auto-generate work order number
+        document.getElementById('workerSelect')?.addEventListener('change', function() {
+            const workOrderField = document.querySelector('input[name="AssignmentRequest.WorkOrderNumber"]');
+            if (workOrderField && workOrderField.value === '') {
+                const today = new Date();
+                const dateStr = today.getFullYear() + '' + 
+                    (today.getMonth() + 1).toString().padStart(2, '0') + '' +
+                    today.getDate().toString().padStart(2, '0');
+                const randomNum = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+                workOrderField.value = `WO-${dateStr}-${randomNum}`;
+            }
+            
+            // Check availability when worker changes
+            checkWorkerAvailability();
+        });
+
+        // Check availability when date changes
+        document.getElementById('dateSelect')?.addEventListener('change', function() {
+            checkWorkerAvailability();
+        });
+
+        // Check worker availability for the selected date
+        async function checkWorkerAvailability() {
+            const workerEmail = document.getElementById('workerSelect')?.value;
+            const selectedDate = document.getElementById('dateSelect')?.value;
+            const availabilitySection = document.getElementById('availabilitySection');
+            const availabilityContainer = document.getElementById('availabilityContainer');
+            const assignButton = document.getElementById('assignButton');
+            
+            if (!workerEmail || !selectedDate) {
+                if (availabilitySection) availabilitySection.style.display = 'none';
+                if (assignButton) assignButton.disabled = !workerEmail || !selectedDate;
+                return;
+            }
+
+            // Show loading state
+            if (availabilitySection) availabilitySection.style.display = 'block';
+            if (availabilityContainer) availabilityContainer.innerHTML = '<div class="text-muted"><i class="fas fa-spinner fa-spin me-2"></i>Checking availability...</div>';
+            if (assignButton) assignButton.disabled = true;
+
+            try {
+                const url = `/TenantRequests/AssignWorker/${currentRequestId}?handler=WorkerAvailability&workerEmail=${encodeURIComponent(workerEmail)}&date=${selectedDate}`;
+                
+                const response = await fetch(url);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+
+                // Display availability status
+                if (data.available) {
+                    if (availabilityContainer) {
+                        availabilityContainer.innerHTML = `
+                            <div class="alert alert-success">
+                                <i class="fas fa-check-circle me-2"></i>
+                                <strong>Worker Available</strong><br>
+                                ${data.message || 'Worker is available on the selected date.'}
+                            </div>
+                        `;
+                    }
+                    if (assignButton) assignButton.disabled = false;
+                } else {
+                    if (availabilityContainer) {
+                        availabilityContainer.innerHTML = `
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                <strong>Worker Not Available</strong><br>
+                                ${data.message || 'Worker is not available on the selected date.'}
+                            </div>
+                        `;
+                    }
+                    if (assignButton) assignButton.disabled = true;
+                }
+                
+            } catch (error) {
+                console.error('Error checking availability:', error);
+                if (availabilityContainer) {
+                    availabilityContainer.innerHTML = `
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <strong>Error checking availability:</strong> ${error.message}
+                        </div>
+                    `;
+                }
+                if (assignButton) assignButton.disabled = true;
+            }
+        }
+
+        // Form submission handling
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.querySelector('form[method="post"]');
+            const submitBtn = document.getElementById('assignButton');
+            
+            if (form && submitBtn) {
+                form.addEventListener('submit', function(e) {
+                    // Validate required fields
+                    const workerEmail = document.getElementById('workerSelect')?.value;
+                    const scheduledDate = document.getElementById('dateSelect')?.value;
+                    const workOrderNumber = document.querySelector('input[name="AssignmentRequest.WorkOrderNumber"]')?.value;
+                    
+                    if (!workerEmail || !scheduledDate || !workOrderNumber) {
+                        e.preventDefault();
+                        alert('Please fill in all required fields.');
+                        return false;
+                    }
+                    
+                    // Disable submit button to prevent double submission
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Assigning Worker...';
+                });
+            }
+        });
+    </script>
+}

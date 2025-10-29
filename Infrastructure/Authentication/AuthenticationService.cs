@@ -1,202 +1,152 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using RentalRepairs.Application.Interfaces;
-using RentalRepairs.Domain.Repositories;
+using RentalRepairs.Application.Common.Interfaces;
 using System.Security.Claims;
 
 namespace RentalRepairs.Infrastructure.Authentication;
 
 /// <summary>
-/// Streamlined authentication service implementation
+/// Consolidated Authentication Service - Implements Application layer interface directly
+/// All users authenticate with email/password only
+/// System automatically determines role and parameters from stored user profile
 /// </summary>
 public class AuthenticationService : IAuthenticationService
 {
-    private readonly IPropertyService _propertyService;
-    private readonly IWorkerService _workerService;
-    private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly IPropertyService? _propertyService;
+    private readonly IWorkerService? _workerService;
+    private readonly IHttpContextAccessor? _httpContextAccessor;
     private readonly ILogger<AuthenticationService> _logger;
+    private readonly IDemoUserService _demoUserService;
 
     public AuthenticationService(
-        IPropertyService propertyService,
-        IWorkerService workerService,
-        IHttpContextAccessor httpContextAccessor,
-        ILogger<AuthenticationService> logger)
+        ILogger<AuthenticationService> logger,
+        IDemoUserService demoUserService,
+        IPropertyService? propertyService = null,
+        IWorkerService? workerService = null,
+        IHttpContextAccessor? httpContextAccessor = null)
     {
+        _logger = logger;
+        _demoUserService = demoUserService;
         _propertyService = propertyService;
         _workerService = workerService;
         _httpContextAccessor = httpContextAccessor;
-        _logger = logger;
     }
 
-    public async Task<AuthenticationResult> AuthenticateAsync(string email, string password, CancellationToken cancellationToken = default)
+    /// <summary>
+    /// Unified authentication method - determines user role and parameters automatically
+    /// </summary>
+    public async Task<AuthenticationResult> AuthenticateAsync(string email, string password)
     {
         try
         {
-            // Simplified authentication - in production, integrate with proper identity provider
+            _logger.LogInformation("Attempting unified authentication for email: {Email}", email);
+
+            // Validate input parameters
             if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(password))
             {
-                return new AuthenticationResult
-                {
-                    IsSuccess = false,
-                    ErrorMessage = "Email and password are required"
-                };
+                _logger.LogWarning("Authentication failed: Email or password is empty");
+                return AuthenticationResult.Failure("Email and password are required");
             }
 
-            // For demo purposes, create a basic authenticated user
-            var result = new AuthenticationResult
+            // Use secure demo user service
+            if (_demoUserService.IsDemoModeEnabled())
             {
-                IsSuccess = true,
-                UserId = email,
-                Email = email,
-                DisplayName = ExtractDisplayName(email),
-                Token = GenerateToken(email),
-                ExpiresAt = DateTime.UtcNow.AddHours(8),
-                Roles = new List<string> { UserRoles.SystemAdmin }
-            };
+                var validationResult = await _demoUserService.ValidateUserAsync(email, password);
 
-            result.Claims.Add(ClaimTypes.Email, email);
-            result.Claims.Add(ClaimTypes.Name, result.DisplayName);
-            result.Claims.Add(ClaimTypes.NameIdentifier, email);
+                if (!validationResult.IsValid)
+                {
+                    return AuthenticationResult.Failure(
+                        validationResult.ErrorMessage ?? "Invalid credentials",
+                        validationResult.IsLockedOut,
+                        validationResult.LockoutEndTime);
+                }
 
-            _logger.LogInformation("User {Email} authenticated successfully", email);
-            return result;
+                var user = validationResult.User!;
+                
+                // Create claims dictionary for result
+                var claimsDict = new Dictionary<string, object>();
+                foreach (var claim in user.Claims)
+                {
+                    claimsDict[claim.Key] = claim.Value;
+                }
+
+                // Create successful authentication result with role detection
+                var result = AuthenticationResult.Success(
+                    user.Email,
+                    user.Email,
+                    user.DisplayName,
+                    user.Roles.ToList(),
+                    claimsDict);
+
+                _logger.LogInformation("User {Email} authenticated successfully with role(s): {Roles}, redirecting to: {DashboardUrl}", 
+                    email, 
+                    string.Join(", ", user.Roles),
+                    result.DashboardUrl);
+
+                // Log role-specific parameters for debugging
+                LogRoleSpecificParameters(result);
+
+                return result;
+            }
+
+            // In production, this would integrate with your actual user store
+            _logger.LogWarning("Demo mode is disabled and no production authentication configured for {Email}", email);
+            return AuthenticationResult.Failure("Authentication service not properly configured");
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Authentication failed for {Email}", email);
-            return new AuthenticationResult
-            {
-                IsSuccess = false,
-                ErrorMessage = "Authentication failed"
-            };
+            return AuthenticationResult.Failure("Authentication failed due to an internal error");
         }
     }
 
-    public async Task<AuthenticationResult> AuthenticateTenantAsync(string email, string propertyCode, string unitNumber, CancellationToken cancellationToken = default)
+    public async Task<bool> ValidateCredentialsAsync(string email, string password)
     {
         try
         {
-            var property = await _propertyService.GetPropertyByCodeAsync(propertyCode, cancellationToken);
-            if (property == null)
+            if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(password))
+                return false;
+
+            if (_demoUserService.IsDemoModeEnabled())
             {
-                return new AuthenticationResult
-                {
-                    IsSuccess = false,
-                    ErrorMessage = "Invalid property code"
-                };
+                var validationResult = await _demoUserService.ValidateUserAsync(email, password);
+                return validationResult.IsValid;
             }
 
-            var tenant = await _propertyService.GetTenantByPropertyAndUnitAsync(property.Id, unitNumber, cancellationToken);
-            if (tenant == null || !tenant.ContactInfo.EmailAddress.Equals(email, StringComparison.OrdinalIgnoreCase))
-            {
-                return new AuthenticationResult
-                {
-                    IsSuccess = false,
-                    ErrorMessage = "Invalid tenant credentials"
-                };
-            }
-
-            var result = new AuthenticationResult
-            {
-                IsSuccess = true,
-                UserId = tenant.Id.ToString(),
-                Email = email,
-                DisplayName = $"{tenant.ContactInfo.FirstName} {tenant.ContactInfo.LastName}",
-                Token = GenerateToken(email),
-                ExpiresAt = DateTime.UtcNow.AddHours(4),
-                Roles = new List<string> { UserRoles.Tenant }
-            };
-
-            result.Claims.Add(ClaimTypes.Email, email);
-            result.Claims.Add(ClaimTypes.Name, result.DisplayName);
-            result.Claims.Add(ClaimTypes.NameIdentifier, tenant.Id.ToString());
-            result.Claims.Add(CustomClaims.PropertyId, property.Id.ToString());
-            result.Claims.Add(CustomClaims.UnitNumber, unitNumber);
-            result.Claims.Add(CustomClaims.TenantId, tenant.Id.ToString());
-
-            _logger.LogInformation("Tenant {Email} authenticated for property {PropertyCode} unit {UnitNumber}", 
-                email, propertyCode, unitNumber);
-            return result;
+            return false;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Tenant authentication failed for {Email}", email);
-            return new AuthenticationResult
-            {
-                IsSuccess = false,
-                ErrorMessage = "Tenant authentication failed"
-            };
+            _logger.LogError(ex, "Credential validation failed for {Email}", email);
+            return false;
         }
     }
 
-    public async Task<AuthenticationResult> AuthenticateWorkerAsync(string email, string specialization, CancellationToken cancellationToken = default)
+    public async Task<bool> ValidateTokenAsync(string token)
     {
         try
         {
-            var worker = await _workerService.GetWorkerByEmailAsync(email, cancellationToken);
-            if (worker == null || !worker.IsActive)
-            {
-                return new AuthenticationResult
-                {
-                    IsSuccess = false,
-                    ErrorMessage = "Invalid worker credentials or inactive worker"
-                };
-            }
-
-            if (!string.IsNullOrEmpty(specialization) && 
-                !worker.Specialization.Equals(specialization, StringComparison.OrdinalIgnoreCase))
-            {
-                return new AuthenticationResult
-                {
-                    IsSuccess = false,
-                    ErrorMessage = "Specialization mismatch"
-                };
-            }
-
-            var result = new AuthenticationResult
-            {
-                IsSuccess = true,
-                UserId = worker.Id.ToString(),
-                Email = email,
-                DisplayName = $"{worker.ContactInfo.FirstName} {worker.ContactInfo.LastName}",
-                Token = GenerateToken(email),
-                ExpiresAt = DateTime.UtcNow.AddHours(8),
-                Roles = new List<string> { UserRoles.Worker }
-            };
-
-            result.Claims.Add(ClaimTypes.Email, email);
-            result.Claims.Add(ClaimTypes.Name, result.DisplayName);
-            result.Claims.Add(ClaimTypes.NameIdentifier, worker.Id.ToString());
-            result.Claims.Add(CustomClaims.WorkerId, worker.Id.ToString());
-            result.Claims.Add(CustomClaims.WorkerSpecialization, worker.Specialization ?? "");
-            result.Claims.Add(CustomClaims.IsActive, worker.IsActive.ToString());
-
-            _logger.LogInformation("Worker {Email} authenticated with specialization {Specialization}", 
-                email, worker.Specialization);
-            return result;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Worker authentication failed for {Email}", email);
-            return new AuthenticationResult
-            {
-                IsSuccess = false,
-                ErrorMessage = "Worker authentication failed"
-            };
-        }
-    }
-
-    public async Task<bool> ValidateTokenAsync(string token, CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            // Simplified token validation - in production, use proper JWT validation
+            // Enhanced token validation (still simple for demo, but better than before)
             if (string.IsNullOrEmpty(token))
                 return false;
 
-            // Basic token format validation
+            // Basic token format validation - in production, use JWT validation
+            if (!token.StartsWith("secure_token_") || token.Length < 20)
+                return false;
+
+            // Extract timestamp and validate expiration
+            var parts = token.Split('_');
+            if (parts.Length >= 4 && long.TryParse(parts[3], out var timestamp))
+            {
+                var tokenTime = DateTimeOffset.FromUnixTimeSeconds(timestamp).DateTime;
+                var expirationTime = tokenTime.AddHours(8);
+                
+                return DateTime.UtcNow <= expirationTime;
+            }
+
             await Task.CompletedTask;
-            return token.StartsWith("token_") && token.Length > 10;
+            return false;
         }
         catch (Exception ex)
         {
@@ -205,11 +155,11 @@ public class AuthenticationService : IAuthenticationService
         }
     }
 
-    public async Task SignOutAsync(CancellationToken cancellationToken = default)
+    public async Task SignOutAsync()
     {
         try
         {
-            var httpContext = _httpContextAccessor.HttpContext;
+            var httpContext = _httpContextAccessor?.HttpContext;
             if (httpContext?.User?.Identity?.IsAuthenticated == true)
             {
                 var userId = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -225,16 +175,35 @@ public class AuthenticationService : IAuthenticationService
         }
     }
 
-    private string ExtractDisplayName(string email)
+    #region Private Methods
+
+    /// <summary>
+    /// Log role-specific parameters for debugging and monitoring
+    /// </summary>
+    private void LogRoleSpecificParameters(AuthenticationResult result)
     {
-        var parts = email.Split('@');
-        return parts.Length > 0 ? parts[0] : email;
+        switch (result.PrimaryRole)
+        {
+            case "Tenant":
+                _logger.LogDebug("Tenant authenticated - Property: {PropertyCode}, Unit: {UnitNumber}", 
+                    result.PropertyCode, result.UnitNumber);
+                break;
+                
+            case "Worker":
+                _logger.LogDebug("Worker authenticated - Specialization: {Specialization}", 
+                    result.WorkerSpecialization);
+                break;
+                
+            case "PropertySuperintendent":
+                _logger.LogDebug("Superintendent authenticated - Property: {PropertyCode}", 
+                    result.PropertyCode);
+                break;
+                
+            case "SystemAdmin":
+                _logger.LogDebug("System Admin authenticated - Full access granted");
+                break;
+        }
     }
 
-    private string GenerateToken(string email)
-    {
-        // Simplified token generation - in production, use proper JWT token generation
-        var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-        return $"token_{email.Replace("@", "_").Replace(".", "_")}_{timestamp}";
-    }
+    #endregion
 }

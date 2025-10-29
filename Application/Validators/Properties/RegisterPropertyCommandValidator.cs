@@ -1,5 +1,5 @@
 using FluentValidation;
-using RentalRepairs.Application.Commands.Properties;
+using RentalRepairs.Application.Commands.Properties.RegisterProperty;
 using RentalRepairs.Application.DTOs;
 
 namespace RentalRepairs.Application.Validators.Properties;
@@ -32,17 +32,17 @@ public class RegisterPropertyCommandValidator : AbstractValidator<RegisterProper
 
         RuleFor(x => x.Address)
             .NotNull().WithMessage("Address is required")
-            .SetValidator(new PropertyAddressValidator());
+            .SetValidator(new PropertyAddressDtoValidator()!);
 
         RuleFor(x => x.Superintendent)
             .NotNull().WithMessage("Superintendent information is required")
-            .SetValidator(new PersonContactInfoValidator());
+            .SetValidator(new PersonContactInfoDtoValidator()!);
     }
 }
 
-public class PropertyAddressValidator : AbstractValidator<PropertyAddressDto>
+public class PropertyAddressDtoValidator : AbstractValidator<PropertyAddressDto>
 {
-    public PropertyAddressValidator()
+    public PropertyAddressDtoValidator()
     {
         RuleFor(x => x.StreetNumber)
             .NotEmpty().WithMessage("Street number is required")
@@ -62,9 +62,9 @@ public class PropertyAddressValidator : AbstractValidator<PropertyAddressDto>
     }
 }
 
-public class PersonContactInfoValidator : AbstractValidator<PersonContactInfoDto>
+public class PersonContactInfoDtoValidator : AbstractValidator<PersonContactInfoDto>
 {
-    public PersonContactInfoValidator()
+    public PersonContactInfoDtoValidator()
     {
         RuleFor(x => x.FirstName)
             .NotEmpty().WithMessage("First name is required")

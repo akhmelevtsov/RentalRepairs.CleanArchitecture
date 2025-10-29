@@ -1,0 +1,109 @@
+@page "/tenant-requests/decline/{id:guid}"
+@model RentalRepairs.WebUI.Pages.TenantRequests.DeclineModel
+@{
+    ViewData["Title"] = "Decline Request";
+}
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-warning text-dark">
+                    <h4 class="mb-0">
+                        <i class="fas fa-times-circle me-2"></i>Decline Request
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <!-- Request Summary -->
+                    <div class="alert alert-info" role="alert">
+                        <h6 class="alert-heading">
+                            <i class="fas fa-info-circle me-2"></i>Request Details
+                        </h6>
+                        <p class="mb-1"><strong>Title:</strong> @Model.Request?.Title</p>
+                        <p class="mb-1"><strong>Description:</strong> @Model.Request?.Description</p>
+                        <p class="mb-1"><strong>Property:</strong> @Model.Request?.PropertyName - Unit @Model.Request?.TenantUnit</p>
+                        <p class="mb-0"><strong>Tenant:</strong> @Model.Request?.TenantFullName (@Model.Request?.TenantEmail)</p>
+                    </div>
+
+                    <!-- Decline Form -->
+                    <form method="post" asp-page-handler="Decline">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" asp-for="RequestId" />
+                        
+                        <div class="mb-3">
+                            <label asp-for="Reason" class="form-label">
+                                <i class="fas fa-comment me-2"></i>Reason for Declining <span class="text-danger">*</span>
+                            </label>
+                            <textarea asp-for="Reason" class="form-control" rows="4" 
+                                     placeholder="Please provide a detailed reason for declining this request. This will be communicated to the tenant."
+                                     required></textarea>
+                            <span asp-validation-for="Reason" class="text-danger"></span>
+                            <div class="form-text">
+                                This reason will be visible to the tenant and will be logged for audit purposes.
+                            </div>
+                        </div>
+
+                        <div class="alert alert-warning" role="alert">
+                            <h6 class="alert-heading">
+                                <i class="fas fa-exclamation-triangle me-2"></i>Important Notice
+                            </h6>
+                            <p class="mb-0">
+                                Declining this request will permanently change its status to "Declined" and notify the tenant.
+                                This action cannot be undone. Please ensure you have provided a clear and professional reason.
+                            </p>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a asp-page="Details" asp-route-id="@Model.RequestId" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Cancel
+                            </a>
+                            <button type="submit" class="btn btn-warning" 
+                                    onclick="return confirm('Are you sure you want to decline this request? This action cannot be undone.');">
+                                <i class="fas fa-times-circle me-2"></i>Decline Request
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        // Auto-focus on the reason textarea
+        document.addEventListener('DOMContentLoaded', function() {
+            const reasonTextarea = document.getElementById('Reason');
+            if (reasonTextarea) {
+                reasonTextarea.focus();
+            }
+        });
+
+        // Character counter for reason field
+        const reasonField = document.getElementById('Reason');
+        if (reasonField) {
+            const maxLength = 1000;
+            const counter = document.createElement('div');
+            counter.className = 'form-text text-end';
+            counter.id = 'reasonCounter';
+            reasonField.parentNode.insertBefore(counter, reasonField.nextSibling.nextSibling);
+            
+            function updateCounter() {
+                const remaining = maxLength - reasonField.value.length;
+                counter.textContent = `${reasonField.value.length}/${maxLength} characters`;
+                
+                if (remaining < 50) {
+                    counter.className = 'form-text text-end text-warning';
+                } else if (remaining < 0) {
+                    counter.className = 'form-text text-end text-danger';
+                } else {
+                    counter.className = 'form-text text-end text-muted';
+                }
+            }
+            
+            reasonField.addEventListener('input', updateCounter);
+            updateCounter();
+        }
+    </script>
+}

@@ -4,114 +4,179 @@
     ViewData["Title"] = "Submit Maintenance Request";
 }
 
+<!-- ? Display success/error messages from TempData -->
+@if (!string.IsNullOrEmpty(Model.SuccessMessage))
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="fas fa-check-circle"></i> @Model.SuccessMessage
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="fas fa-exclamation-triangle"></i> @Model.ErrorMessage
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
 <div class="container py-4">
     <div class="row justify-content-center">
         <div class="col-lg-8">
-            <div class="card">
-                <div class="card-header">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
                     <h3 class="mb-0">
                         <i class="fas fa-plus-circle me-2"></i>Submit Maintenance Request
                     </h3>
                 </div>
                 <div class="card-body">
+                    <!-- ? CSRF PROTECTED: Form with antiforgery token -->
                     <form method="post">
+                        @Html.AntiForgeryToken() <!-- ? CSRF Protection -->
+                        
                         <div asp-validation-summary="ModelOnly" class="text-danger mb-4"></div>
                         
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label asp-for="TenantRequest.PropertyCode" class="form-label">
-                                    <i class="fas fa-building me-2"></i>Property Code
-                                </label>
-                                <input asp-for="TenantRequest.PropertyCode" class="form-control" placeholder="Enter property code" />
-                                <span asp-validation-for="TenantRequest.PropertyCode" class="text-danger"></span>
+                        <!-- Tenant Information Section (Read-only) -->
+                        <div class="card mb-4 border-info">
+                            <div class="card-header bg-info text-white">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-user-check me-2"></i>Your Information
+                                </h5>
                             </div>
-                            <div class="col-md-6">
-                                <label asp-for="TenantRequest.UnitNumber" class="form-label">
-                                    <i class="fas fa-door-open me-2"></i>Unit Number
-                                </label>
-                                <input asp-for="TenantRequest.UnitNumber" class="form-control" placeholder="Enter unit number" />
-                                <span asp-validation-for="TenantRequest.UnitNumber" class="text-danger"></span>
-                            </div>
-                        </div>
-
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label asp-for="TenantRequest.TenantFirstName" class="form-label">
-                                    <i class="fas fa-user me-2"></i>First Name
-                                </label>
-                                <input asp-for="TenantRequest.TenantFirstName" class="form-control" placeholder="Enter first name" />
-                                <span asp-validation-for="TenantRequest.TenantFirstName" class="text-danger"></span>
-                            </div>
-                            <div class="col-md-6">
-                                <label asp-for="TenantRequest.TenantLastName" class="form-label">
-                                    <i class="fas fa-user me-2"></i>Last Name
-                                </label>
-                                <input asp-for="TenantRequest.TenantLastName" class="form-control" placeholder="Enter last name" />
-                                <span asp-validation-for="TenantRequest.TenantLastName" class="text-danger"></span>
-                            </div>
-                        </div>
-
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label asp-for="TenantRequest.TenantEmail" class="form-label">
-                                    <i class="fas fa-envelope me-2"></i>Email Address
-                                </label>
-                                <input asp-for="TenantRequest.TenantEmail" class="form-control" placeholder="Enter email address" />
-                                <span asp-validation-for="TenantRequest.TenantEmail" class="text-danger"></span>
-                            </div>
-                            <div class="col-md-6">
-                                <label asp-for="TenantRequest.TenantPhone" class="form-label">
-                                    <i class="fas fa-phone me-2"></i>Phone Number
-                                </label>
-                                <input asp-for="TenantRequest.TenantPhone" class="form-control" placeholder="Enter phone number" />
-                                <span asp-validation-for="TenantRequest.TenantPhone" class="text-danger"></span>
-                            </div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label asp-for="TenantRequest.ProblemDescription" class="form-label">
-                                <i class="fas fa-comment-alt me-2"></i>Problem Description
-                            </label>
-                            <textarea asp-for="TenantRequest.ProblemDescription" class="form-control" rows="4" 
-                                      placeholder="Please describe the maintenance issue in detail..."></textarea>
-                            <span asp-validation-for="TenantRequest.ProblemDescription" class="text-danger"></span>
-                            <div class="form-text">
-                                Please provide as much detail as possible to help us understand and address your request.
+                            <div class="card-body bg-light">
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label text-dark fw-bold">
+                                            <i class="fas fa-building me-2"></i>Property
+                                        </label>
+                                        <p class="form-control-plaintext fw-bold">@Model.DisplayPropertyName (@Model.DisplayPropertyCode)</p>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label text-dark fw-bold">
+                                            <i class="fas fa-door-open me-2"></i>Unit Number
+                                        </label>
+                                        <p class="form-control-plaintext fw-bold">@Model.DisplayUnitNumber</p>
+                                    </div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label text-dark fw-bold">
+                                            <i class="fas fa-user me-2"></i>Name
+                                        </label>
+                                        <p class="form-control-plaintext fw-bold">@Model.DisplayTenantName</p>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label text-dark fw-bold">
+                                            <i class="fas fa-envelope me-2"></i>Email Address
+                                        </label>
+                                        <p class="form-control-plaintext fw-bold">@Model.DisplayTenantEmail</p>
+                                    </div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label text-dark fw-bold">
+                                            <i class="fas fa-phone me-2"></i>Phone Number
+                                        </label>
+                                        <p class="form-control-plaintext fw-bold">@Model.DisplayTenantPhone</p>
+                                        <small class="text-muted fst-italic">This phone number is from your tenant profile and cannot be changed here.</small>
+                                    </div>
+                                </div>
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    <strong>This information is automatically populated from your account. If any details are incorrect, please contact your property manager.</strong>
+                                </div>
                             </div>
                         </div>
 
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <div class="form-check">
-                                    <input asp-for="TenantRequest.IsEmergency" class="form-check-input" />
-                                    <label asp-for="TenantRequest.IsEmergency" class="form-check-label">
-                                        <i class="fas fa-exclamation-triangle text-warning me-2"></i>
-                                        This is an emergency request
+                        <!-- Hidden fields to maintain the model binding -->
+                        <input type="hidden" asp-for="TenantRequest.PropertyCode" />
+                        <input type="hidden" asp-for="TenantRequest.UnitNumber" />
+                        <input type="hidden" asp-for="TenantRequest.TenantFirstName" />
+                        <input type="hidden" asp-for="TenantRequest.TenantLastName" />
+                        <input type="hidden" asp-for="TenantRequest.TenantEmail" />
+                        <input type="hidden" asp-for="TenantRequest.TenantPhone" />
+
+                        <!-- Editable Fields Section -->
+                        <div class="card mb-4 border-success">
+                            <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-edit me-2"></i>Request Details
+                                </h5>
+                                <!-- ? DEMO MODE: Show random generation button only in demo mode -->
+                                @if (Model.IsDemoModeEnabled)
+                                {
+                                    <button type="button" id="generateRandomBtn" class="btn btn-warning btn-sm fw-bold">
+                                        <i class="fas fa-magic me-2"></i>Generate Random Request
+                                    </button>
+                                }
+                            </div>
+                            <div class="card-body">
+                                <!-- ? DEMO MODE: Show demo helper in demo mode -->
+                                @if (Model.IsDemoModeEnabled)
+                                {
+                                    <div class="alert alert-warning">
+                                        <i class="fas fa-lightbulb me-2"></i>
+                                        <strong>Demo Mode:</strong> Use the "Generate Random Request" button above to automatically fill the form with realistic maintenance request data for testing purposes.
+                                    </div>
+                                }
+
+                                <div class="mb-3">
+                                    <label asp-for="TenantRequest.ProblemDescription" class="form-label text-dark fw-bold">
+                                        <i class="fas fa-comment-alt me-2 text-primary"></i>Problem Description <span class="text-danger">*</span>
                                     </label>
+                                    <textarea asp-for="TenantRequest.ProblemDescription" class="form-control" rows="4" 
+                                              placeholder="Please describe the maintenance issue in detail..." id="problemDescriptionTextArea"></textarea>
+                                    <span asp-validation-for="TenantRequest.ProblemDescription" class="text-danger"></span>
+                                    <div class="form-text">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        Please provide as much detail as possible to help us understand and address your request.
+                                    </div>
                                 </div>
-                                <div class="form-text">
-                                    Check this box for urgent issues that pose safety risks or require immediate attention.
+
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label asp-for="TenantRequest.UrgencyLevel" class="form-label text-dark fw-bold">
+                                            <i class="fas fa-exclamation-circle me-2 text-warning"></i>Urgency Level <span class="text-danger">*</span>
+                                        </label>
+                                        <select asp-for="TenantRequest.UrgencyLevel" class="form-select" id="urgencyLevelSelect">
+                                            <option value="Low">Low - Can wait several days</option>
+                                            <option value="Normal" selected>Normal - Standard maintenance</option>
+                                            <option value="High">High - Needs attention soon</option>
+                                            <option value="Critical">Critical - Emergency situation</option>
+                                        </select>
+                                        <span asp-validation-for="TenantRequest.UrgencyLevel" class="text-danger"></span>
+                                        <div class="form-text">
+                                            <i class="fas fa-info-circle me-1"></i>
+                                            Please select the appropriate urgency level for your request.
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label asp-for="TenantRequest.PreferredContactTime" class="form-label text-dark fw-bold">
+                                            <i class="fas fa-clock me-2 text-info"></i>Preferred Contact Time
+                                        </label>
+                                        <select asp-for="TenantRequest.PreferredContactTime" class="form-select" id="contactTimeSelect">
+                                            <option value="">Select preferred time</option>
+                                            <option value="Morning (8 AM - 12 PM)">Morning (8 AM - 12 PM)</option>
+                                            <option value="Afternoon (12 PM - 5 PM)">Afternoon (12 PM - 5 PM)</option>
+                                            <option value="Evening (5 PM - 8 PM)">Evening (5 PM - 8 PM)</option>
+                                            <option value="Anytime">Anytime</option>
+                                        </select>
+                                        <span asp-validation-for="TenantRequest.PreferredContactTime" class="text-danger"></span>
+                                        <div class="form-text">
+                                            <i class="fas fa-info-circle me-1"></i>
+                                            Let us know when it's best to contact you about this request.
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="col-md-6">
-                                <label asp-for="TenantRequest.PreferredContactTime" class="form-label">
-                                    <i class="fas fa-clock me-2"></i>Preferred Contact Time
-                                </label>
-                                <select asp-for="TenantRequest.PreferredContactTime" class="form-select">
-                                    <option value="">Select preferred time</option>
-                                    <option value="Morning (8 AM - 12 PM)">Morning (8 AM - 12 PM)</option>
-                                    <option value="Afternoon (12 PM - 5 PM)">Afternoon (12 PM - 5 PM)</option>
-                                    <option value="Evening (5 PM - 8 PM)">Evening (5 PM - 8 PM)</option>
-                                    <option value="Anytime">Anytime</option>
-                                </select>
                             </div>
                         </div>
 
                         <div class="d-flex justify-content-between">
-                            <a asp-page="/Index" class="btn btn-outline-secondary">
+                            <a asp-page="/Index" class="btn btn-outline-secondary btn-lg">
                                 <i class="fas fa-arrow-left me-2"></i>Cancel
                             </a>
-                            <button type="submit" class="btn btn-primary">
+                            <button type="submit" class="btn btn-primary btn-lg">
                                 <i class="fas fa-paper-plane me-2"></i>Submit Request
                             </button>
                         </div>
@@ -125,11 +190,103 @@
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script>
-        // Show additional warning for emergency requests
-        document.getElementById('TenantRequest_IsEmergency').addEventListener('change', function() {
-            if (this.checked) {
-                alert('Emergency requests will be prioritized and you will be contacted as soon as possible. For immediate life-threatening situations, please call 911.');
+        // Show additional warning for critical/emergency requests
+        document.getElementById('urgencyLevelSelect')?.addEventListener('change', function() {
+            if (this.value === 'Critical') {
+                alert('Critical requests will be prioritized and you will be contacted as soon as possible. For immediate life-threatening situations, please call 911.');
             }
         });
+        
+        // Form validation enhancement
+        document.querySelector('form')?.addEventListener('submit', function(e) {
+            const description = document.querySelector('[name="TenantRequest.ProblemDescription"]').value.trim();
+            if (description.length < 10) {
+                e.preventDefault();
+                alert('Please provide a more detailed description of the problem (at least 10 characters).');
+                return false;
+            }
+        });
+
+        // DEMO MODE: Random request generation functionality
+        @if (Model.IsDemoModeEnabled)
+        {
+            <text>
+            document.getElementById('generateRandomBtn')?.addEventListener('click', function() {
+                generateRandomRequest();
+            });
+
+            async function generateRandomRequest() {
+                const button = document.getElementById('generateRandomBtn');
+                const originalText = button.innerHTML;
+                
+                try {
+                    button.disabled = true;
+                    button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Generating...';
+                    
+                    const response = await fetch('/TenantRequests/Submit?handler=GenerateRandom');
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        const problemTextArea = document.getElementById('problemDescriptionTextArea');
+                        const urgencySelect = document.getElementById('urgencyLevelSelect');
+                        const contactTimeSelect = document.getElementById('contactTimeSelect');
+                        
+                        if (problemTextArea) {
+                            problemTextArea.value = result.data.problemDescription;
+                            problemTextArea.dispatchEvent(new Event('input'));
+                        }
+                        
+                        if (urgencySelect) {
+                            urgencySelect.value = result.data.urgencyLevel;
+                            urgencySelect.dispatchEvent(new Event('change'));
+                        }
+                        
+                        if (contactTimeSelect) {
+                            contactTimeSelect.value = result.data.preferredContactTime;
+                        }
+                        
+                        showGenerationSuccess('Random request generated successfully! Review the details and submit when ready.');
+                        problemTextArea?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        
+                    } else {
+                        console.error('Failed to generate random request:', result.error);
+                        alert('Failed to generate random request. Please try again.');
+                    }
+                    
+                } catch (error) {
+                    console.error('Error generating random request:', error);
+                    alert('An error occurred while generating random request. Please try again.');
+                } finally {
+                    button.disabled = false;
+                    button.innerHTML = originalText;
+                }
+            }
+
+            function showGenerationSuccess(message) {
+                const existingMessage = document.querySelector('.generation-success');
+                if (existingMessage) {
+                    existingMessage.remove();
+                }
+
+                const successDiv = document.createElement('div');
+                successDiv.className = 'alert alert-success alert-dismissible fade show generation-success mt-3';
+                successDiv.innerHTML = `
+                    <i class="fas fa-magic me-2"></i>${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `;
+
+                const demoAlert = document.querySelector('.alert-warning');
+                if (demoAlert) {
+                    demoAlert.parentNode.insertBefore(successDiv, demoAlert.nextSibling);
+                }
+
+                setTimeout(() => {
+                    if (successDiv && successDiv.parentNode) {
+                        successDiv.remove();
+                    }
+                }, 5000);
+            }
+            </text>
+        }
     </script>
 }

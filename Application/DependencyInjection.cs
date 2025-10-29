@@ -3,41 +3,39 @@ using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using RentalRepairs.Application.Common.Behaviors;
-using RentalRepairs.Application.Interfaces;
 using RentalRepairs.Application.Services;
-using RentalRepairs.Application.Mappings;
-using RentalRepairs.Domain;
+using RentalRepairs.Application.Interfaces;
 
 namespace RentalRepairs.Application;
 
 public static class DependencyInjection
 {
-    public static IServiceCollection AddApplication(this IServiceCollection services)
+    public static IServiceCollection AddApplicationServices(this IServiceCollection services)
     {
-        // Register Domain Services first
-        services.AddDomain();
+        // MediatR Registration
+        services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly()));
 
-        // Register MediatR
-        services.AddMediatR(cfg =>
-        {
-            cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly());
-        });
-
-        // Register Mapster
-        DomainToResponseMappingConfig.RegisterMappings();
-
-        // Register FluentValidation
-        services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
-
-        // Register MediatR behaviors
+        // Behavior Registration
+        services.AddTransient(typeof(IPipelineBehavior<,>), typeof(UnhandledExceptionBehavior<,>));
         services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
         services.AddTransient(typeof(IPipelineBehavior<,>), typeof(PerformanceBehavior<,>));
 
-        // Register Application Services
-        services.AddScoped<IPropertyService, PropertyService>();
-        services.AddScoped<ITenantRequestService, TenantRequestService>();
+        // ? FIXED: Application Orchestration Services (proper DDD architecture)
+        services.AddScoped<ITenantRequestService, TenantRequestService>(); // Uses pure domain services
         services.AddScoped<IWorkerService, WorkerService>();
+        //services.AddScoped<IWorkerAssignmentOrchestrationService, WorkerAssignmentOrchestrationService>(); // ? NEW: Worker assignment orchestration
+        
+        // ? Application Services (data transformation and coordination)
+        services.AddScoped<UserRoleService>(); // ? Added role management service
+        services.AddScoped<INotificationService, NotificationService>();
         services.AddScoped<INotifyPartiesService, NotifyPartiesService>();
+        
+        // ? REMOVED: Services that don't exist or are incorrectly referenced
+        // services.AddScoped<ITenantRequestStatusService, StatusManagement.TenantRequestStatusService>();
+        // services.AddScoped<ITenantRequestAuthorizationService, Authorization.TenantRequestAuthorizationService>();
+
+        // Validators
+        services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
 
         return services;
     }

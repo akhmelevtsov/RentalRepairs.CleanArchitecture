@@ -11,6 +11,11 @@ public class TenantConfiguration : IEntityTypeConfiguration<Tenant>
         builder.ToTable("Tenants");
 
         builder.HasKey(t => t.Id);
+        
+        // Configure Guid ID
+        builder.Property(t => t.Id)
+            .IsRequired()
+            .ValueGeneratedNever(); // Guid generated in domain
 
         builder.Property(t => t.UnitNumber)
             .IsRequired()
@@ -39,18 +44,24 @@ public class TenantConfiguration : IEntityTypeConfiguration<Tenant>
                 .HasMaxLength(20);
         });
 
-        // Configure relationships
-        builder.HasOne(t => t.Property)
-            .WithMany(p => p.Tenants)
-            .HasForeignKey("PropertyId")
-            .OnDelete(DeleteBehavior.Restrict);
+        // Configure foreign key relationship (Guid PropertyId)
+        builder.Property(t => t.PropertyId)
+            .IsRequired();
+            
+        builder.HasIndex(t => t.PropertyId)
+            .HasDatabaseName("IX_Tenants_PropertyId");
+        
+        // Configure PropertyCode as additional identifier
+        builder.Property(t => t.PropertyCode)
+            .IsRequired()
+            .HasMaxLength(20);
 
         // Unique constraint: One tenant per unit per property
         builder.HasIndex("PropertyId", "UnitNumber")
             .IsUnique()
             .HasDatabaseName("IX_Tenants_Property_Unit");
 
-        // Configure domain events to be ignored
+        // Configure domain events to be ignored (handled by base configuration)
         builder.Ignore(t => t.DomainEvents);
     }
 }

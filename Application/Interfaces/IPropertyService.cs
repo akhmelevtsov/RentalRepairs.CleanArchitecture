@@ -1,27 +1,25 @@
-using RentalRepairs.Application.DTOs;
-using RentalRepairs.Application.Queries.Properties;
-
 namespace RentalRepairs.Application.Interfaces;
 
 /// <summary>
-/// Application service for property management operations
+/// Property service interface containing ONLY business logic operations.
+/// Simple CRUD operations should use CQRS directly via IMediator.
+/// 
+/// ARCHITECTURAL DECISION:
+/// This service now contains only methods that orchestrate multiple domain operations
+/// or contain genuine business logic. Pure CRUD operations have been removed to 
+/// eliminate unnecessary indirection and follow proper CQRS patterns.
+/// 
+/// REMOVED METHODS (use direct CQRS instead):
+/// - RegisterPropertyAsync ? Use RegisterPropertyCommand via IMediator
+/// - GetPropertyByIdAsync ? Use GetPropertyByIdQuery via IMediator
+/// - GetPropertyByCodeAsync ? Use GetPropertyByCodeQuery via IMediator
+/// - GetPropertiesAsync ? Use GetPropertiesQuery via IMediator
+/// - GetPropertyStatisticsAsync ? Use GetPropertyStatisticsQuery via IMediator
+/// - RegisterTenantAsync ? Use RegisterTenantCommand via IMediator
+/// - GetTenantByIdAsync ? Use GetTenantByIdQuery via IMediator
+/// - GetTenantByPropertyAndUnitAsync ? Use GetTenantByPropertyAndUnitQuery via IMediator
+/// - GetTenantsByPropertyAsync ? Use GetTenantsByPropertyQuery via IMediator
 /// </summary>
 public interface IPropertyService
 {
-    // Property Management
-    Task<int> RegisterPropertyAsync(PropertyDto propertyDto, CancellationToken cancellationToken = default);
-    Task<PropertyDto> GetPropertyByIdAsync(int propertyId, CancellationToken cancellationToken = default);
-    Task<PropertyDto> GetPropertyByCodeAsync(string code, CancellationToken cancellationToken = default);
-    Task<List<PropertyDto>> GetPropertiesAsync(string? city = null, string? superintendentEmail = null, bool? withTenants = null, CancellationToken cancellationToken = default);
-    Task<PropertyStatisticsDto> GetPropertyStatisticsAsync(int propertyId, CancellationToken cancellationToken = default);
-    
-    // Tenant Management within Property
-    Task<int> RegisterTenantAsync(int propertyId, TenantDto tenantDto, CancellationToken cancellationToken = default);
-    Task<TenantDto> GetTenantByIdAsync(int tenantId, CancellationToken cancellationToken = default);
-    Task<TenantDto> GetTenantByPropertyAndUnitAsync(int propertyId, string unitNumber, CancellationToken cancellationToken = default);
-    Task<List<TenantDto>> GetTenantsByPropertyAsync(int propertyId, bool withActiveRequestsOnly = false, CancellationToken cancellationToken = default);
-    
-    // Property Business Operations
-    Task<bool> IsUnitAvailableAsync(string propertyCode, string unitNumber, CancellationToken cancellationToken = default);
-    Task<List<string>> GetAvailableUnitsAsync(string propertyCode, CancellationToken cancellationToken = default);
 }
