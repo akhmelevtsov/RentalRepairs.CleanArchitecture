@@ -58,41 +58,41 @@ The project demonstrates sophisticated domain modeling with **4 core aggregates*
 classDiagram
     class Property {
         <<Aggregate Root>>
-        +RegisterTenant() Tenant
-        +AddUnit(unitNumber) void
-        +CalculateMetrics() PropertyMetrics
-        +RequiresAttention() bool
-        -ValidateUnitForTenantRegistration()
+        + RegisterTenant() Tenant
+        + AddUnit(unitNumber) void
+        + CalculateMetrics() PropertyMetrics
+        + RequiresAttention() bool
+        - ValidateUnitForTenantRegistration()
     }
     
     class TenantRequest {
         <<Aggregate Root>>
-        +Submit() void
-        +ScheduleWork(date, worker) void
-        +ReportWorkCompleted(success) void
-        +CalculateUrgencyPriority() int
-        +IsOverdue() bool
+        + Submit() void
+        + ScheduleWork(date, worker) void
+        + ReportWorkCompleted(success) void
+        + CalculateUrgencyPriority() int
+        + IsOverdue() bool
     }
     
     class Worker {
         <<Aggregate Root>>
-        +AssignToWork(workOrder, date) void
-        +CompleteWork(workOrder, success) void
-        +CalculateScoreForRequest(request) int
-        +HasSpecializedSkills(skill) bool
-        +IsAvailableForWork(date) bool
+        + AssignToWork(workOrder, date) void
+        + CompleteWork(workOrder, success) void
+        + CalculateScoreForRequest(request) int
+        + HasSpecializedSkills(skill) bool
+        + IsAvailableForWork(date) bool
     }
     
     class Tenant {
-        +SubmitRequest(title, description) TenantRequest
-        +CanSubmitRequest(urgency) bool
-        +GetNextAllowedSubmissionTime() DateTime?
-        -ValidateSubmissionRules()
+        + SubmitRequest(title, description) TenantRequest
+        + CanSubmitRequest(urgency) bool
+        + GetNextAllowedSubmissionTime() DateTime?
+        - ValidateSubmissionRules()
     }
     
-    Property ||--o{ Tenant : manages
-    Tenant ||--o{ TenantRequest : creates
-    Worker ||--o{ TenantRequest : assigned_to
+    Property "1" --> "0..*" Tenant : manages
+    Tenant "1" --> "0..*" TenantRequest : creates
+    Worker "1" --> "0..*" TenantRequest : assigned_to
 ```
 
 ### Business Rules Enforcement
