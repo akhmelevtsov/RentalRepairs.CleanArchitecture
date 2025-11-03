@@ -172,7 +172,7 @@ This project demonstrates:
 
 ## Business Domain
 
-This application models a **rental property maintenance system** with sophisticated business workflows:
+This application models a **rental property maintenance system** with business workflows:
 
 ### Core Business Entities
 
