@@ -49,7 +49,7 @@ graph TB
     style EF fill:#fce4ec
 ```
 
-## Domain-Driven Design Excellence
+## Domain-Driven Design 
 
 ### Rich Domain Model
 The project demonstrates sophisticated domain modeling with **4 core aggregates**:

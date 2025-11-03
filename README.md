@@ -1,7 +1,6 @@
-﻿# RentalRepairs - Clean Architecture Portfolio
+﻿# RentalRepairs - Building Workflow Applications for Multi-User Scenarios with Clean Architecture and DDD
 
-A comprehensive demonstration of **Clean Architecture**, **Domain-Driven Design (DDD)**, and **CQRS** patterns implemented in **.NET 8** with **Razor Pages**.
-
+A practical exploration of designing workflow-driven, multi-user applications using Clean Architecture, Domain-Driven Design (DDD), and modern .NET 8 technologies.
 ## Architecture Overview
 
 This project showcases modern software architecture patterns:
@@ -13,7 +12,7 @@ This project showcases modern software architecture patterns:
 - **Specification Pattern** for complex queries
 - **Domain Events** for cross-cutting concerns
 
-## Sophisticated Domain Architecture
+## Advanced Domain Architecture
 
 This project demonstrates advanced **Domain-Driven Design** with a complex business domain:
 
@@ -243,6 +242,3 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **Copyright (c) 2025 Protva Software Inc**
 
----
-
-**This project serves as a portfolio piece demonstrating advanced .NET development skills and architectural knowledge.**

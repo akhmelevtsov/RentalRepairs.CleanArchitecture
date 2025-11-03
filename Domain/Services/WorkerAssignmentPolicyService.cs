@@ -141,17 +141,4 @@ public class WorkerAssignmentPolicyService
         return recommendations.OrderByDescending(r => r.Score).ToList();
     }
 
-    #region Removed Methods - Logic Moved to Worker Aggregate
-
-    // ✅ STEP 2: These methods have been removed and their logic moved to Worker aggregate:
-    // - GetWorkerPriorityScore() → Worker.CalculateScoreForRequest()
-    // - CalculateRecommendationConfidence() → Worker.CalculateRecommendationConfidence()
-    // - GenerateRecommendationReasoning() → Worker.GenerateRecommendationReasoning()
-    // - EstimateCompletionTime() → Worker.EstimateCompletionTime()
-    // - IsWorkerOverloaded() → Worker.IsOverloaded() (private method)
-    
-    // This demonstrates proper DDD: business logic belongs in aggregates,
-    // domain services coordinate between aggregates but don't implement business rules.
-
-    #endregion
 }

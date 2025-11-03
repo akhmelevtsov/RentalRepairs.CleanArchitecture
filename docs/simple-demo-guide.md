@@ -130,8 +130,6 @@ This guide demonstrates the **essential workflow** that every maintenance manage
 - **Location**: Sunset Apartments, Unit 101
 - **Contact**: John Doe - (555) 123-4567
 - **Issue Description**: Kitchen faucet dripping constantly
-- **Parts Needed**: Faucet washer/O-ring
-- **Estimated Time**: 1 hour
 
 ### **3.4 Complete Work**
 ![Complete Work Form](screenshots/13-complete-work.png)
@@ -139,8 +137,6 @@ This guide demonstrates the **essential workflow** that every maintenance manage
 
 **Completion Details:**
 - **Work Status**: ✅ Completed Successfully
-- **Parts Used**: Faucet O-ring ($2.50)
-- **Time Spent**: 45 minutes
 - **Work Notes**: "Replaced worn O-ring in kitchen faucet. Tested - no more drips. Tenant confirmed repair."
 
 ### **3.5 Work Completed**
@@ -162,8 +158,6 @@ This guide demonstrates the **essential workflow** that every maintenance manage
 
 **Work Summary:**
 - **Worker**: Mike Smith
-- **Completion Time**: 45 minutes
-- **Parts Cost**: $2.50
 - **Status**: Completed Successfully
 - **Tenant Satisfaction**: Confirmed repair working
 
@@ -174,8 +168,6 @@ This guide demonstrates the **essential workflow** that every maintenance manage
 **Closure Details:**
 - **Closure Notes**: "Plumbing repair completed successfully. Tenant satisfied with work quality."
 - **Final Status**: ✅ Closed
-- **Total Cost**: $47.50 (labor + parts)
-- **Resolution Time**: 1 day 2 hours (within SLA)
 
 ### **4.3 Request Closed**
 ![Request Closed](screenshots/17-request-closed.png)
@@ -222,8 +214,6 @@ This guide demonstrates the **essential workflow** that every maintenance manage
 ### **Business Rules Applied**
 - ✅ **Worker Specialization**: Plumber assigned to plumbing issue
 - ✅ **Availability Checking**: Worker schedule verified before assignment
-- ✅ **SLA Tracking**: Resolution time monitored against targets
-- ✅ **Cost Tracking**: Labor and materials captured for reporting
 
 ---
 
@@ -244,7 +234,7 @@ This simple workflow demonstrates:
 
 1. **Clone Repository**: `git clone https://github.com/akhmelevtsov/RentalRepairs.CleanArchitecture`
 2. **Run Application**: `dotnet run --project src/WebUI/`
-3. **Open Browser**: `https://localhost:5001`
+3. **Open Browser**: `https://localhost:7001`
 4. **Follow Workflow**: Use the credentials above to walk through each step
 
 **Total Time**: ~10 minutes to complete full workflow
