@@ -186,23 +186,13 @@ sequenceDiagram
 ### Comprehensive Test Coverage
 
 ```mermaid
-pyramid
-    title Testing Pyramid
-    
-    section Unit Tests
-        Domain Logic: 85%
-        Application Services: 80%
-        Value Objects: 90%
-    
-    section Integration Tests  
-        Repository Layer: 75%
-        API Endpoints: 70%
-        Database Operations: 80%
-    
-    section End-to-End Tests
-        User Workflows: 60%
-        Authentication: 70%
-        Business Scenarios: 65%
+graph TD
+    A[Unit Tests<br/>Domain Logic: 85%<br/>Application Services: 80%<br/>Value Objects: 90%]
+    B[Integration Tests<br/>Repository Layer: 75%<br/>API Endpoints: 70%<br/>Database Operations: 80%]
+    C[End-to-End Tests<br/>User Workflows: 60%<br/>Authentication: 70%<br/>Business Scenarios: 65%]
+
+    A --> B
+    B --> C
 ```
 
 ### Key Testing Patterns
@@ -210,7 +200,6 @@ pyramid
 - **Application Service Testing**: Use case verification
 - **Architecture Testing**: Dependency rule enforcement
 - **Integration Testing**: External system interaction
-- **Performance Testing**: Load and stress scenarios
 
 ## Advanced Patterns Demonstrated
 
@@ -260,7 +249,6 @@ var request = TenantRequestTestDataBuilder.Default()
 - **Entity Framework Configuration**: Custom configurations for complex relationships
 - **Query Optimization**: Strategic use of Include() and projection
 - **Caching Strategy**: Memory caching for frequently accessed data
-- **Bulk Operations**: Efficient handling of large data sets
 
 ### Application Performance
 - **Async/Await**: Throughout the application stack
@@ -289,7 +277,7 @@ This project demonstrates:
 ### Technical Leadership Skills
 - **Architectural Decision Making**: Proper pattern selection and implementation
 - **Code Quality**: Clean, maintainable, well-documented code
-- **Testing Excellence**: Comprehensive testing strategy
+- **Advanced Testing**: Comprehensive testing strategy
 - **Performance Awareness**: Optimization considerations throughout
 
 ### Business Understanding
