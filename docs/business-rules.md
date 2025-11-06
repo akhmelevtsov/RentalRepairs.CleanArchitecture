@@ -331,68 +331,6 @@ public void ValidateCanBeScheduled(DateTime scheduledDate, string workerEmail, s
 }
 ```
 
-## Performance and Analytics Rules  
-
-### Metrics Calculation
-```mermaid
-graph TB
-    subgraph "Performance Metrics"
-        PM1[Resolution Time<br/>Actual vs Expected]
-        PM2[First Call Resolution<br/>Success Rate]
-        PM3[Worker Efficiency<br/>Completion Rate]
-        PM4[Tenant Satisfaction<br/>Based on SLA]
-    end
-    
-    subgraph "Business Rules"
-        BR1[On-time = Within SLA]
-        BR2[Failed work = Poor performance]
-        BR3[Emergency < 2h = Excellent]
-        BR4[Overdue = Attention required]
-    end
-    
-    PM1 --> BR1
-    PM2 --> BR2
-    PM3 --> BR3
-    PM4 --> BR4
-    
-    subgraph "Actions"
-        A1[Performance Bonus]
-        A2[Worker Training]
-        A3[Priority Assignment]
-        A4[Escalation Protocol]
-    end
-    
-    BR1 --> A1
-    BR2 --> A2
-    BR3 --> A3
-    BR4 --> A4
-```
-
-### Implementation Examples
-```csharp
-// Performance scoring business logic
-public double CalculateResolutionPerformanceScore()
-{
-    if (!CompletedDate.HasValue) return 0;
-    
-    var actualHours = (CompletedDate.Value - CreatedAt).TotalHours;
-    var expectedHours = GetExpectedResolutionHours();
-    
-    if (actualHours <= expectedHours)
-        return 100; // On time = perfect score
-    
-    // Calculate penalty for being late
-    var latePenalty = Math.Min(50, (actualHours - expectedHours) / expectedHours * 50);
-    return Math.Max(0, 100 - latePenalty);
-}
-
-// Property attention requirement
-public bool RequiresAttention()
-{
-    const double AttentionThreshold = 0.8; // Business rule constant
-    return GetOccupancyRate() < AttentionThreshold;
-}
-```
 
 ## Data Integrity Rules
 

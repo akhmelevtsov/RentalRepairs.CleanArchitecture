@@ -1,4 +1,10 @@
-﻿# RentalRepairs - Building Workflow Applications for Multi-User Scenarios with Clean Architecture and DDD
+![.NET 8](https://img.shields.io/badge/.NET-8.0-blue)
+![C#](https://img.shields.io/badge/C%23-12-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
+![Architecture](https://img.shields.io/badge/architecture-Clean%20Architecture-orange)
+![Pattern](https://img.shields.io/badge/pattern-DDD%20%2B%20CQRS-orange)
+![Tests](https://img.shields.io/badge/tests-xUnit-green)
+ # RentalRepairs - Building Workflow Applications for Multi-User Scenarios with Clean Architecture and DDD
 
 A practical exploration of designing workflow-driven, multi-user applications using Clean Architecture, Domain-Driven Design (DDD), and modern .NET 8 technologies.
 ## Architecture Overview
@@ -172,7 +178,7 @@ This project demonstrates:
 
 ## Business Domain
 
-This application models a **rental property maintenance system** with sophisticated business workflows:
+This application models a **rental property maintenance system** with business workflows:
 
 ### Core Business Entities
 
