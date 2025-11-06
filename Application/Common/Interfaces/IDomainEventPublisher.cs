@@ -16,7 +16,7 @@ public interface IDomainEventPublisher
     /// <summary>
     /// Publish a specific domain event immediately
     /// </summary>
-    Task PublishEventAsync<TEvent>(TEvent domainEvent, CancellationToken cancellationToken = default) 
+    Task PublishEventAsync<TEvent>(TEvent domainEvent, CancellationToken cancellationToken = default)
         where TEvent : class;
 
     /// <summary>

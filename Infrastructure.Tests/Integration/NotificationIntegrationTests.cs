@@ -1,9 +1,9 @@
 using Microsoft.Extensions.Logging;
 using RentalRepairs.Application.EventHandlers.Notifications;
-using RentalRepairs.Domain.Events.TenantRequests; // Fixed: Add correct namespace for events
+using RentalRepairs.Domain.Events.TenantRequests;
 using RentalRepairs.Domain.Entities;
 using RentalRepairs.Domain.ValueObjects;
-using RentalRepairs.Infrastructure.Services.Email;
+using RentalRepairs.Infrastructure.Tests.TestHelpers;
 using Xunit;
 using FluentAssertions;
 
@@ -15,9 +15,9 @@ public class NotificationIntegrationTests
     public async Task TenantRequestNotificationHandler_Should_Send_Emails_Successfully()
     {
         // Arrange
-        var emailLogger = new MockLogger<MockEmailService>();
+        var emailLogger = new MockLogger<TestableEmailService>();
         var handlerLogger = new MockLogger<TenantRequestNotificationHandler>();
-        var emailService = new MockEmailService(emailLogger);
+        var emailService = new TestableEmailService(emailLogger);
         var handler = new TenantRequestNotificationHandler(emailService, handlerLogger);
 
         // Create a test tenant request
@@ -29,9 +29,10 @@ public class NotificationIntegrationTests
 
         // Assert
         emailService.SentEmails.Should().HaveCount(2, "Should send emails to tenant and superintendent");
-        
+
         var tenantEmail = emailService.SentEmails.FirstOrDefault(e => e.RecipientEmail == tenantRequest.TenantEmail);
-        var superintendentEmail = emailService.SentEmails.FirstOrDefault(e => e.RecipientEmail == tenantRequest.SuperintendentEmail);
+        var superintendentEmail =
+            emailService.SentEmails.FirstOrDefault(e => e.RecipientEmail == tenantRequest.SuperintendentEmail);
 
         tenantEmail.Should().NotBeNull();
         tenantEmail!.Subject.Should().Contain("Request Submitted");
@@ -48,9 +49,9 @@ public class NotificationIntegrationTests
     public async Task TenantRequestScheduledEvent_Should_Send_Three_Emails()
     {
         // Arrange
-        var emailLogger = new MockLogger<MockEmailService>();
+        var emailLogger = new MockLogger<TestableEmailService>();
         var handlerLogger = new MockLogger<TenantRequestNotificationHandler>();
-        var emailService = new MockEmailService(emailLogger);
+        var emailService = new TestableEmailService(emailLogger);
         var handler = new TenantRequestNotificationHandler(emailService, handlerLogger);
 
         var tenantRequest = CreateTestTenantRequest();
@@ -59,7 +60,7 @@ public class NotificationIntegrationTests
             "worker@example.com",
             "WO-12345",
             1);
-            
+
         var scheduledEvent = new TenantRequestScheduledEvent(tenantRequest, scheduleInfo);
 
         // Act
@@ -67,7 +68,7 @@ public class NotificationIntegrationTests
 
         // Assert
         emailService.SentEmails.Should().HaveCount(3, "Should send emails to tenant, superintendent, and worker");
-        
+
         var recipients = emailService.SentEmails.Select(e => e.RecipientEmail).ToList();
         recipients.Should().Contain(tenantRequest.TenantEmail);
         recipients.Should().Contain(tenantRequest.SuperintendentEmail);
@@ -78,16 +79,16 @@ public class NotificationIntegrationTests
     public async Task TenantRequestCompletedEvent_Should_Send_Two_Emails()
     {
         // Arrange
-        var emailLogger = new MockLogger<MockEmailService>();
+        var emailLogger = new MockLogger<TestableEmailService>();
         var handlerLogger = new MockLogger<TenantRequestNotificationHandler>();
-        var emailService = new MockEmailService(emailLogger);
+        var emailService = new TestableEmailService(emailLogger);
         var handler = new TenantRequestNotificationHandler(emailService, handlerLogger);
 
         var tenantRequest = CreateTestTenantRequest();
         tenantRequest.Submit();
         tenantRequest.Schedule(DateTime.UtcNow.AddDays(1), "worker@test.com", "WO-001");
-        tenantRequest.ReportWorkCompleted(true, "Work completed successfully"); // Use proper domain method
-        
+        tenantRequest.ReportWorkCompleted(true, "Work completed successfully");
+
         var completedEvent = new TenantRequestCompletedEvent(tenantRequest, "Work completed successfully");
 
         // Act
@@ -95,9 +96,10 @@ public class NotificationIntegrationTests
 
         // Assert
         emailService.SentEmails.Should().HaveCount(2, "Should send emails to tenant and superintendent");
-        
+
         var tenantEmail = emailService.SentEmails.FirstOrDefault(e => e.RecipientEmail == tenantRequest.TenantEmail);
-        var superintendentEmail = emailService.SentEmails.FirstOrDefault(e => e.RecipientEmail == tenantRequest.SuperintendentEmail);
+        var superintendentEmail =
+            emailService.SentEmails.FirstOrDefault(e => e.RecipientEmail == tenantRequest.SuperintendentEmail);
 
         tenantEmail.Should().NotBeNull();
         tenantEmail!.Subject.Should().Contain("Work Completed");
@@ -110,26 +112,37 @@ public class NotificationIntegrationTests
     private static TenantRequest CreateTestTenantRequest()
     {
         return TenantRequest.CreateNew(
-            code: "REQ-2024-001",
-            title: "Leaky Faucet",
-            description: "The kitchen faucet is dripping constantly",
-            urgencyLevel: "Normal",
-            tenantId: Guid.NewGuid(), // Fixed: Use Guid instead of int
-            propertyId: Guid.NewGuid(), // Fixed: Use Guid instead of int
-            tenantFullName: "John Doe",
-            tenantEmail: "john.doe@example.com",
-            tenantUnit: "Apt 101",
-            propertyName: "Sunset Apartments",
-            propertyPhone: "+1-555-123-4567",
-            superintendentFullName: "Jane Smith",
-            superintendentEmail: "jane.smith@example.com"
+            "REQ-2024-001",
+            "Leaky Faucet",
+            "The kitchen faucet is dripping constantly",
+            "Normal",
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            "John Doe",
+            "john.doe@example.com",
+            "Apt 101",
+            "Sunset Apartments",
+            "+1-555-123-4567",
+            "Jane Smith",
+            "jane.smith@example.com"
         );
     }
 
     private class MockLogger<T> : ILogger<T>
     {
-        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
-        public bool IsEnabled(LogLevel logLevel) => true;
-        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter) { }
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull
+        {
+            return null;
+        }
+
+        public bool IsEnabled(LogLevel logLevel)
+        {
+            return true;
+        }
+
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception,
+            Func<TState, Exception?, string> formatter)
+        {
+        }
     }
 }

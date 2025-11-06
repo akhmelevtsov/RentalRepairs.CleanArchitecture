@@ -1,18 +1,24 @@
 using RentalRepairs.Application.Common.Interfaces;
 using RentalRepairs.Application.DTOs;
+using RentalRepairs.Domain.Services;
 
 namespace RentalRepairs.Application.Queries.Workers.GetWorkers;
 
 /// <summary>
-/// ? Query handlers using consistent direct projection approach
+/// Query handler for getting workers with optional filters.
+/// Phase 2: Now uses SpecializationDeterminationService to handle enum/string conversion.
 /// </summary>
 public class GetWorkersQueryHandler : IQueryHandler<GetWorkersQuery, List<WorkerDto>>
 {
     private readonly IApplicationDbContext _context;
+    private readonly SpecializationDeterminationService _specializationService;
 
-    public GetWorkersQueryHandler(IApplicationDbContext context)
+    public GetWorkersQueryHandler(
+        IApplicationDbContext context,
+        SpecializationDeterminationService specializationService)
     {
         _context = context;
+        _specializationService = specializationService;
     }
 
     public async Task<List<WorkerDto>> Handle(GetWorkersQuery request, CancellationToken cancellationToken)
@@ -21,16 +27,16 @@ public class GetWorkersQueryHandler : IQueryHandler<GetWorkersQuery, List<Worker
 
         // Apply filters directly
         if (request.IsActive.HasValue)
-        {
             query = query.Where(w => w.IsActive == request.IsActive.Value);
-        }
 
         if (!string.IsNullOrEmpty(request.Specialization))
         {
-            query = query.Where(w => w.Specialization == request.Specialization);
+            // Parse string filter to enum
+            var specializationEnum = _specializationService.ParseSpecialization(request.Specialization);
+            query = query.Where(w => w.Specialization == specializationEnum);
         }
 
-        // ? Option 1: Use direct EF projection (most efficient)
+        // Project to DTO
         var workerDtos = await Task.FromResult(query
             .OrderBy(w => w.ContactInfo.LastName)
             .ThenBy(w => w.ContactInfo.FirstName)
@@ -45,11 +51,11 @@ public class GetWorkersQueryHandler : IQueryHandler<GetWorkersQuery, List<Worker
                     MobilePhone = w.ContactInfo.MobilePhone,
                     FullName = w.ContactInfo.GetFullName()
                 },
-                Specialization = w.Specialization,
+                // Convert enum to string for DTO
+                Specialization = w.Specialization.ToString(),
                 IsActive = w.IsActive,
                 Notes = w.Notes,
                 RegistrationDate = w.CreatedAt
-                // ? DisplayName is computed property, don't assign to it
             })
             .ToList());
 

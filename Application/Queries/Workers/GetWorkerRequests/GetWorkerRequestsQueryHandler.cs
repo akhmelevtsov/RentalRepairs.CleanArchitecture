@@ -18,7 +18,8 @@ public class GetWorkerRequestsQueryHandler : IQueryHandler<GetWorkerRequestsQuer
         _context = context;
     }
 
-    public async Task<PagedResult<TenantRequestDto>> Handle(GetWorkerRequestsQuery request, CancellationToken cancellationToken)
+    public async Task<PagedResult<TenantRequestDto>> Handle(GetWorkerRequestsQuery request,
+        CancellationToken cancellationToken)
     {
         var query = _context.TenantRequests
             .Where(tr => tr.AssignedWorkerEmail == request.WorkerEmail);
@@ -28,9 +29,9 @@ public class GetWorkerRequestsQueryHandler : IQueryHandler<GetWorkerRequestsQuer
         // Join with Properties to get the actual PropertyName and PropertyCode
         var items = await query
             .Join(_context.Properties,
-                  tr => tr.PropertyId,
-                  p => p.Id,
-                  (tr, p) => new { TenantRequest = tr, Property = p })
+                tr => tr.PropertyId,
+                p => p.Id,
+                (tr, p) => new { TenantRequest = tr, Property = p })
             .OrderByDescending(joined => joined.TenantRequest.CreatedAt)
             .Skip((request.PageNumber - 1) * request.PageSize)
             .Take(request.PageSize)

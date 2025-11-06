@@ -37,8 +37,7 @@ public class DemoAuthenticationSettings
 /// </summary>
 public class DemoUserCredential
 {
-    [Required]
-    public string Email { get; set; } = string.Empty;
+    [Required] public string Email { get; set; } = string.Empty;
 
     /// <summary>
     /// BCrypt hashed password (never store plain text)
@@ -46,11 +45,9 @@ public class DemoUserCredential
     [Required]
     public string HashedPassword { get; set; } = string.Empty;
 
-    [Required]
-    public string DisplayName { get; set; } = string.Empty;
+    [Required] public string DisplayName { get; set; } = string.Empty;
 
-    [Required]
-    public List<string> Roles { get; set; } = new();
+    [Required] public List<string> Roles { get; set; } = new();
 
     /// <summary>
     /// Additional claims for user context (property_id, unit_number, etc.)

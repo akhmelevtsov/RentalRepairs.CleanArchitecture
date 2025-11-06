@@ -36,8 +36,8 @@ public class ApplicationEndToEndTests : IClassFixture<WebApplicationTestFactory<
 
         // Assert
         response.Should().NotBeNull();
-        (response.StatusCode == HttpStatusCode.OK || 
-         response.StatusCode == HttpStatusCode.Redirect || 
+        (response.StatusCode == HttpStatusCode.OK ||
+         response.StatusCode == HttpStatusCode.Redirect ||
          response.StatusCode == HttpStatusCode.Found).Should().BeTrue();
 
         _output.WriteLine($"Application starts successfully (Status: {response.StatusCode})");
@@ -53,7 +53,7 @@ public class ApplicationEndToEndTests : IClassFixture<WebApplicationTestFactory<
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        
+
         var content = await response.Content.ReadAsStringAsync();
         content.Should().Contain("Healthy");
 
@@ -81,7 +81,7 @@ public class ApplicationEndToEndTests : IClassFixture<WebApplicationTestFactory<
         foreach (var (url, description) in pages)
         {
             var response = await _client.GetAsync(url);
-            
+
             // Should either load successfully, redirect, or return method not allowed
             // All of these indicate the route exists and is properly configured
             response.StatusCode.Should().BeOneOf(
@@ -95,7 +95,7 @@ public class ApplicationEndToEndTests : IClassFixture<WebApplicationTestFactory<
                 HttpStatusCode.Forbidden);
 
             // Only log errors for actual server errors or not found
-            if (response.StatusCode == HttpStatusCode.InternalServerError || 
+            if (response.StatusCode == HttpStatusCode.InternalServerError ||
                 response.StatusCode == HttpStatusCode.NotFound)
             {
                 _output.WriteLine($"{description}: {response.StatusCode} - Route may not exist");
@@ -125,7 +125,7 @@ public class ApplicationEndToEndTests : IClassFixture<WebApplicationTestFactory<
         // Test JavaScript file  
         var jsResponse = await _client.GetAsync("/js/site.js");
         jsResponse.StatusCode.Should().Be(HttpStatusCode.OK);
-        
+
         _output.WriteLine("Static files serve correctly");
     }
 
@@ -172,7 +172,7 @@ public class ApplicationEndToEndTests : IClassFixture<WebApplicationTestFactory<
         var response = await _client.GetAsync("/NonExistentPage");
 
         // Assert - Should return 404 or redirect to error page
-        (response.StatusCode == HttpStatusCode.NotFound || 
+        (response.StatusCode == HttpStatusCode.NotFound ||
          response.StatusCode == HttpStatusCode.Redirect ||
          response.StatusCode == HttpStatusCode.Found).Should().BeTrue();
 
@@ -255,12 +255,12 @@ public class ApplicationEndToEndTests : IClassFixture<WebApplicationTestFactory<
             var cssResponse = await client.GetAsync("/css/site.css");
             cssResponse.StatusCode.Should().Be(HttpStatusCode.OK);
             validationResults.Add("Static file serving");
-            
+
             // 4. Test health checks
             var healthResponse = await client.GetAsync("/health");
             healthResponse.StatusCode.Should().Be(HttpStatusCode.OK);
             validationResults.Add("Health checks operational");
-            
+
             // 5. Test service resolution
             using var scope = _factory.Services.CreateScope();
             var serviceProvider = scope.ServiceProvider;
@@ -269,10 +269,7 @@ public class ApplicationEndToEndTests : IClassFixture<WebApplicationTestFactory<
 
             _output.WriteLine("COMPREHENSIVE END-TO-END INTEGRATION TEST PASSED!");
 
-            foreach (var result in validationResults)
-            {
-                _output.WriteLine(result);
-            }
+            foreach (var result in validationResults) _output.WriteLine(result);
         }
         catch (Exception ex)
         {

@@ -16,21 +16,21 @@
                 <div class="card-body">
                     <form method="post">
                         <div asp-validation-summary="ModelOnly" class="text-danger mb-4"></div>
-                        
+
                         <!-- Property Information -->
                         <h5 class="mb-3">
                             <i class="fas fa-info-circle me-2"></i>Property Information
                         </h5>
-                        
+
                         <div class="row mb-3">
                             <div class="col-md-8">
                                 <label asp-for="Property.Name" class="form-label">Property Name</label>
-                                <input asp-for="Property.Name" class="form-control" placeholder="Enter property name" />
+                                <input asp-for="Property.Name" class="form-control" placeholder="Enter property name"/>
                                 <span asp-validation-for="Property.Name" class="text-danger"></span>
                             </div>
                             <div class="col-md-4">
                                 <label asp-for="Property.Code" class="form-label">Property Code</label>
-                                <input asp-for="Property.Code" class="form-control" placeholder="Enter unique code" />
+                                <input asp-for="Property.Code" class="form-control" placeholder="Enter unique code"/>
                                 <span asp-validation-for="Property.Code" class="text-danger"></span>
                             </div>
                         </div>
@@ -39,27 +39,27 @@
                         <h5 class="mb-3">
                             <i class="fas fa-map-marker-alt me-2"></i>Address Information
                         </h5>
-                        
+
                         <div class="mb-3">
                             <label asp-for="Property.StreetAddress" class="form-label">Street Address</label>
-                            <input asp-for="Property.StreetAddress" class="form-control" placeholder="Enter street address" />
+                            <input asp-for="Property.StreetAddress" class="form-control" placeholder="Enter street address"/>
                             <span asp-validation-for="Property.StreetAddress" class="text-danger"></span>
                         </div>
 
                         <div class="row mb-3">
                             <div class="col-md-6">
                                 <label asp-for="Property.City" class="form-label">City</label>
-                                <input asp-for="Property.City" class="form-control" placeholder="Enter city" />
+                                <input asp-for="Property.City" class="form-control" placeholder="Enter city"/>
                                 <span asp-validation-for="Property.City" class="text-danger"></span>
                             </div>
                             <div class="col-md-3">
                                 <label asp-for="Property.State" class="form-label">State</label>
-                                <input asp-for="Property.State" class="form-control" placeholder="Enter state" />
+                                <input asp-for="Property.State" class="form-control" placeholder="Enter state"/>
                                 <span asp-validation-for="Property.State" class="text-danger"></span>
                             </div>
                             <div class="col-md-3">
                                 <label asp-for="Property.ZipCode" class="form-label">ZIP Code</label>
-                                <input asp-for="Property.ZipCode" class="form-control" placeholder="Enter ZIP code" />
+                                <input asp-for="Property.ZipCode" class="form-control" placeholder="Enter ZIP code"/>
                                 <span asp-validation-for="Property.ZipCode" class="text-danger"></span>
                             </div>
                         </div>
@@ -68,16 +68,16 @@
                         <h5 class="mb-3">
                             <i class="fas fa-user-tie me-2"></i>Superintendent Information
                         </h5>
-                        
+
                         <div class="row mb-3">
                             <div class="col-md-6">
                                 <label asp-for="Property.SuperintendentFirstName" class="form-label">First Name</label>
-                                <input asp-for="Property.SuperintendentFirstName" class="form-control" placeholder="Enter first name" />
+                                <input asp-for="Property.SuperintendentFirstName" class="form-control" placeholder="Enter first name"/>
                                 <span asp-validation-for="Property.SuperintendentFirstName" class="text-danger"></span>
                             </div>
                             <div class="col-md-6">
                                 <label asp-for="Property.SuperintendentLastName" class="form-label">Last Name</label>
-                                <input asp-for="Property.SuperintendentLastName" class="form-control" placeholder="Enter last name" />
+                                <input asp-for="Property.SuperintendentLastName" class="form-control" placeholder="Enter last name"/>
                                 <span asp-validation-for="Property.SuperintendentLastName" class="text-danger"></span>
                             </div>
                         </div>
@@ -85,12 +85,12 @@
                         <div class="row mb-3">
                             <div class="col-md-6">
                                 <label asp-for="Property.SuperintendentEmail" class="form-label">Email Address</label>
-                                <input asp-for="Property.SuperintendentEmail" class="form-control" placeholder="Enter email address" />
+                                <input asp-for="Property.SuperintendentEmail" class="form-control" placeholder="Enter email address"/>
                                 <span asp-validation-for="Property.SuperintendentEmail" class="text-danger"></span>
                             </div>
                             <div class="col-md-6">
                                 <label asp-for="Property.SuperintendentPhone" class="form-label">Phone Number</label>
-                                <input asp-for="Property.SuperintendentPhone" class="form-control" placeholder="Enter phone number" />
+                                <input asp-for="Property.SuperintendentPhone" class="form-control" placeholder="Enter phone number"/>
                                 <span asp-validation-for="Property.SuperintendentPhone" class="text-danger"></span>
                             </div>
                         </div>
@@ -111,5 +111,5 @@
 </div>
 
 @section Scripts {
-    <partial name="_ValidationScriptsPartial" />
+    <partial name="_ValidationScriptsPartial"/>
 }

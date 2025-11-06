@@ -10,7 +10,8 @@ namespace RentalRepairs.Application.Queries.Properties.GetPropertiesWithStats;
 /// <summary>
 /// Query handler to get properties with statistics using direct EF Core with optimized queries
 /// </summary>
-public class GetPropertiesWithStatsQueryHandler : IRequestHandler<GetPropertiesWithStatsQuery, IEnumerable<PropertyWithStatsDto>>
+public class
+    GetPropertiesWithStatsQueryHandler : IRequestHandler<GetPropertiesWithStatsQuery, IEnumerable<PropertyWithStatsDto>>
 {
     private readonly IApplicationDbContext _context;
 
@@ -19,7 +20,8 @@ public class GetPropertiesWithStatsQueryHandler : IRequestHandler<GetPropertiesW
         _context = context;
     }
 
-    public async Task<IEnumerable<PropertyWithStatsDto>> Handle(GetPropertiesWithStatsQuery request, CancellationToken cancellationToken)
+    public async Task<IEnumerable<PropertyWithStatsDto>> Handle(GetPropertiesWithStatsQuery request,
+        CancellationToken cancellationToken)
     {
         // Use direct EF Core with projections for better performance
         // Avoid using Mapster.Adapt inside EF projections as it can't be translated
@@ -36,7 +38,8 @@ public class GetPropertiesWithStatsQueryHandler : IRequestHandler<GetPropertiesW
                     StreetName = p.Address.StreetName,
                     City = p.Address.City,
                     PostalCode = p.Address.PostalCode,
-                    FullAddress = p.Address.StreetNumber + " " + p.Address.StreetName + ", " + p.Address.City + ", " + p.Address.PostalCode
+                    FullAddress = p.Address.StreetNumber + " " + p.Address.StreetName + ", " + p.Address.City + ", " +
+                                  p.Address.PostalCode
                 },
                 PhoneNumber = p.PhoneNumber,
                 NoReplyEmailAddress = p.NoReplyEmailAddress,
@@ -55,8 +58,8 @@ public class GetPropertiesWithStatsQueryHandler : IRequestHandler<GetPropertiesW
                 VacantUnits = p.Units.Count - p.Tenants.Count,
                 OccupancyRate = p.Units.Count > 0 ? (double)p.Tenants.Count / p.Units.Count * 100 : 0,
                 ActiveRequestsCount = p.Tenants.SelectMany(t => t.Requests)
-                    .Count(r => r.Status == Domain.Enums.TenantRequestStatus.Submitted || 
-                               r.Status == Domain.Enums.TenantRequestStatus.Scheduled),
+                    .Count(r => r.Status == Domain.Enums.TenantRequestStatus.Submitted ||
+                                r.Status == Domain.Enums.TenantRequestStatus.Scheduled),
                 TotalRequestsCount = p.Tenants.SelectMany(t => t.Requests).Count(),
                 CreatedAt = p.CreatedAt
             })

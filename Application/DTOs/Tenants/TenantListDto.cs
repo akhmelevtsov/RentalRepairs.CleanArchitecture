@@ -16,7 +16,7 @@ public class TenantListDto
     public int ActiveRequestsCount { get; set; }
     public int TotalRequestsCount { get; set; }
     public DateTime? LastRequestDate { get; set; }
-    
+
     // UI properties
     public bool HasActiveRequests => ActiveRequestsCount > 0;
 }

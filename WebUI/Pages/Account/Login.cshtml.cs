@@ -15,12 +15,12 @@ namespace RentalRepairs.WebUI.Pages.Account;
 public class LoginModel : PageModel
 {
     private readonly RentalRepairs.Application.Common.Interfaces.IAuthenticationService _authService;
-    private readonly RentalRepairs.Application.Common.Interfaces.IDemoUserService _demoUserService;
+    private readonly Application.Common.Interfaces.IDemoUserService _demoUserService;
     private readonly ILogger<LoginModel> _logger;
 
     public LoginModel(
         RentalRepairs.Application.Common.Interfaces.IAuthenticationService authService,
-        RentalRepairs.Application.Common.Interfaces.IDemoUserService demoUserService,
+        Application.Common.Interfaces.IDemoUserService demoUserService,
         ILogger<LoginModel> logger)
     {
         _authService = authService;
@@ -28,17 +28,14 @@ public class LoginModel : PageModel
         _logger = logger;
     }
 
-    [BindProperty]
-    public LoginViewModel Login { get; set; } = new();
+    [BindProperty] public LoginViewModel Login { get; set; } = new();
 
     // Demo credentials for display
     public DemoCredentialsViewModel DemoCredentials { get; set; } = new();
 
-    [TempData]
-    public string? SuccessMessage { get; set; }
-    
-    [TempData] 
-    public string? ErrorMessage { get; set; }
+    [TempData] public string? SuccessMessage { get; set; }
+
+    [TempData] public string? ErrorMessage { get; set; }
 
     /// <summary>
     /// Load unified login page with demo credentials if available
@@ -82,14 +79,15 @@ public class LoginModel : PageModel
                 return Page();
             }
 
-            _logger.LogInformation("Processing unified login for email: {Email} - concurrent sessions enabled", Login.Email);
+            _logger.LogInformation("Processing unified login for email: {Email} - concurrent sessions enabled",
+                Login.Email);
             var result = await _authService.AuthenticateAsync(Login.Email, Login.Password);
 
             if (result.IsSuccess)
             {
                 await SignInUserAsync(result, Login.RememberMe);
-                
-                _logger.LogInformation("User {Email} logged in successfully as {Role}, redirecting to: {DashboardUrl}", 
+
+                _logger.LogInformation("User {Email} logged in successfully as {Role}, redirecting to: {DashboardUrl}",
                     Login.Email, result.PrimaryRole, result.DashboardUrl);
 
                 // Redirect to role-specific dashboard or return URL
@@ -114,11 +112,11 @@ public class LoginModel : PageModel
 
     #region Private Helper Methods
 
-    private async Task SignInUserAsync(RentalRepairs.Application.Common.Interfaces.AuthenticationResult result, bool rememberMe)
+    private async Task SignInUserAsync(Application.Common.Interfaces.AuthenticationResult result, bool rememberMe)
     {
         // Ensure we're completely signed out before signing in with new identity
         await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-        
+
         var claims = new List<Claim>
         {
             new(ClaimTypes.NameIdentifier, result.UserId ?? ""),
@@ -127,16 +125,10 @@ public class LoginModel : PageModel
         };
 
         // Add role claims
-        foreach (var role in result.Roles)
-        {
-            claims.Add(new Claim(ClaimTypes.Role, role));
-        }
+        foreach (var role in result.Roles) claims.Add(new Claim(ClaimTypes.Role, role));
 
         // Add custom claims from authentication result
-        foreach (var claim in result.Claims)
-        {
-            claims.Add(new Claim(claim.Key, claim.Value?.ToString() ?? ""));
-        }
+        foreach (var claim in result.Claims) claims.Add(new Claim(claim.Key, claim.Value?.ToString() ?? ""));
 
         // Add role-specific claims for easy access
         if (!string.IsNullOrEmpty(result.PropertyCode))
@@ -162,33 +154,30 @@ public class LoginModel : PageModel
             new ClaimsPrincipal(claimsIdentity),
             authProperties);
 
-        _logger.LogInformation("User {Email} signed in successfully with {ClaimCount} claims - concurrent sessions supported", result.Email, claims.Count);
+        _logger.LogInformation(
+            "User {Email} signed in successfully with {ClaimCount} claims - concurrent sessions supported",
+            result.Email, claims.Count);
     }
 
-    private void HandleAuthenticationFailure(RentalRepairs.Application.Common.Interfaces.AuthenticationResult result)
+    private void HandleAuthenticationFailure(Application.Common.Interfaces.AuthenticationResult result)
     {
         if (result.IsLockedOut)
-        {
-            ModelState.AddModelError(string.Empty, 
+            ModelState.AddModelError(string.Empty,
                 $"Account is temporarily locked. Please try again after {result.LockoutEndTime:HH:mm:ss}.");
-        }
         else
-        {
             ModelState.AddModelError(string.Empty, result.ErrorMessage ?? "Invalid login credentials.");
-        }
     }
 
     private async Task LoadDemoCredentials()
     {
         if (_demoUserService.IsDemoModeEnabled())
-        {
             try
             {
                 var demoUsers = await _demoUserService.GetDemoUsersForDisplayAsync();
 
                 DemoCredentials = new DemoCredentialsViewModel
                 {
-                    AvailableUsers = demoUsers.Select(u => new RentalRepairs.WebUI.Models.DemoUserInfo
+                    AvailableUsers = demoUsers.Select(u => new DemoUserInfo
                     {
                         Email = u.Email,
                         DisplayName = u.DisplayName,
@@ -205,7 +194,6 @@ public class LoginModel : PageModel
                 _logger.LogWarning(ex, "Failed to load demo credentials for display");
                 DemoCredentials = new DemoCredentialsViewModel();
             }
-        }
     }
 
     private bool ValidateLoginModel()

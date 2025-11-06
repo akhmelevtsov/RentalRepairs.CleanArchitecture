@@ -7,7 +7,10 @@ namespace RentalRepairs.Domain.Exceptions;
 public abstract class WorkerAssignmentDomainException : DomainException
 {
     protected WorkerAssignmentDomainException(string message) : base(message) { }
-    protected WorkerAssignmentDomainException(string message, Exception innerException) : base(message, innerException) { }
+
+    protected WorkerAssignmentDomainException(string message, Exception innerException) : base(message, innerException)
+    {
+    }
 }
 
 /// <summary>
@@ -18,7 +21,7 @@ public class InvalidRequestForAssignmentException : WorkerAssignmentDomainExcept
     public string CurrentStatus { get; }
     public Guid RequestId { get; }
 
-    public InvalidRequestForAssignmentException(Guid requestId, string currentStatus) 
+    public InvalidRequestForAssignmentException(Guid requestId, string currentStatus)
         : base($"Request {requestId} with status '{currentStatus}' cannot have workers assigned")
     {
         RequestId = requestId;
@@ -34,7 +37,7 @@ public class RequestAlreadyAssignedException : WorkerAssignmentDomainException
     public Guid RequestId { get; }
     public string AssignedWorkerEmail { get; }
 
-    public RequestAlreadyAssignedException(Guid requestId, string assignedWorkerEmail) 
+    public RequestAlreadyAssignedException(Guid requestId, string assignedWorkerEmail)
         : base($"Request {requestId} is already assigned to worker {assignedWorkerEmail}")
     {
         RequestId = requestId;
@@ -50,7 +53,7 @@ public class InvalidAssignmentParametersException : WorkerAssignmentDomainExcept
     public string ParameterName { get; }
     public object? ParameterValue { get; }
 
-    public InvalidAssignmentParametersException(string parameterName, object? parameterValue, string reason) 
+    public InvalidAssignmentParametersException(string parameterName, object? parameterValue, string reason)
         : base($"Invalid assignment parameter '{parameterName}': {reason}")
     {
         ParameterName = parameterName;
@@ -66,7 +69,7 @@ public class WorkerNotAvailableException : WorkerAssignmentDomainException
     public string WorkerEmail { get; }
     public string Reason { get; }
 
-    public WorkerNotAvailableException(string workerEmail, string reason) 
+    public WorkerNotAvailableException(string workerEmail, string reason)
         : base($"Worker {workerEmail} is not available for assignment: {reason}")
     {
         WorkerEmail = workerEmail;

@@ -1,48 +1,45 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using RentalRepairs.Application.Interfaces;
 using MediatR;
 using RentalRepairs.Application.Commands.TenantRequests.SubmitTenantRequest;
 using RentalRepairs.Application.Commands.TenantRequests.CloseRequest;
+using RentalRepairs.Application.DTOs;
+using RentalRepairs.Application.Queries.TenantRequests.GetTenantRequestById;
 using RentalRepairs.WebUI.Helpers;
 
 namespace RentalRepairs.WebUI.Pages.TenantRequests;
 
 /// <summary>
-/// Simplified page model using consolidated ITenantRequestService
-/// CSRF PROTECTED: All POST operations validate antiforgery tokens
-/// UI HELPER INTEGRATED: Uses centralized TenantRequestUIHelper for all UI logic
+/// Simplified page model using CQRS directly (no service wrapper).
+/// Query handler enriches DTO with business context when requested.
+/// CSRF PROTECTED: All POST operations validate antiforgery tokens.
 /// </summary>
 [Authorize]
 [ValidateAntiForgeryToken]
 public class DetailsModel : PageModel
 {
-    private readonly ITenantRequestService _tenantRequestService;
     private readonly IMediator _mediator;
     private readonly ILogger<DetailsModel> _logger;
 
     public DetailsModel(
-        ITenantRequestService tenantRequestService,
         IMediator mediator,
         ILogger<DetailsModel> logger)
     {
-        _tenantRequestService = tenantRequestService;
         _mediator = mediator;
         _logger = logger;
     }
 
-    // View model properties - use the interface version that extends TenantRequestDto
-    public RentalRepairs.Application.Interfaces.TenantRequestDetailsDto? TenantRequest { get; set; }
+    // View model properties
+    public TenantRequestDetailsDto? TenantRequest { get; set; }
 
-    [TempData]
-    public string? SuccessMessage { get; set; }
-    
-    [TempData] 
-    public string? ErrorMessage { get; set; }
+    [TempData] public string? SuccessMessage { get; set; }
+
+    [TempData] public string? ErrorMessage { get; set; }
 
     /// <summary>
-    /// Load tenant request details using the consolidated service
+    /// Load tenant request details using CQRS query directly.
+    /// Query handler enriches with business context (authorization, available actions).
     /// </summary>
     public async Task<IActionResult> OnGetAsync(Guid id, string? returnUrl = null)
     {
@@ -50,20 +47,33 @@ public class DetailsModel : PageModel
         {
             // Store ReturnUrl in ViewData for use in the view
             ViewData["ReturnUrl"] = returnUrl;
-            
-            // Use consolidated service to get request details with context
-            var userEmail = User.Identity?.Name ?? "anonymous";
-            TenantRequest = await _tenantRequestService.GetRequestDetailsWithContextAsync(id, userEmail);
 
-            if (TenantRequest == null)
+            // Use CQRS query directly with business context enrichment
+            var query = new GetTenantRequestByIdQuery(id) { IncludeBusinessContext = true };
+            var result = await _mediator.Send(query);
+
+            if (result == null)
             {
                 ErrorMessage = "Tenant request not found.";
                 return RedirectToPage("/TenantRequests/Index");
             }
 
-            // Log for debugging
-            _logger.LogDebug("Loaded request details for {RequestId}. Tenant: {TenantName}, Email: {TenantEmail}, Unit: {Unit}, Property: {Property}", 
-                id, TenantRequest.TenantFullName, TenantRequest.TenantEmail, TenantRequest.TenantUnit, TenantRequest.PropertyName);
+            // Cast to enriched DTO type
+            TenantRequest = result as TenantRequestDetailsDto;
+
+            if (TenantRequest == null)
+            {
+                _logger.LogError(
+                    "Query returned TenantRequestDto instead of TenantRequestDetailsDto for request {RequestId}",
+                    id);
+                ErrorMessage = "Unable to load request details with business context.";
+                return RedirectToPage("/TenantRequests/Index");
+            }
+
+            _logger.LogDebug(
+                "Loaded request details for {RequestId}. Tenant: {TenantName}, Email: {TenantEmail}, Unit: {Unit}, Property: {Property}",
+                id, TenantRequest.TenantFullName, TenantRequest.TenantEmail, TenantRequest.TenantUnit,
+                TenantRequest.PropertyName);
 
             return Page();
         }
@@ -89,11 +99,11 @@ public class DetailsModel : PageModel
             };
 
             var result = await _mediator.Send(command);
-            
+
             if (result.IsSuccess)
             {
                 SuccessMessage = "Request submitted successfully.";
-                _logger.LogInformation("Request {RequestId} submitted successfully by user {UserId}", 
+                _logger.LogInformation("Request {RequestId} submitted successfully by user {UserId}",
                     id, User.Identity?.Name);
             }
             else
@@ -132,8 +142,8 @@ public class DetailsModel : PageModel
 
             await _mediator.Send(command);
             SuccessMessage = "Request closed successfully.";
-            
-            _logger.LogInformation("Request {RequestId} closed successfully by user {UserId} with notes: {Notes}", 
+
+            _logger.LogInformation("Request {RequestId} closed successfully by user {UserId} with notes: {Notes}",
                 id, User.Identity?.Name, closureNotes);
         }
         catch (Exception ex)
@@ -179,9 +189,9 @@ public class DetailsModel : PageModel
     public bool ShouldShowOverdueWarning()
     {
         if (TenantRequest == null) return false;
-        
+
         // Check if request is overdue (simple logic)
-        return TenantRequest.Status == "Submitted" && 
+        return TenantRequest.Status == "Submitted" &&
                TenantRequest.CreatedDate < DateTime.Now.AddDays(-3);
     }
 
@@ -191,7 +201,7 @@ public class DetailsModel : PageModel
     public bool ShouldShowWorkAssignment()
     {
         if (TenantRequest == null) return false;
-        return TenantRequest.Status == "Scheduled" || 
+        return TenantRequest.Status == "Scheduled" ||
                TenantRequest.Status == "Done" ||
                !string.IsNullOrEmpty(TenantRequest.AssignedWorkerEmail);
     }
@@ -202,7 +212,7 @@ public class DetailsModel : PageModel
     public int GetProgressPercentage()
     {
         if (TenantRequest == null) return 0;
-        
+
         // Convert string status to enum if possible, otherwise use string-based logic
         return TenantRequest.Status switch
         {
@@ -241,7 +251,7 @@ public class DetailsModel : PageModel
     public string GetStatusDescription()
     {
         if (TenantRequest == null) return "Status unknown";
-        
+
         return TenantRequest.Status switch
         {
             "Draft" => "Request is being prepared",
@@ -261,9 +271,9 @@ public class DetailsModel : PageModel
     public List<string> GetAvailableQuickActions()
     {
         if (TenantRequest == null) return new List<string>();
-        
+
         var actions = new List<string>();
-        
+
         // Get user role and determine available actions
         if (User.IsInRole("SystemAdmin"))
         {
@@ -286,7 +296,7 @@ public class DetailsModel : PageModel
             if (TenantRequest.Status == "Draft")
                 actions.AddRange(new[] { "Submit", "Edit" });
         }
-        
+
         return actions;
     }
 

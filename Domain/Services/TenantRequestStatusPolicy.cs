@@ -12,14 +12,16 @@ public class TenantRequestStatusPolicy
     // Domain business rules - centralized from Application layer
     private static readonly Dictionary<TenantRequestStatus, List<TenantRequestStatus>> AllowedStatusTransitions = new()
     {
-        [TenantRequestStatus.Draft] = new() { TenantRequestStatus.Submitted },
-        [TenantRequestStatus.Submitted] = new() { TenantRequestStatus.Scheduled, TenantRequestStatus.Declined },
-        [TenantRequestStatus.Scheduled] = new() { TenantRequestStatus.Done, TenantRequestStatus.Failed },
-        [TenantRequestStatus.Failed] = new() { TenantRequestStatus.Scheduled },
-        [TenantRequestStatus.Done] = new() { TenantRequestStatus.Closed },
-        [TenantRequestStatus.Declined] = new() { TenantRequestStatus.Closed }
+        [TenantRequestStatus.Draft] = new List<TenantRequestStatus> { TenantRequestStatus.Submitted },
+        [TenantRequestStatus.Submitted] =
+            new List<TenantRequestStatus> { TenantRequestStatus.Scheduled, TenantRequestStatus.Declined },
+        [TenantRequestStatus.Scheduled] =
+            new List<TenantRequestStatus> { TenantRequestStatus.Done, TenantRequestStatus.Failed },
+        [TenantRequestStatus.Failed] = new List<TenantRequestStatus> { TenantRequestStatus.Scheduled },
+        [TenantRequestStatus.Done] = new List<TenantRequestStatus> { TenantRequestStatus.Closed },
+        [TenantRequestStatus.Declined] = new List<TenantRequestStatus> { TenantRequestStatus.Closed }
     };
-    
+
     private static readonly Dictionary<TenantRequestStatus, string> StatusDisplayNames = new()
     {
         [TenantRequestStatus.Draft] = "Draft",
@@ -30,7 +32,7 @@ public class TenantRequestStatusPolicy
         [TenantRequestStatus.Declined] = "Declined",
         [TenantRequestStatus.Closed] = "Closed"
     };
-    
+
     private static readonly Dictionary<TenantRequestStatus, string> StatusCssClasses = new()
     {
         [TenantRequestStatus.Draft] = "badge-secondary",
@@ -41,16 +43,16 @@ public class TenantRequestStatusPolicy
         [TenantRequestStatus.Declined] = "badge-danger",
         [TenantRequestStatus.Closed] = "badge-dark"
     };
-    
+
     private static readonly Dictionary<TenantRequestStatus, int> StatusPriorities = new()
     {
-        [TenantRequestStatus.Failed] = 1,      // Highest priority - needs attention
-        [TenantRequestStatus.Submitted] = 2,   // Needs assignment
-        [TenantRequestStatus.Scheduled] = 3,   // Active work
-        [TenantRequestStatus.Draft] = 4,       // Pending submission
-        [TenantRequestStatus.Done] = 5,        // Awaiting closure
-        [TenantRequestStatus.Declined] = 6,    // Awaiting closure
-        [TenantRequestStatus.Closed] = 7       // Complete
+        [TenantRequestStatus.Failed] = 1, // Highest priority - needs attention
+        [TenantRequestStatus.Submitted] = 2, // Needs assignment
+        [TenantRequestStatus.Scheduled] = 3, // Active work
+        [TenantRequestStatus.Draft] = 4, // Pending submission
+        [TenantRequestStatus.Done] = 5, // Awaiting closure
+        [TenantRequestStatus.Declined] = 6, // Awaiting closure
+        [TenantRequestStatus.Closed] = 7 // Complete
     };
 
     /// <summary>
@@ -129,7 +131,7 @@ public class TenantRequestStatusPolicy
     /// </summary>
     public bool IsValidStatusTransition(TenantRequestStatus fromStatus, TenantRequestStatus toStatus)
     {
-        return AllowedStatusTransitions.ContainsKey(fromStatus) && 
+        return AllowedStatusTransitions.ContainsKey(fromStatus) &&
                AllowedStatusTransitions[fromStatus].Contains(toStatus);
     }
 
@@ -139,8 +141,8 @@ public class TenantRequestStatusPolicy
     /// </summary>
     public List<TenantRequestStatus> GetAllowedNextStatuses(TenantRequestStatus currentStatus)
     {
-        return AllowedStatusTransitions.ContainsKey(currentStatus) 
-            ? AllowedStatusTransitions[currentStatus] 
+        return AllowedStatusTransitions.ContainsKey(currentStatus)
+            ? AllowedStatusTransitions[currentStatus]
             : new List<TenantRequestStatus>();
     }
 
@@ -205,12 +207,14 @@ public class TenantRequestStatusPolicy
     /// Parses string status to strongly-typed enum with validation.
     /// Moved from Application layer for centralized business logic.
     /// </summary>
-    public TenantRequestStatus ParseStatus(string statusString, TenantRequestStatus defaultStatus = TenantRequestStatus.Draft)
+    public TenantRequestStatus ParseStatus(string statusString,
+        TenantRequestStatus defaultStatus = TenantRequestStatus.Draft)
     {
         if (TryParseStatus(statusString, out TenantRequestStatus status))
         {
             return status;
         }
+
         return defaultStatus;
     }
 
@@ -261,7 +265,8 @@ public class TenantRequestStatusPolicy
     /// Validates a status transition and provides detailed result.
     /// Enhanced business rule validation with detailed information.
     /// </summary>
-    public StatusTransitionValidationResult ValidateStatusTransition(TenantRequestStatus fromStatus, TenantRequestStatus toStatus)
+    public StatusTransitionValidationResult ValidateStatusTransition(TenantRequestStatus fromStatus,
+        TenantRequestStatus toStatus)
     {
         if (IsValidStatusTransition(fromStatus, toStatus))
         {
@@ -269,8 +274,9 @@ public class TenantRequestStatusPolicy
         }
 
         List<TenantRequestStatus> allowedStatuses = GetAllowedNextStatuses(fromStatus);
-        string message = $"Cannot transition from {GetStatusDisplayName(fromStatus)} to {GetStatusDisplayName(toStatus)}. " +
-                     $"Allowed transitions: {string.Join(", ", allowedStatuses.Select(GetStatusDisplayName))}";
+        string message =
+            $"Cannot transition from {GetStatusDisplayName(fromStatus)} to {GetStatusDisplayName(toStatus)}. " +
+            $"Allowed transitions: {string.Join(", ", allowedStatuses.Select(GetStatusDisplayName))}";
 
         return StatusTransitionValidationResult.Failure(message, allowedStatuses);
     }
@@ -298,16 +304,22 @@ public class StatusTransitionValidationResult
     public bool IsValid { get; }
     public string? ValidationMessage { get; }
     public List<TenantRequestStatus> AllowedStatuses { get; }
-    
-    public StatusTransitionValidationResult(bool isValid, string? validationMessage = null, List<TenantRequestStatus>? allowedStatuses = null)
+
+    public StatusTransitionValidationResult(bool isValid, string? validationMessage = null,
+        List<TenantRequestStatus>? allowedStatuses = null)
     {
         IsValid = isValid;
         ValidationMessage = validationMessage;
         AllowedStatuses = allowedStatuses ?? new List<TenantRequestStatus>();
     }
-    
-    public static StatusTransitionValidationResult Success() => new(true);
-    
-    public static StatusTransitionValidationResult Failure(string message, List<TenantRequestStatus> allowedStatuses) => 
-        new(false, message, allowedStatuses);
+
+    public static StatusTransitionValidationResult Success()
+    {
+        return new StatusTransitionValidationResult(true);
+    }
+
+    public static StatusTransitionValidationResult Failure(string message, List<TenantRequestStatus> allowedStatuses)
+    {
+        return new StatusTransitionValidationResult(false, message, allowedStatuses);
+    }
 }

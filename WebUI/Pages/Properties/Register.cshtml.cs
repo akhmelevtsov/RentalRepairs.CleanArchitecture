@@ -24,14 +24,11 @@ public class RegisterModel : PageModel
         _logger = logger;
     }
 
-    [BindProperty]
-    public RegisterPropertyViewModel Property { get; set; } = new();
+    [BindProperty] public RegisterPropertyViewModel Property { get; set; } = new();
 
-    [TempData]
-    public string? SuccessMessage { get; set; }
-    
-    [TempData] 
-    public string? ErrorMessage { get; set; }
+    [TempData] public string? SuccessMessage { get; set; }
+
+    [TempData] public string? ErrorMessage { get; set; }
 
     /// <summary>
     /// ? Simple GET handler - just display the form
@@ -52,27 +49,25 @@ public class RegisterModel : PageModel
         try
         {
             // ? CSRF Protection: Token validation happens automatically
-            
-            if (!ModelState.IsValid)
-            {
-                return Page();
-            }
+
+            if (!ModelState.IsValid) return Page();
 
             // Use Mapster to convert view model to command
             var command = Property.Adapt<RegisterPropertyCommand>();
             var propertyId = await _mediator.Send(command);
 
             SuccessMessage = $"Property '{Property.Name}' has been registered successfully.";
-            
-            _logger.LogInformation("Property {PropertyName} with code {PropertyCode} registered successfully with ID {PropertyId}", 
+
+            _logger.LogInformation(
+                "Property {PropertyName} with code {PropertyCode} registered successfully with ID {PropertyId}",
                 Property.Name, Property.Code, propertyId);
-            
+
             // Redirect to property details page if it exists, otherwise to a listing page
             return RedirectToPage("/Properties/Index"); // Adjust as needed
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error registering property {PropertyName} with code {PropertyCode}", 
+            _logger.LogError(ex, "Error registering property {PropertyName} with code {PropertyCode}",
                 Property.Name, Property.Code);
             ErrorMessage = "An error occurred while registering the property. Please try again.";
             return Page();

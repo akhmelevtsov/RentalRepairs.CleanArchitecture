@@ -1,20 +1,23 @@
 namespace RentalRepairs.WebUI.Services;
 
 /// <summary>
-/// Service for generating random tenant request data for demo purposes
+/// Service for generating random tenant request data for demo purposes.
+/// Used in production WebUI for demo mode feature (Submit.cshtml.cs OnGetGenerateRandom endpoint).
+/// Also used in tests for generating realistic test data.
 /// </summary>
 public class RandomTenantRequestGenerator
 {
     private static readonly Random _random = new();
 
-    private static readonly string[] _problemTypes = {
-        "Plumbing", "Electrical", "HVAC", "Appliance", "Door/Window", "Flooring", 
+    private static readonly string[] _problemTypes =
+    {
+        "Plumbing", "Electrical", "HVAC", "Appliance", "Door/Window", "Flooring",
         "Lighting", "Security", "Pest Control", "General Maintenance", "Painting", "Roof/Ceiling"
     };
 
     private static readonly Dictionary<string, List<string>> _problemDescriptions = new()
     {
-        ["Plumbing"] = new()
+        ["Plumbing"] = new List<string>
         {
             "Kitchen sink is leaking water underneath the cabinet. Water is pooling on the floor and may cause damage to the cabinet bottom.",
             "Toilet in the main bathroom won't stop running water. The handle needs to be jiggled multiple times to stop the water flow.",
@@ -24,7 +27,7 @@ public class RandomTenantRequestGenerator
             "Kitchen garbage disposal stopped working and makes a humming sound when turned on. There's also a slight odor coming from it.",
             "Bathroom sink faucet is loose and wobbles when turned. Water sometimes sprays in different directions."
         },
-        ["Electrical"] = new()
+        ["Electrical"] = new List<string>
         {
             "Several outlets in the living room have stopped working. I've checked the circuit breaker but can't identify the issue.",
             "Light switch in the bedroom is sparking when turned on or off. This seems like a safety hazard that needs immediate attention.",
@@ -34,7 +37,7 @@ public class RandomTenantRequestGenerator
             "Doorbell doesn't work and hasn't been functioning for the past two weeks. Visitors have to knock loudly to be heard.",
             "Outdoor porch light stays on constantly and can't be turned off from the inside switch. This is wasting electricity."
         },
-        ["HVAC"] = new()
+        ["HVAC"] = new List<string>
         {
             "Air conditioning unit is making very loud noises and doesn't seem to be cooling effectively. The air coming out feels warm.",
             "Heater isn't working and the apartment is getting very cold. Thermostat shows the right temperature but no heat is coming through vents.",
@@ -44,7 +47,7 @@ public class RandomTenantRequestGenerator
             "Bathroom exhaust fan is very loud and doesn't seem to be removing moisture effectively. The bathroom stays steamy for hours.",
             "Heating vents in the living room are barely blowing air. The room stays much colder than the rest of the apartment."
         },
-        ["Appliance"] = new()
+        ["Appliance"] = new List<string>
         {
             "Refrigerator is making constant clicking and humming noises. The freezer isn't maintaining proper temperature and ice cream is melting.",
             "Dishwasher leaks water onto the kitchen floor after every cycle. The leak appears to come from the bottom front area.",
@@ -54,7 +57,7 @@ public class RandomTenantRequestGenerator
             "Microwave door doesn't close properly and the unit won't start. The latch mechanism appears to be broken or misaligned.",
             "Range hood light bulb burned out and the exhaust fan makes a loud rattling noise when turned on."
         },
-        ["Door/Window"] = new()
+        ["Door/Window"] = new List<string>
         {
             "Front door lock is very difficult to turn and sometimes gets stuck. Have to use significant force to lock or unlock the door.",
             "Bedroom window won't open and appears to be painted shut. This is a safety concern for emergency exit purposes.",
@@ -64,7 +67,7 @@ public class RandomTenantRequestGenerator
             "Closet door in the bedroom has come off its hinges and is leaning against the wall. Can't access clothing properly.",
             "Screen door has several large tears and doesn't keep insects out effectively. The frame is also bent in one corner."
         },
-        ["Flooring"] = new()
+        ["Flooring"] = new List<string>
         {
             "Hardwood floor in the living room has several loose boards that creak loudly and move when stepped on. May be a safety hazard.",
             "Carpet in the bedroom has a large stain that won't come out with regular cleaning. The stain has been there since move-in.",
@@ -74,7 +77,7 @@ public class RandomTenantRequestGenerator
             "Bathroom floor feels soft and spongy near the toilet. There may be water damage to the subfloor underneath.",
             "Living room carpet has several burn marks and the padding underneath feels compressed and uncomfortable."
         },
-        ["Lighting"] = new()
+        ["Lighting"] = new List<string>
         {
             "Light fixture in the dining room hangs crooked and sways when the upstairs neighbors walk around. Mounting may be loose.",
             "Fluorescent light in the kitchen buzzes loudly and flickers constantly. The ballast may need replacement.",
@@ -84,7 +87,7 @@ public class RandomTenantRequestGenerator
             "Outdoor walkway light is broken and creates a safety hazard for entering the building at night. Glass cover is also cracked.",
             "Closet light pull-chain broke and the light is stuck in the on position. Can't turn it off which wastes electricity."
         },
-        ["Security"] = new()
+        ["Security"] = new List<string>
         {
             "Deadbolt lock on the front door is difficult to engage and sometimes doesn't lock completely. Security is compromised.",
             "Window locks in the bedroom are broken and windows can be opened from outside. This is a serious security concern.",
@@ -94,7 +97,7 @@ public class RandomTenantRequestGenerator
             "Balcony door can be opened from outside despite being locked. The locking mechanism appears to be faulty.",
             "Entry gate code reader is malfunctioning and visitors can't be buzzed in properly. Having to meet everyone at the gate."
         },
-        ["Pest Control"] = new()
+        ["Pest Control"] = new List<string>
         {
             "Ants are entering the kitchen through cracks near the window and gathering around food prep areas. Treatment needed urgently.",
             "Cockroaches spotted in the bathroom and kitchen, especially at night. This is a health concern that needs professional attention.",
@@ -104,7 +107,7 @@ public class RandomTenantRequestGenerator
             "Fruit flies swarming in the kitchen despite keeping area clean. Issue persists even with removal of all fruit.",
             "Strange buzzing noise coming from within the walls. May be bees or other insects nesting inside and needs repair work."
         },
-        ["General Maintenance"] = new()
+        ["General Maintenance"] = new List<string>
         {
             "Smoke detector battery is low and beeping every few minutes throughout the day and night. Very disruptive to sleep.",
             "Caulking around bathtub is moldy and peeling away from the wall. Water is getting behind the tub causing potential damage.",
@@ -114,7 +117,7 @@ public class RandomTenantRequestGenerator
             "Grout between bathroom tiles is cracked and discolored. Water seeps through and there's a musty smell.",
             "Cabinet doors in the kitchen don't close properly and some hinges are completely broken. Storage is difficult."
         },
-        ["Painting"] = new()
+        ["Painting"] = new List<string>
         {
             "Paint on the living room walls is chipped and peeling in several large areas. The wall surface is becoming rough and unsightly.",
             "Bathroom paint is bubbling and peeling due to moisture. Some areas have exposed drywall that needs attention.",
@@ -124,7 +127,7 @@ public class RandomTenantRequestGenerator
             "Ceiling paint in the living room is yellowing and has water stains from what appears to be an old leak.",
             "Exterior door paint is fading and chipping, exposing bare wood underneath. Weather protection is compromised."
         },
-        ["Roof/Ceiling"] = new()
+        ["Roof/Ceiling"] = new List<string>
         {
             "Water stain on the bedroom ceiling that keeps growing after each rain. There may be an active roof leak above.",
             "Ceiling fan mounting appears loose and the fan wobbles dangerously when running. Safety concern for people below.",
@@ -136,12 +139,12 @@ public class RandomTenantRequestGenerator
         }
     };
 
-    private static readonly string[] _urgencyLevels = { "Low", "Normal", "High", "Critical" };
 
-    private static readonly string[] _contactTimes = {
-        "Morning (8 AM - 12 PM)", 
-        "Afternoon (12 PM - 5 PM)", 
-        "Evening (5 PM - 8 PM)", 
+    private static readonly string[] _contactTimes =
+    {
+        "Morning (8 AM - 12 PM)",
+        "Afternoon (12 PM - 5 PM)",
+        "Evening (5 PM - 8 PM)",
         "Anytime"
     };
 
@@ -153,7 +156,7 @@ public class RandomTenantRequestGenerator
         var problemType = _problemTypes[_random.Next(_problemTypes.Length)];
         var descriptions = _problemDescriptions[problemType];
         var description = descriptions[_random.Next(descriptions.Count)];
-        
+
         // Occasionally add additional context to make it more realistic
         if (_random.Next(100) < 30) // 30% chance
         {
@@ -173,7 +176,7 @@ public class RandomTenantRequestGenerator
 
         // Adjust urgency based on problem type
         var urgency = GetUrgencyForProblemType(problemType);
-        
+
         return new RandomRequestData
         {
             ProblemDescription = description,
@@ -194,7 +197,8 @@ public class RandomTenantRequestGenerator
             "Security" => _random.Next(100) < 50 ? "High" : "Normal", // Security issues important
             "HVAC" => _random.Next(100) < 25 ? "High" : "Normal", // HVAC less often urgent
             "Pest Control" => _random.Next(100) < 35 ? "High" : "Normal", // Pests can be urgent
-            "Roof/Ceiling" => _random.Next(100) < 20 ? "Critical" : _random.Next(100) < 40 ? "High" : "Normal", // Leaks can be critical
+            "Roof/Ceiling" => _random.Next(100) < 20 ? "Critical" :
+                _random.Next(100) < 40 ? "High" : "Normal", // Leaks can be critical
             _ => _random.Next(100) < 10 ? "High" : _random.Next(100) < 70 ? "Normal" : "Low" // General distribution
         };
     }
@@ -205,10 +209,7 @@ public class RandomTenantRequestGenerator
     public static List<RandomRequestData> GenerateMultipleRequests(int count)
     {
         var requests = new List<RandomRequestData>();
-        for (int i = 0; i < count; i++)
-        {
-            requests.Add(GenerateRandomRequest());
-        }
+        for (var i = 0; i < count; i++) requests.Add(GenerateRandomRequest());
         return requests;
     }
 }

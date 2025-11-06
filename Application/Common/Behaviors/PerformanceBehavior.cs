@@ -17,7 +17,8 @@ public class PerformanceBehavior<TRequest, TResponse> : IPipelineBehavior<TReque
         _logger = logger;
     }
 
-    public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
+    public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next,
+        CancellationToken cancellationToken)
     {
         var requestName = typeof(TRequest).Name;
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
@@ -28,33 +29,29 @@ public class PerformanceBehavior<TRequest, TResponse> : IPipelineBehavior<TReque
             stopwatch.Stop();
 
             if (stopwatch.ElapsedMilliseconds > 500) // Log slow requests
-            {
                 _logger.LogWarning(
                     "Slow request detected: {RequestName} took {ElapsedMilliseconds}ms {@Request}",
                     requestName,
                     stopwatch.ElapsedMilliseconds,
                     request);
-            }
             else if (stopwatch.ElapsedMilliseconds > 100) // Log moderately slow requests at debug level
-            {
                 _logger.LogDebug(
                     "Request completed: {RequestName} took {ElapsedMilliseconds}ms",
                     requestName,
                     stopwatch.ElapsedMilliseconds);
-            }
 
             return response;
         }
         catch (Exception ex)
         {
             stopwatch.Stop();
-            
+
             _logger.LogError(ex,
                 "Request {RequestName} failed after {ElapsedMilliseconds}ms {@Request}",
                 requestName,
                 stopwatch.ElapsedMilliseconds,
                 request);
-            
+
             throw;
         }
     }

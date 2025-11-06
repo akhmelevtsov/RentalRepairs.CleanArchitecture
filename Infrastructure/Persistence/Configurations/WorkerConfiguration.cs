@@ -12,7 +12,7 @@ public class WorkerConfiguration : IEntityTypeConfiguration<Worker>
         builder.ToTable("Workers");
 
         builder.HasKey(w => w.Id);
-        
+
         // Configure Guid ID
         builder.Property(w => w.Id)
             .IsRequired()
@@ -68,43 +68,43 @@ public class WorkerConfiguration : IEntityTypeConfiguration<Worker>
         builder.OwnsMany(w => w.Assignments, assignment =>
         {
             assignment.ToTable("WorkerAssignments");
-            
+
             assignment.WithOwner().HasForeignKey("WorkerId");
-            
+
             assignment.Property<int>("Id")
                 .ValueGeneratedOnAdd()
                 .HasColumnName("Id");
-            
+
             assignment.HasKey("Id");
-            
+
             assignment.Property(a => a.WorkOrderNumber)
                 .HasMaxLength(50)
                 .IsRequired();
-                
+
             assignment.Property(a => a.ScheduledDate)
                 .IsRequired();
-                
+
             assignment.Property(a => a.Notes)
                 .HasMaxLength(500);
-                
+
             assignment.Property(a => a.AssignedDate)
                 .IsRequired();
-                
+
             assignment.Property(a => a.IsCompleted)
                 .IsRequired()
                 .HasDefaultValue(false);
-                
+
             assignment.Property(a => a.CompletedDate);
-            
+
             assignment.Property(a => a.CompletedSuccessfully);
-            
+
             assignment.Property(a => a.CompletionNotes)
                 .HasMaxLength(1000);
 
             // Index on work order number for efficient lookups
             assignment.HasIndex(a => a.WorkOrderNumber)
                 .HasDatabaseName("IX_WorkerAssignments_WorkOrderNumber");
-                
+
             // Index on scheduled date for efficient filtering
             assignment.HasIndex(a => a.ScheduledDate)
                 .HasDatabaseName("IX_WorkerAssignments_ScheduledDate");

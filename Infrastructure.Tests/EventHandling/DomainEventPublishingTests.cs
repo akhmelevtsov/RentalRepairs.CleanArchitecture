@@ -48,6 +48,9 @@ public class DomainEventPublishingTests : IDisposable
         // Add email service (required by TenantRequestNotificationHandler)
         services.AddScoped<IEmailService, MockEmailService>();
 
+        // Add domain services (required by NotifyPartiesService)
+        services.AddScoped<RentalRepairs.Domain.Services.SpecializationDeterminationService>();
+
         // Add notification service
         services.AddScoped<INotifyPartiesService, NotifyPartiesService>();
 
@@ -75,7 +78,8 @@ public class DomainEventPublishingTests : IDisposable
         var units = new List<string> { "101", "102" };
 
         // Act
-        var property = new Property("Test Property", "TP001", address, "555-1234", superintendent, units, "noreply@test.com");
+        var property = new Property("Test Property", "TP001", address, "555-1234", superintendent, units,
+            "noreply@test.com");
 
         // Verify events were added during creation
         property.DomainEvents.Should().NotBeEmpty("Property creation should generate domain events");
@@ -99,7 +103,8 @@ public class DomainEventPublishingTests : IDisposable
         var superintendent = new PersonContactInfo("Jane", "Smith", "jane@example.com", "555-5678");
         var units = new List<string> { "201", "202" };
 
-        var property = new Property("Oak Property", "OP001", address, "555-5678", superintendent, units, "noreply@oak.com");
+        var property = new Property("Oak Property", "OP001", address, "555-5678", superintendent, units,
+            "noreply@oak.com");
         _context.Properties.Add(property);
         await _context.SaveChangesAsync();
 
@@ -130,7 +135,8 @@ public class DomainEventPublishingTests : IDisposable
         var superintendent = new PersonContactInfo("Alice", "Brown", "alice@example.com", "555-1111");
         var units = new List<string> { "301", "302" };
 
-        var property = new Property("Pine Property", "PP001", address, "555-1111", superintendent, units, "noreply@pine.com");
+        var property = new Property("Pine Property", "PP001", address, "555-1111", superintendent, units,
+            "noreply@pine.com");
         var tenantContact = new PersonContactInfo("Charlie", "Davis", "charlie@example.com", "555-2222");
         var tenant = property.RegisterTenant(tenantContact, "301");
 
@@ -162,7 +168,8 @@ public class DomainEventPublishingTests : IDisposable
         var superintendent = new PersonContactInfo("David", "Wilson", "david@example.com", "555-3333");
         var units = new List<string> { "401", "402" };
 
-        var property = new Property("Elm Property", "EP001", address, "555-3333", superintendent, units, "noreply@elm.com");
+        var property = new Property("Elm Property", "EP001", address, "555-3333", superintendent, units,
+            "noreply@elm.com");
         var tenantContact = new PersonContactInfo("Eve", "Miller", "eve@example.com", "555-4444");
         var tenant = property.RegisterTenant(tenantContact, "401");
         var tenantRequest = tenant.CreateRequest("Broken Window", "Living room window won't open", "High");
@@ -194,7 +201,7 @@ public class DomainEventPublishingTests : IDisposable
 
         // Act
         var worker = new Worker(workerContact);
-        worker.SetSpecialization("Plumbing");
+        worker.SetSpecialization(Domain.Enums.WorkerSpecialization.Plumbing);
 
         // Verify events were added during worker creation/setup
         worker.DomainEvents.Should().NotBeEmpty("Worker registration should generate domain events");
@@ -204,7 +211,7 @@ public class DomainEventPublishingTests : IDisposable
 
         // Assert
         worker.IsActive.Should().BeTrue();
-        worker.Specialization.Should().Be("Plumbing");
+        worker.Specialization.Should().Be(Domain.Enums.WorkerSpecialization.Plumbing);
         worker.DomainEvents.Should().BeEmpty("Events should be cleared after publishing");
         logger.LogInformation("Worker registration test completed successfully");
     }
@@ -220,11 +227,12 @@ public class DomainEventPublishingTests : IDisposable
         var superintendent = new PersonContactInfo("Grace", "Lee", "grace@example.com", "555-6666");
         var units = new List<string> { "501", "502", "503" };
 
-        var property = new Property("Maple Property", "MP001", address, "555-6666", superintendent, units, "noreply@maple.com");
-        
+        var property = new Property("Maple Property", "MP001", address, "555-6666", superintendent, units,
+            "noreply@maple.com");
+
         var tenant1Contact = new PersonContactInfo("Henry", "Taylor", "henry@example.com", "555-7777");
         var tenant1 = property.RegisterTenant(tenant1Contact, "501");
-        
+
         var tenant2Contact = new PersonContactInfo("Iris", "Anderson", "iris@example.com", "555-8888");
         var tenant2 = property.RegisterTenant(tenant2Contact, "502");
 
@@ -254,7 +262,8 @@ public class DomainEventPublishingTests : IDisposable
         request1.Status.Should().Be(Domain.Enums.TenantRequestStatus.Submitted);
         request2.Status.Should().Be(Domain.Enums.TenantRequestStatus.Submitted);
 
-        logger.LogInformation("Multiple events test completed successfully - all domain events were published and cleared");
+        logger.LogInformation(
+            "Multiple events test completed successfully - all domain events were published and cleared");
     }
 
     public void Dispose()
@@ -295,46 +304,25 @@ internal class TestCurrentUserService : ICurrentUserService
 /// </summary>
 internal class TestAuditService : IAuditService
 {
-    public void ApplyAuditInformation(IEnumerable<Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry> entries, string? currentUser = null)
+    public void ApplyAuditInformation(IEnumerable<Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry> entries,
+        string? currentUser = null)
     {
         var auditUser = currentUser ?? "test-user";
         var auditTime = DateTime.UtcNow;
 
         foreach (var entry in entries)
-        {
-            if (entry.Entity is RentalRepairs.Domain.Common.IAuditableEntity auditableEntity)
-            {
+            if (entry.Entity is Domain.Common.IAuditableEntity auditableEntity)
                 switch (entry.State)
                 {
-                    case Microsoft.EntityFrameworkCore.EntityState.Added:
+                    case EntityState.Added:
                         auditableEntity.CreatedAt = auditTime;
                         auditableEntity.CreatedBy = auditUser;
                         break;
-                    case Microsoft.EntityFrameworkCore.EntityState.Modified:
+                    case EntityState.Modified:
                         auditableEntity.UpdatedAt = auditTime;
                         auditableEntity.UpdatedBy = auditUser;
                         break;
                 }
-            }
-        }
-    }
-
-    public Task<List<RentalRepairs.Application.Common.Interfaces.AuditEntry>> GetAuditTrailAsync(Type entityType, int entityId, CancellationToken cancellationToken = default)
-    {
-        return Task.FromResult(new List<RentalRepairs.Application.Common.Interfaces.AuditEntry>());
-    }
-
-    public Task<RentalRepairs.Application.Common.Interfaces.AuditSummary> GetAuditSummaryAsync(DateTime fromDate, DateTime toDate, CancellationToken cancellationToken = default)
-    {
-        return Task.FromResult(new RentalRepairs.Application.Common.Interfaces.AuditSummary
-        {
-            FromDate = fromDate,
-            ToDate = toDate,
-            TotalOperations = 0,
-            CreateOperations = 0,
-            UpdateOperations = 0,
-            DeleteOperations = 0
-        });
     }
 }
 
@@ -354,9 +342,7 @@ internal class MockEmailService : IEmailService
     {
         // Mock implementation
         foreach (var email in emails)
-        {
             Console.WriteLine($"Mock bulk email sent to {email.RecipientEmail}: {email.Subject}");
-        }
         return Task.CompletedTask;
     }
 }

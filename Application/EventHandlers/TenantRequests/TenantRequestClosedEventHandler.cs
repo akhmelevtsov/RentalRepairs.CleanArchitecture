@@ -26,8 +26,9 @@ public class TenantRequestClosedEventHandler : INotificationHandler<TenantReques
         var request = notification.TenantRequest;
         var closureNotes = notification.ClosureNotes;
 
-        _logger.LogInformation("Processing TenantRequestClosedEvent for request {RequestCode} with closure notes: {ClosureNotes}", 
-            request.Code, 
+        _logger.LogInformation(
+            "Processing TenantRequestClosedEvent for request {RequestCode} with closure notes: {ClosureNotes}",
+            request.Code,
             closureNotes);
 
         try
@@ -36,14 +37,15 @@ public class TenantRequestClosedEventHandler : INotificationHandler<TenantReques
             await _notificationService.NotifyTenantOfRequestClosureAsync(request, closureNotes, cancellationToken);
 
             // Archive notification to superintendent
-            await _notificationService.NotifySuperintendentOfRequestClosureAsync(request, closureNotes, cancellationToken);
+            await _notificationService.NotifySuperintendentOfRequestClosureAsync(request, closureNotes,
+                cancellationToken);
 
-            _logger.LogInformation("Successfully processed TenantRequestClosedEvent for request {RequestCode}", 
+            _logger.LogInformation("Successfully processed TenantRequestClosedEvent for request {RequestCode}",
                 request.Code);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error processing TenantRequestClosedEvent for request {RequestCode}", 
+            _logger.LogError(ex, "Error processing TenantRequestClosedEvent for request {RequestCode}",
                 request.Code);
             throw;
         }

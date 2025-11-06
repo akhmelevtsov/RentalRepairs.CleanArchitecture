@@ -5,211 +5,220 @@
 }
 
 <div class="container py-4">
-    
-    <!-- Success/Error Messages -->
-    @if (!string.IsNullOrEmpty(Model.SuccessMessage))
-    {
-        <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
-            <i class="fas fa-check-circle me-2"></i>
-            @Model.SuccessMessage
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    }
-    
-    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
-    {
-        <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
-            <i class="fas fa-exclamation-triangle me-2"></i>
-            @Model.ErrorMessage
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    }
 
-    <!-- Page Header -->
-    <div class="row mb-4">
-        <div class="col">
-            <h1 class="h2 mb-0">
-                <i class="fas fa-tachometer-alt me-2"></i>Dashboard
-            </h1>
-            <p class="text-muted">Welcome back, @Model.Dashboard.UserName</p>
+<!-- Success/Error Messages -->
+@if (!string.IsNullOrEmpty(Model.SuccessMessage))
+{
+    <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+        <i class="fas fa-check-circle me-2"></i>
+        @Model.SuccessMessage
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        @Model.ErrorMessage
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<!-- Page Header -->
+<div class="row mb-4">
+    <div class="col">
+        <h1 class="h2 mb-0">
+            <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+        </h1>
+        <p class="text-muted">Welcome back, @Model.Dashboard.UserName</p>
+    </div>
+</div>
+
+@if (Model.Dashboard.UserRole == UserRole.SystemAdmin)
+{
+    <!-- System Admin Dashboard -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title text-muted mb-2">Total Properties</h6>
+                            <div class="h4 mb-0 text-primary">@Model.Dashboard.TotalSystemProperties</div>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-building fa-2x text-primary"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title text-muted mb-2">Total Requests</h6>
+                            <div class="h4 mb-0 text-info">@Model.Dashboard.TotalSystemRequests</div>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-tasks fa-2x text-info"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
-    @if (Model.Dashboard.UserRole == UserRole.SystemAdmin)
-    {
-        <!-- System Admin Dashboard -->
-        <div class="row g-4 mb-4">
-            <div class="col-md-3">
-                <div class="card">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between">
-                            <div>
-                                <h6 class="card-title text-muted mb-2">Total Properties</h6>
-                                <div class="h4 mb-0 text-primary">@Model.Dashboard.TotalSystemProperties</div>
-                            </div>
-                            <div class="align-self-center">
-                                <i class="fas fa-building fa-2x text-primary"></i>
-                            </div>
-                        </div>
-                    </div>
+    <!-- Recent Properties and Requests -->
+    <div class="row g-4">
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Recent Properties</h5>
                 </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between">
-                            <div>
-                                <h6 class="card-title text-muted mb-2">Total Requests</h6>
-                                <div class="h4 mb-0 text-info">@Model.Dashboard.TotalSystemRequests</div>
-                            </div>
-                            <div class="align-self-center">
-                                <i class="fas fa-tasks fa-2x text-info"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Recent Properties and Requests -->
-        <div class="row g-4">
-            <div class="col-lg-6">
-                <div class="card">
-                    <div class="card-header bg-primary text-white">
-                        <h5 class="mb-0">Recent Properties</h5>
-                    </div>
-                    <div class="card-body">
-                        @if (Model.Dashboard.RecentProperties.Any())
-                        {
-                            <div class="list-group list-group-flush">
-                                @foreach (var property in Model.Dashboard.RecentProperties)
-                                {
-                                    <div class="list-group-item d-flex justify-content-between align-items-center">
-                                        <div>
-                                            <strong>@property.Name</strong>
-                                            <br><small class="text-muted">@property.Code</small>
-                                        </div>
-                                        <span class="badge bg-primary rounded-pill">@property.TenantCount tenants</span>
+                <div class="card-body">
+                    @if (Model.Dashboard.RecentProperties.Any())
+                    {
+                        <div class="list-group list-group-flush">
+                            @foreach (var property in Model.Dashboard.RecentProperties)
+                            {
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <strong>@property.Name</strong>
+                                        <br><small class="text-muted">@property.Code</small>
                                     </div>
-                                }
-                            </div>
-                        }
-                        else
-                        {
-                            <p class="text-muted mb-0">No properties found.</p>
-                        }
-                    </div>
+                                    <span class="badge bg-primary rounded-pill">@property.TenantCount tenants</span>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-muted mb-0">No properties found.</p>
+                    }
                 </div>
             </div>
-            <div class="col-lg-6">
-                <div class="card">
-                    <div class="card-header bg-primary text-white">
-                        <h5 class="mb-0">Recent Requests</h5>
-                    </div>
-                    <div class="card-body">
-                        @if (Model.Dashboard.RecentRequests.Any())
-                        {
-                            <div class="list-group list-group-flush">
-                                @foreach (var request in Model.Dashboard.RecentRequests)
-                                {
-                                    <div class="list-group-item">
-                                        <div class="d-flex w-100 justify-content-between">
-                                            <h6 class="mb-1">@request.ProblemDescription</h6>
-                                            <small class="text-muted">@request.SubmittedDate.ToString("MM/dd/yyyy")</small>
-                                        </div>
-                                        <small class="text-muted">@request.PropertyName - Unit @request.UnitNumber</small>
+        </div>
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Recent Requests</h5>
+                </div>
+                <div class="card-body">
+                    @if (Model.Dashboard.RecentRequests.Any())
+                    {
+                        <div class="list-group list-group-flush">
+                            @foreach (var request in Model.Dashboard.RecentRequests)
+                            {
+                                <div class="list-group-item">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">@request.ProblemDescription</h6>
+                                        <small class="text-muted">@request.SubmittedDate.ToString("MM/dd/yyyy")</small>
                                     </div>
-                                }
-                            </div>
-                        }
-                        else
-                        {
-                            <p class="text-muted mb-0">No recent requests found.</p>
-                        }
-                    </div>
+                                    <small class="text-muted">@request.PropertyName - Unit @request.UnitNumber</small>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-muted mb-0">No recent requests found.</p>
+                    }
                 </div>
             </div>
         </div>
-    }
-    else if (Model.Dashboard.UserRole == UserRole.PropertySuperintendent)
-    {
-        <!-- Superintendent Dashboard -->
-        <div class="row g-4 mb-4">
-            <div class="col-md-6">
-                <div class="card border-warning">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between">
-                            <div>
-                                <h6 class="card-title text-muted mb-2">Pending Requests</h6>
-                                <div class="h4 mb-0 text-warning">@Model.Dashboard.PendingRequests</div>
-                            </div>
-                            <div class="align-self-center">
-                                <i class="fas fa-clock fa-2x text-warning"></i>
-                            </div>
+    </div>
+}
+else if (Model.Dashboard.UserRole == UserRole.PropertySuperintendent)
+{
+    <!-- Superintendent Dashboard -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-6">
+            <div class="card border-warning">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title text-muted mb-2">Pending Requests</h6>
+                            <div class="h4 mb-0 text-warning">@Model.Dashboard.PendingRequests</div>
                         </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="card border-danger">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between">
-                            <div>
-                                <h6 class="card-title text-muted mb-2">Emergency Requests</h6>
-                                <div class="h4 mb-0 text-danger">@Model.Dashboard.EmergencyRequests</div>
-                            </div>
-                            <div class="align-self-center">
-                                <i class="fas fa-exclamation-triangle fa-2x text-danger"></i>
-                            </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-clock fa-2x text-warning"></i>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+        <div class="col-md-6">
+            <div class="card border-danger">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title text-muted mb-2">Emergency Requests</h6>
+                            <div class="h4 mb-0 text-danger">@Model.Dashboard.EmergencyRequests</div>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-exclamation-triangle fa-2x text-danger"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-        <!-- Request Management Actions -->
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-header bg-success text-white">
-                        <h5 class="mb-0">
-                            <i class="fas fa-clipboard-list me-2"></i>Request Management
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row align-items-center">
-                            <div class="col-md-8">
-                                <p class="card-text text-muted mb-0">
-                                    Manage tenant requests, assign workers, and track progress across your property.
-                                </p>
-                            </div>
-                            <div class="col-md-4 text-md-end">
+    <!-- Request Management Actions -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-clipboard-list me-2"></i>Request Management
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <p class="card-text text-muted mb-0">
+                                Manage tenant requests, assign workers, and track progress across your property.
+                            </p>
+                        </div>
+                        <div class="col-md-4 text-md-end">
+                            <div class="btn-group" role="group">
+                                <a asp-page="/TenantRequests/Manage" class="btn btn-primary">
+                                    <i class="fas fa-cogs me-2"></i>Manage All Requests
+                                </a>
                                 <div class="btn-group" role="group">
-                                    <a asp-page="/TenantRequests/Manage" class="btn btn-primary">
-                                        <i class="fas fa-cogs me-2"></i>Manage All Requests
-                                    </a>
-                                    <div class="btn-group" role="group">
-                                        <button type="button" class="btn btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown" id="quickViewsDropdown">
-                                            <i class="fas fa-filter me-2"></i>Quick Views
-                                        </button>
-                                        <ul class="dropdown-menu">
-                                            <li><a class="dropdown-item" href="#" onclick="filterRequests('all'); return false;">
+                                    <button type="button" class="btn btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown" id="quickViewsDropdown">
+                                        <i class="fas fa-filter me-2"></i>Quick Views
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li>
+                                            <a class="dropdown-item" href="#" onclick="filterRequests('all'); return false;">
                                                 <i class="fas fa-list me-2"></i>Show All
-                                            </a></li>
-                                            <li><a class="dropdown-item" href="#" onclick="filterRequests('pending'); return false;">
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="#" onclick="filterRequests('pending'); return false;">
                                                 <i class="fas fa-clock me-2"></i>Pending Assignment
-                                            </a></li>
-                                            <li><a class="dropdown-item" href="#" onclick="filterRequests('emergency'); return false;">
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="#" onclick="filterRequests('emergency'); return false;">
                                                 <i class="fas fa-exclamation-triangle me-2"></i>Emergency Requests
-                                            </a></li>
-                                            <li><a class="dropdown-item" href="#" onclick="filterRequests('scheduled'); return false;">
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="#" onclick="filterRequests('scheduled'); return false;">
                                                 <i class="fas fa-calendar-check me-2"></i>Scheduled Requests
-                                            </a></li>
-                                            <li><a class="dropdown-item" href="#" onclick="filterRequests('overdue'); return false;">
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="#" onclick="filterRequests('overdue'); return false;">
                                                 <i class="fas fa-calendar-times me-2"></i>Overdue Requests
-                                            </a></li>
-                                        </ul>
-                                    </div>
+                                            </a>
+                                        </li>
+                                    </ul>
                                 </div>
                             </div>
                         </div>
@@ -217,366 +226,371 @@
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- Recent Requests -->
-        <div class="card">
-            <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">
-                    <span id="requestsTitle">Recent Requests</span>
-                    <span id="filterBadge" class="badge bg-secondary ms-2" style="display: none;"></span>
-                </h5>
-                <a asp-page="/TenantRequests/Manage" class="btn btn-sm btn-outline-light">
-                    <i class="fas fa-external-link-alt me-1"></i>View All
-                </a>
+    <!-- Recent Requests -->
+    <div class="card">
+        <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">
+                <span id="requestsTitle">Recent Requests</span>
+                <span id="filterBadge" class="badge bg-secondary ms-2" style="display: none;"></span>
+            </h5>
+            <a asp-page="/TenantRequests/Manage" class="btn btn-sm btn-outline-light">
+                <i class="fas fa-external-link-alt me-1"></i>View All
+            </a>
+        </div>
+        <div class="card-body">
+            @if (Model.Dashboard.RecentRequests.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover" id="requestsTable">
+                        <thead>
+                        <tr>
+                            <th>Unit</th>
+                            <th>Issue</th>
+                            <th>Status</th>
+                            <th>Urgency</th>
+                            <th>Date</th>
+                            <th>Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        @foreach (var request in Model.Dashboard.RecentRequests)
+                        {
+                            <tr data-status="@request.Status.ToLower()"
+                                data-urgency="@request.UrgencyLevel.ToLower()"
+                                data-emergency="@(request.IsEmergency ? "true" : "false")"
+                                data-scheduled-date="@(request.ScheduledDate?.ToString("yyyy-MM-dd") ?? "")"
+                                data-submitted-date="@request.SubmittedDate.ToString("yyyy-MM-dd")">
+                                <td>@request.UnitNumber</td>
+                                <td>@request.ProblemDescription</td>
+                                <td>
+                                    <span class="badge bg-primary">@request.Status</span>
+                                </td>
+                                <td>
+                                    @if (request.IsEmergency)
+                                    {
+                                        <span class="badge bg-danger">
+                                            <i class="fas fa-exclamation-triangle"></i> Emergency
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">@request.UrgencyLevel</span>
+                                    }
+                                </td>
+                                <td>@request.SubmittedDate.ToString("MM/dd/yyyy")</td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a asp-page="/TenantRequests/Details" asp-route-id="@request.Id" asp-route-returnUrl="/Index" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye"></i> View
+                                        </a>
+                                        @if (request.Status.Equals("Submitted", StringComparison.OrdinalIgnoreCase) ||
+                                             request.Status.Equals("Draft", StringComparison.OrdinalIgnoreCase))
+                                        {
+                                            <a asp-page="/TenantRequests/AssignWorker"
+                                               asp-route-requestId="@request.Id"
+                                               asp-route-returnUrl="/Index"
+                                               class="btn btn-sm btn-success">
+                                                <i class="fas fa-user-plus"></i> Assign
+                                            </a>
+                                        }
+                                        else if (request.Status.Equals("Scheduled", StringComparison.OrdinalIgnoreCase))
+                                        {
+                                            <span class="btn btn-sm btn-outline-success disabled">
+                                                <i class="fas fa-user-check"></i> Assigned
+                                            </span>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
+                </div>
+                <div id="noFilterResults" class="text-center py-4" style="display: none;">
+                    <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                    <p class="text-muted mb-3">No requests match the selected filter.</p>
+                    <button class="btn btn-outline-primary" onclick="filterRequests('all')">
+                        <i class="fas fa-times me-2"></i>Clear Filter
+                    </button>
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-4">
+                    <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                    <p class="text-muted mb-3">No recent requests found.</p>
+                    <p class="text-muted">When tenants submit requests, they'll appear here for management.</p>
+                </div>
+            }
+        </div>
+    </div>
+}
+else if (Model.Dashboard.UserRole == UserRole.Tenant)
+{
+    <!-- Tenant Dashboard -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Your Property Information</h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">
+                        <strong>Property:</strong> @Model.Dashboard.PropertyName<br>
+                        <strong>Unit:</strong> @Model.Dashboard.UnitNumber
+                    </p>
+
+                    @if (Request.Query.ContainsKey("debug"))
+                    {
+                        <div class="alert alert-info mt-3">
+                            <h6>Debug: Current Claims</h6>
+                            <ul class="mb-0">
+                                @foreach (var claim in User.Claims)
+                                {
+                                    <li>
+                                        <strong>@claim.Type:</strong> @claim.Value
+                                    </li>
+                                }
+                            </ul>
+                        </div>
+                    }
+
+                    <a asp-page="/TenantRequests/Submit" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>Submit New Request
+                    </a>
+                </div>
             </div>
-            <div class="card-body">
-                @if (Model.Dashboard.RecentRequests.Any())
-                {
-                    <div class="table-responsive">
-                        <table class="table table-hover" id="requestsTable">
-                            <thead>
+        </div>
+    </div>
+
+    <!-- My Requests -->
+    <div class="card">
+        <div class="card-header bg-success text-white">
+            <h5 class="mb-0">My Recent Requests</h5>
+        </div>
+        <div class="card-body">
+            @if (Model.Dashboard.MyRequests.Any())
+            {
+                <div class="list-group">
+                    @foreach (var request in Model.Dashboard.MyRequests)
+                    {
+                        <div class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">
+                                    <a asp-page="/TenantRequests/Details" asp-route-id="@request.Id" class="text-decoration-none">
+                                        @request.ProblemDescription
+                                    </a>
+                                </h6>
+                                <span class="badge bg-primary">@request.Status</span>
+                            </div>
+                            <p class="mb-1">Submitted: @request.SubmittedDate.ToString("MMMM dd, yyyy")</p>
+                            @if (request.ScheduledDate.HasValue)
+                            {
+                                <small class="text-muted">Scheduled: @request.ScheduledDate.Value.ToString("MMMM dd, yyyy")</small>
+                            }
+                            else
+                            {
+                                <small class="text-muted">Request ID: @request.Id</small>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <p class="text-muted mb-0">You haven't submitted any requests yet.</p>
+            }
+        </div>
+    </div>
+}
+else if (Model.Dashboard.UserRole == UserRole.Worker)
+{
+    <!-- Worker Dashboard -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title text-muted mb-2">Active Assignments</h6>
+                            <div class="h4 mb-0 text-primary">@(Model.Dashboard.UpcomingWork.Count(w => w.Status.Equals("Scheduled", StringComparison.OrdinalIgnoreCase)))</div>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-clipboard-list fa-2x text-primary"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-success">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title text-muted mb-2">Completed This Month</h6>
+                            <div class="h4 mb-0 text-success">@Model.Dashboard.CompletedThisMonth</div>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-check-circle fa-2x text-success"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-warning">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title text-muted mb-2">Overdue Work</h6>
+                            <div class="h4 mb-0 text-warning">@(Model.Dashboard.UpcomingWork.Count(w => w.ScheduledDate.HasValue && w.ScheduledDate < DateTime.Now && w.Status.Equals("Scheduled", StringComparison.OrdinalIgnoreCase)))</div>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-exclamation-triangle fa-2x text-warning"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-info">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title text-muted mb-2">Total Assigned</h6>
+                            <div class="h4 mb-0 text-info">@Model.Dashboard.AssignedRequests</div>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-tasks fa-2x text-info"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Work Status Tabs -->
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <ul class="nav nav-tabs card-header-tabs" id="workTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="scheduled-tab" data-bs-toggle="tab" data-bs-target="#scheduled" type="button" role="tab">
+                        <i class="fas fa-clock me-1"></i>Scheduled Work (@(Model.Dashboard.UpcomingWork.Count(w => w.Status.Equals("Scheduled", StringComparison.OrdinalIgnoreCase))))
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="completed-tab" data-bs-toggle="tab" data-bs-target="#completed" type="button" role="tab">
+                        <i class="fas fa-check-circle me-1"></i>Recently Completed (@Model.Dashboard.CompletedThisMonth)
+                    </button>
+                </li>
+            </ul>
+        </div>
+        <div class="card-body">
+            <div class="tab-content" id="workTabsContent">
+                <!-- Scheduled Work Tab -->
+                <div class="tab-pane fade show active" id="scheduled" role="tabpanel">
+                    @{
+                        var scheduledWork = Model.Dashboard.UpcomingWork.Where(w => w.Status.Equals("Scheduled", StringComparison.OrdinalIgnoreCase)).ToList();
+                    }
+                    @if (scheduledWork.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
                                 <tr>
+                                    <th>Priority</th>
+                                    <th>Property</th>
                                     <th>Unit</th>
                                     <th>Issue</th>
-                                    <th>Status</th>
-                                    <th>Urgency</th>
-                                    <th>Date</th>
+                                    <th>Scheduled</th>
                                     <th>Actions</th>
                                 </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var request in Model.Dashboard.RecentRequests)
+                                </thead>
+                                <tbody>
+                                @foreach (var work in scheduledWork.OrderBy(w => w.ScheduledDate))
                                 {
-                                    <tr data-status="@request.Status.ToLower()" 
-                                        data-urgency="@request.UrgencyLevel.ToLower()"
-                                        data-emergency="@(request.IsEmergency ? "true" : "false")"
-                                        data-scheduled-date="@(request.ScheduledDate?.ToString("yyyy-MM-dd") ?? "")"
-                                        data-submitted-date="@request.SubmittedDate.ToString("yyyy-MM-dd")">
-                                        <td>@request.UnitNumber</td>
-                                        <td>@request.ProblemDescription</td>
-                                        <td><span class="badge bg-primary">@request.Status</span></td>
+                                    <tr class="@(work.IsEmergency ? "table-warning" : "") @(work.ScheduledDate.HasValue && work.ScheduledDate < DateTime.Now ? "table-danger" : "")">
                                         <td>
-                                            @if (request.IsEmergency)
+                                            @if (work.IsEmergency)
                                             {
                                                 <span class="badge bg-danger">
                                                     <i class="fas fa-exclamation-triangle"></i> Emergency
                                                 </span>
                                             }
+                                            else if (work.ScheduledDate.HasValue && work.ScheduledDate < DateTime.Now)
+                                            {
+                                                <span class="badge bg-warning">
+                                                    <i class="fas fa-clock"></i> Overdue
+                                                </span>
+                                            }
                                             else
                                             {
-                                                <span class="badge bg-secondary">@request.UrgencyLevel</span>
+                                                <span class="badge bg-secondary">@work.UrgencyLevel</span>
                                             }
                                         </td>
-                                        <td>@request.SubmittedDate.ToString("MM/dd/yyyy")</td>
+                                        <td>@work.PropertyName</td>
+                                        <td>@work.UnitNumber</td>
+                                        <td>
+                                            <span class="text-truncate" style="max-width: 200px; display: inline-block;"
+                                                  title="@work.ProblemDescription">
+                                                @work.ProblemDescription
+                                            </span>
+                                        </td>
+                                        <td>
+                                            @if (work.ScheduledDate.HasValue)
+                                            {
+                                                var isOverdue = work.ScheduledDate < DateTime.Now;
+                                                <span class="@(isOverdue ? "text-danger fw-bold" : "")">
+                                                    @work.ScheduledDate.Value.ToString("MMM dd, yyyy")
+                                                    <br>
+                                                    <small class="@(isOverdue ? "text-danger" : "text-muted")">@work.ScheduledDate.Value.ToString("h:mm tt")</small>
+                                                </span>
+                                            }
+                                        </td>
                                         <td>
                                             <div class="btn-group" role="group">
-                                                <a asp-page="/TenantRequests/Details" asp-route-id="@request.Id" asp-route-returnUrl="/Index" class="btn btn-sm btn-outline-primary">
+                                                <a asp-page="/TenantRequests/Complete" asp-route-id="@work.Id" class="btn btn-sm btn-success">
+                                                    <i class="fas fa-clipboard-check"></i> Report Completed
+                                                </a>
+                                                <a asp-page="/TenantRequests/Details" asp-route-id="@work.Id" class="btn btn-sm btn-outline-primary">
                                                     <i class="fas fa-eye"></i> View
                                                 </a>
-                                                @if (request.Status.Equals("Submitted", StringComparison.OrdinalIgnoreCase) || 
-                                                     request.Status.Equals("Draft", StringComparison.OrdinalIgnoreCase))
-                                                {
-                                                    <a asp-page="/TenantRequests/AssignWorker" 
-                                                       asp-route-requestId="@request.Id" 
-                                                       asp-route-returnUrl="/Index" 
-                                                       class="btn btn-sm btn-success">
-                                                        <i class="fas fa-user-plus"></i> Assign
-                                                    </a>
-                                                }
-                                                else if (request.Status.Equals("Scheduled", StringComparison.OrdinalIgnoreCase))
-                                                {
-                                                    <span class="btn btn-sm btn-outline-success disabled">
-                                                        <i class="fas fa-user-check"></i> Assigned
-                                                    </span>
-                                                }
                                             </div>
                                         </td>
                                     </tr>
                                 }
-                            </tbody>
-                        </table>
-                    </div>
-                    <div id="noFilterResults" class="text-center py-4" style="display: none;">
-                        <i class="fas fa-search fa-3x text-muted mb-3"></i>
-                        <p class="text-muted mb-3">No requests match the selected filter.</p>
-                        <button class="btn btn-outline-primary" onclick="filterRequests('all')">
-                            <i class="fas fa-times me-2"></i>Clear Filter
-                        </button>
-                    </div>
-                }
-                else
-                {
-                    <div class="text-center py-4">
-                        <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
-                        <p class="text-muted mb-3">No recent requests found.</p>
-                        <p class="text-muted">When tenants submit requests, they'll appear here for management.</p>
-                    </div>
-                }
-            </div>
-        </div>
-    }
-    else if (Model.Dashboard.UserRole == UserRole.Tenant)
-    {
-        <!-- Tenant Dashboard -->
-        <div class="row mb-4">
-            <div class="col-md-8">
-                <div class="card">
-                    <div class="card-header bg-info text-white">
-                        <h5 class="mb-0">Your Property Information</h5>
-                    </div>
-                    <div class="card-body">
-                        <p class="card-text">
-                            <strong>Property:</strong> @Model.Dashboard.PropertyName<br>
-                            <strong>Unit:</strong> @Model.Dashboard.UnitNumber
-                        </p>
-                        
-                        @if (Request.Query.ContainsKey("debug"))
-                        {
-                            <div class="alert alert-info mt-3">
-                                <h6>Debug: Current Claims</h6>
-                                <ul class="mb-0">
-                                    @foreach (var claim in User.Claims)
-                                    {
-                                        <li><strong>@claim.Type:</strong> @claim.Value</li>
-                                    }
-                                </ul>
-                            </div>
-                        }
-                        
-                        <a asp-page="/TenantRequests/Submit" class="btn btn-primary">
-                            <i class="fas fa-plus me-2"></i>Submit New Request
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- My Requests -->
-        <div class="card">
-            <div class="card-header bg-success text-white">
-                <h5 class="mb-0">My Recent Requests</h5>
-            </div>
-            <div class="card-body">
-                @if (Model.Dashboard.MyRequests.Any())
-                {
-                    <div class="list-group">
-                        @foreach (var request in Model.Dashboard.MyRequests)
-                        {
-                            <div class="list-group-item">
-                                <div class="d-flex w-100 justify-content-between">
-                                    <h6 class="mb-1">
-                                        <a asp-page="/TenantRequests/Details" asp-route-id="@request.Id" class="text-decoration-none">
-                                            @request.ProblemDescription
-                                        </a>
-                                    </h6>
-                                    <span class="badge bg-primary">@request.Status</span>
-                                </div>
-                                <p class="mb-1">Submitted: @request.SubmittedDate.ToString("MMMM dd, yyyy")</p>
-                                @if (request.ScheduledDate.HasValue)
-                                {
-                                    <small class="text-muted">Scheduled: @request.ScheduledDate.Value.ToString("MMMM dd, yyyy")</small>
-                                }
-                                else
-                                {
-                                    <small class="text-muted">Request ID: @request.Id</small>
-                                }
-                            </div>
-                        }
-                    </div>
-                }
-                else
-                {
-                    <p class="text-muted mb-0">You haven't submitted any requests yet.</p>
-                }
-            </div>
-        </div>
-    }
-    else if (Model.Dashboard.UserRole == UserRole.Worker)
-    {
-        <!-- Worker Dashboard -->
-        <div class="row g-4 mb-4">
-            <div class="col-md-3">
-                <div class="card">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between">
-                            <div>
-                                <h6 class="card-title text-muted mb-2">Active Assignments</h6>
-                                <div class="h4 mb-0 text-primary">@(Model.Dashboard.UpcomingWork.Count(w => w.Status.Equals("Scheduled", StringComparison.OrdinalIgnoreCase)))</div>
-                            </div>
-                            <div class="align-self-center">
-                                <i class="fas fa-clipboard-list fa-2x text-primary"></i>
-                            </div>
+                                </tbody>
+                            </table>
                         </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card border-success">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between">
-                            <div>
-                                <h6 class="card-title text-muted mb-2">Completed This Month</h6>
-                                <div class="h4 mb-0 text-success">@Model.Dashboard.CompletedThisMonth</div>
-                            </div>
-                            <div class="align-self-center">
-                                <i class="fas fa-check-circle fa-2x text-success"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card border-warning">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between">
-                            <div>
-                                <h6 class="card-title text-muted mb-2">Overdue Work</h6>
-                                <div class="h4 mb-0 text-warning">@(Model.Dashboard.UpcomingWork.Count(w => w.ScheduledDate.HasValue && w.ScheduledDate < DateTime.Now && w.Status.Equals("Scheduled", StringComparison.OrdinalIgnoreCase)))</div>
-                            </div>
-                            <div class="align-self-center">
-                                <i class="fas fa-exclamation-triangle fa-2x text-warning"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card border-info">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between">
-                            <div>
-                                <h6 class="card-title text-muted mb-2">Total Assigned</h6>
-                                <div class="h4 mb-0 text-info">@Model.Dashboard.AssignedRequests</div>
-                            </div>
-                            <div class="align-self-center">
-                                <i class="fas fa-tasks fa-2x text-info"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Work Status Tabs -->
-        <div class="card">
-            <div class="card-header bg-primary text-white">
-                <ul class="nav nav-tabs card-header-tabs" id="workTabs" role="tablist">
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link active" id="scheduled-tab" data-bs-toggle="tab" data-bs-target="#scheduled" type="button" role="tab">
-                            <i class="fas fa-clock me-1"></i>Scheduled Work (@(Model.Dashboard.UpcomingWork.Count(w => w.Status.Equals("Scheduled", StringComparison.OrdinalIgnoreCase))))
-                        </button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="completed-tab" data-bs-toggle="tab" data-bs-target="#completed" type="button" role="tab">
-                            <i class="fas fa-check-circle me-1"></i>Recently Completed (@Model.Dashboard.CompletedThisMonth)
-                        </button>
-                    </li>
-                </ul>
-            </div>
-            <div class="card-body">
-                <div class="tab-content" id="workTabsContent">
-                    <!-- Scheduled Work Tab -->
-                    <div class="tab-pane fade show active" id="scheduled" role="tabpanel">
-                        @{
-                            var scheduledWork = Model.Dashboard.UpcomingWork.Where(w => w.Status.Equals("Scheduled", StringComparison.OrdinalIgnoreCase)).ToList();
-                        }
-                        @if (scheduledWork.Any())
-                        {
-                            <div class="table-responsive">
-                                <table class="table table-hover">
-                                    <thead>
-                                        <tr>
-                                            <th>Priority</th>
-                                            <th>Property</th>
-                                            <th>Unit</th>
-                                            <th>Issue</th>
-                                            <th>Scheduled</th>
-                                            <th>Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach (var work in scheduledWork.OrderBy(w => w.ScheduledDate))
-                                        {
-                                            <tr class="@(work.IsEmergency ? "table-warning" : "") @(work.ScheduledDate.HasValue && work.ScheduledDate < DateTime.Now ? "table-danger" : "")">
-                                                <td>
-                                                    @if (work.IsEmergency)
-                                                    {
-                                                        <span class="badge bg-danger">
-                                                            <i class="fas fa-exclamation-triangle"></i> Emergency
-                                                        </span>
-                                                    }
-                                                    else if (work.ScheduledDate.HasValue && work.ScheduledDate < DateTime.Now)
-                                                    {
-                                                        <span class="badge bg-warning">
-                                                            <i class="fas fa-clock"></i> Overdue
-                                                        </span>
-                                                    }
-                                                    else
-                                                    {
-                                                        <span class="badge bg-secondary">@work.UrgencyLevel</span>
-                                                    }
-                                                </td>
-                                                <td>@work.PropertyName</td>
-                                                <td>@work.UnitNumber</td>
-                                                <td>
-                                                    <span class="text-truncate" style="max-width: 200px; display: inline-block;" 
-                                                          title="@work.ProblemDescription">
-                                                        @work.ProblemDescription
-                                                    </span>
-                                                </td>
-                                                <td>
-                                                    @if (work.ScheduledDate.HasValue)
-                                                    {
-                                                        var isOverdue = work.ScheduledDate < DateTime.Now;
-                                                        <span class="@(isOverdue ? "text-danger fw-bold" : "")">
-                                                            @work.ScheduledDate.Value.ToString("MMM dd, yyyy")
-                                                            <br>
-                                                            <small class="@(isOverdue ? "text-danger" : "text-muted")">@work.ScheduledDate.Value.ToString("h:mm tt")</small>
-                                                        </span>
-                                                    }
-                                                </td>
-                                                <td>
-                                                    <div class="btn-group" role="group">
-                                                        <a asp-page="/TenantRequests/Complete" asp-route-id="@work.Id" class="btn btn-sm btn-success">
-                                                            <i class="fas fa-clipboard-check"></i> Report Completed
-                                                        </a>
-                                                        <a asp-page="/TenantRequests/Details" asp-route-id="@work.Id" class="btn btn-sm btn-outline-primary">
-                                                            <i class="fas fa-eye"></i> View
-                                                        </a>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        }
-                                    </tbody>
-                                </table>
-                            </div>
-                        }
-                        else
-                        {
-                            <div class="text-center py-4">
-                                <i class="fas fa-calendar-check fa-3x text-muted mb-3"></i>
-                                <p class="text-muted mb-0">No scheduled work at this time.</p>
-                                <p class="text-muted">Great job staying on top of your assignments!</p>
-                            </div>
-                        }
-                    </div>
-
-                    <!-- Recently Completed Tab -->
-                    <div class="tab-pane fade" id="completed" role="tabpanel">
-                        @{
-                            // This would need to be loaded from a service in real implementation
-                            // For now, we'll show a placeholder
-                        }
+                    }
+                    else
+                    {
                         <div class="text-center py-4">
-                            <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
-                            <p class="text-muted mb-0">You've completed @Model.Dashboard.CompletedThisMonth work orders this month.</p>
-                            <p class="text-muted">Keep up the excellent work!</p>
+                            <i class="fas fa-calendar-check fa-3x text-muted mb-3"></i>
+                            <p class="text-muted mb-0">No scheduled work at this time.</p>
+                            <p class="text-muted">Great job staying on top of your assignments!</p>
                         </div>
+                    }
+                </div>
+
+                <!-- Recently Completed Tab -->
+                <div class="tab-pane fade" id="completed" role="tabpanel">
+                    @{
+                        // This would need to be loaded from a service in real implementation
+                        // For now, we'll show a placeholder
+                    }
+                    <div class="text-center py-4">
+                        <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                        <p class="text-muted mb-0">You've completed @Model.Dashboard.CompletedThisMonth work orders this month.</p>
+                        <p class="text-muted">Keep up the excellent work!</p>
                     </div>
                 </div>
             </div>
         </div>
-    }
+    </div>
+}
 </div>
 
 @section Scripts {

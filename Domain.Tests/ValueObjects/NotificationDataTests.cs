@@ -97,13 +97,13 @@ public class NotificationDataTests
     {
         // Note: The current implementation doesn't validate worker email to allow flexibility
         // This might be by design to handle cases where email validation is done elsewhere
-        
+
         // Arrange
         var request = CreateTestTenantRequest();
 
         // Act & Assert - Should not throw since validation is handled elsewhere
         var notification = NotificationData.CreateWorkerAssignmentNotification(request, invalidEmail!);
-        
+
         // The notification should be created even with invalid email
         notification.Should().NotBeNull();
         notification.RecipientEmail.Should().Be(invalidEmail);
@@ -137,19 +137,20 @@ public class NotificationDataTests
         // Assert - NotificationData should be immutable
         notification.Subject.Should().Be(originalSubject);
         notification.Body.Should().Be(originalBody);
-        
+
         // Since NotificationData is a record with init properties, it should be immutable by design
         // The properties should only have get accessors or init accessors
         var subjectProperty = typeof(NotificationData).GetProperty(nameof(notification.Subject));
         var bodyProperty = typeof(NotificationData).GetProperty(nameof(notification.Body));
-        
+
         // For init properties, CanWrite is true but they can only be set during initialization
         // This is the expected behavior for records with init properties
         if (subjectProperty?.SetMethod?.IsPublic == true)
         {
             // Check if it's an init-only setter (C# 9+ feature)
             var setMethod = subjectProperty.SetMethod;
-            var isInitOnly = setMethod.ReturnParameter.GetRequiredCustomModifiers().Any(x => x.Name == "IsExternalInit");
+            var isInitOnly = setMethod.ReturnParameter.GetRequiredCustomModifiers()
+                .Any(x => x.Name == "IsExternalInit");
             isInitOnly.Should().BeTrue("Subject should be init-only");
         }
     }
@@ -220,9 +221,9 @@ public class NotificationDataTests
     {
         // The TenantRequest itself validates emails during creation, so the invalid email
         // never reaches the NotificationData. This test verifies this behavior.
-        
+
         // Act & Assert - Should throw during TenantRequest creation, not during notification creation
-        Assert.Throws<Domain.Exceptions.TenantRequestDomainException>(() => 
+        Assert.Throws<Domain.Exceptions.TenantRequestDomainException>(() =>
             CreateTestTenantRequestWithInvalidEmail());
     }
 
@@ -238,11 +239,11 @@ public class NotificationDataTests
         // Assert
         notification.Subject.Should().NotBeNullOrEmpty();
         notification.Body.Should().NotBeNullOrEmpty();
-        
+
         // The subject might be longer than 200 chars when including the long title
         // This is expected behavior - the notification system should handle long subjects
         notification.Subject.Length.Should().BeGreaterThan(0);
-        
+
         // Verify that the notification contains the title (truncated or not)
         notification.Subject.Should().Contain("Request Submitted");
     }
@@ -305,7 +306,7 @@ public class NotificationDataTests
     {
         // Create a title that's just under the limit (200 chars) to test handling of long subjects
         var longTitle = new string('A', 190); // Just under the 200 character limit
-        
+
         return Domain.Entities.TenantRequest.CreateNew(
             "TEST-001-101-001",
             longTitle,

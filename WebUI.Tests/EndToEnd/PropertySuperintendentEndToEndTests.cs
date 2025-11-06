@@ -32,25 +32,27 @@ public class PropertySuperintendentEndToEndTests : IClassFixture<WebApplicationT
 
         // Step 1: Login as Property Superintendent
         await LoginAsPropertySuperintendent();
-        
+
         // Step 2: Access dashboard
         var dashboardResponse = await _client.GetAsync("/");
-        if (dashboardResponse.StatusCode == HttpStatusCode.Redirect || dashboardResponse.StatusCode == HttpStatusCode.PermanentRedirect)
+        if (dashboardResponse.StatusCode == HttpStatusCode.Redirect ||
+            dashboardResponse.StatusCode == HttpStatusCode.PermanentRedirect)
         {
             var location = dashboardResponse.Headers.Location?.ToString() ?? "/Index";
             dashboardResponse = await _client.GetAsync(location);
         }
 
-        dashboardResponse.StatusCode.Should().BeOneOf(HttpStatusCode.OK, HttpStatusCode.Redirect, HttpStatusCode.Found, HttpStatusCode.PermanentRedirect);
-        
+        dashboardResponse.StatusCode.Should().BeOneOf(HttpStatusCode.OK, HttpStatusCode.Redirect, HttpStatusCode.Found,
+            HttpStatusCode.PermanentRedirect);
+
         if (dashboardResponse.StatusCode == HttpStatusCode.OK)
         {
             var dashboardContent = await dashboardResponse.Content.ReadAsStringAsync();
-            
+
             // Verify superintendent sees property-specific dashboard
             dashboardContent.Should().NotBeNullOrEmpty();
         }
-        
+
         _output.WriteLine("Superintendent dashboard shows property-focused data");
     }
 
@@ -61,7 +63,7 @@ public class PropertySuperintendentEndToEndTests : IClassFixture<WebApplicationT
 
         // Step 1: Login as Property Superintendent
         await LoginAsPropertySuperintendent();
-        
+
         // Step 2: Access request management pages
         var requestPages = new[]
         {
@@ -73,18 +75,19 @@ public class PropertySuperintendentEndToEndTests : IClassFixture<WebApplicationT
         foreach (var page in requestPages)
         {
             _output.WriteLine($"Testing access to {page} for request management");
-            
+
             var response = await _client.GetAsync(page);
-            response.StatusCode.Should().BeOneOf(HttpStatusCode.OK, HttpStatusCode.Redirect, HttpStatusCode.Found, HttpStatusCode.PermanentRedirect);
-            
+            response.StatusCode.Should().BeOneOf(HttpStatusCode.OK, HttpStatusCode.Redirect, HttpStatusCode.Found,
+                HttpStatusCode.PermanentRedirect);
+
             if (response.StatusCode == HttpStatusCode.OK)
             {
                 var content = await response.Content.ReadAsStringAsync();
                 content.Should().NotBeNullOrEmpty();
                 _output.WriteLine($"{page} accessible for superintendent");
             }
-            else if (response.StatusCode == HttpStatusCode.Redirect || 
-                     response.StatusCode == HttpStatusCode.Found || 
+            else if (response.StatusCode == HttpStatusCode.Redirect ||
+                     response.StatusCode == HttpStatusCode.Found ||
                      response.StatusCode == HttpStatusCode.PermanentRedirect)
             {
                 // Follow redirect to see actual content
@@ -115,17 +118,17 @@ public class PropertySuperintendentEndToEndTests : IClassFixture<WebApplicationT
         // Using a sample request ID - in real scenario, this would be from seeded data
         var testRequestId = 1;
         var assignWorkerResponse = await _client.GetAsync($"/TenantRequests/AssignWorker/{testRequestId}");
-        
+
         // The response could be OK (page found), NotFound (no such request), or Redirect (auth issue)
         // Should either show request details or handle non-existent request appropriately
         assignWorkerResponse.StatusCode.Should().BeOneOf(
-            HttpStatusCode.OK, 
-            HttpStatusCode.NotFound, 
-            HttpStatusCode.Redirect, 
+            HttpStatusCode.OK,
+            HttpStatusCode.NotFound,
+            HttpStatusCode.Redirect,
             HttpStatusCode.Found,
             HttpStatusCode.Unauthorized,
             HttpStatusCode.PermanentRedirect);
-        
+
         if (assignWorkerResponse.StatusCode == HttpStatusCode.OK)
         {
             var assignContent = await assignWorkerResponse.Content.ReadAsStringAsync();
@@ -157,19 +160,16 @@ public class PropertySuperintendentEndToEndTests : IClassFixture<WebApplicationT
             "/Index"
         };
 
-        bool hasAccessToTenantData = false;
+        var hasAccessToTenantData = false;
 
         foreach (var page in tenantPages)
         {
             var response = await _client.GetAsync(page);
-            
+
             if (response.StatusCode == HttpStatusCode.Redirect || response.StatusCode == HttpStatusCode.Found)
             {
                 var location = response.Headers.Location?.ToString();
-                if (!string.IsNullOrEmpty(location))
-                {
-                    response = await _client.GetAsync(location);
-                }
+                if (!string.IsNullOrEmpty(location)) response = await _client.GetAsync(location);
             }
 
             if (response.StatusCode == HttpStatusCode.OK)
@@ -186,13 +186,15 @@ public class PropertySuperintendentEndToEndTests : IClassFixture<WebApplicationT
 
         // At minimum, superintendent should have access to some dashboard
         var dashboardResponse = await _client.GetAsync("/");
-        if (dashboardResponse.StatusCode == HttpStatusCode.Redirect || dashboardResponse.StatusCode == HttpStatusCode.PermanentRedirect)
+        if (dashboardResponse.StatusCode == HttpStatusCode.Redirect ||
+            dashboardResponse.StatusCode == HttpStatusCode.PermanentRedirect)
         {
             var location = dashboardResponse.Headers.Location?.ToString() ?? "/Index";
             dashboardResponse = await _client.GetAsync(location);
         }
-        
-        dashboardResponse.StatusCode.Should().BeOneOf(HttpStatusCode.OK, HttpStatusCode.Redirect, HttpStatusCode.Found, HttpStatusCode.PermanentRedirect);
+
+        dashboardResponse.StatusCode.Should().BeOneOf(HttpStatusCode.OK, HttpStatusCode.Redirect, HttpStatusCode.Found,
+            HttpStatusCode.PermanentRedirect);
         _output.WriteLine("Superintendent has access to property management interface");
     }
 
@@ -211,8 +213,9 @@ public class PropertySuperintendentEndToEndTests : IClassFixture<WebApplicationT
 
         var loginFormContent = new FormUrlEncodedContent(loginData);
         var loginPostResponse = await _client.PostAsync("/Account/Login", loginFormContent);
-        
-        loginPostResponse.StatusCode.Should().BeOneOf(HttpStatusCode.Redirect, HttpStatusCode.Found, HttpStatusCode.PermanentRedirect);
+
+        loginPostResponse.StatusCode.Should().BeOneOf(HttpStatusCode.Redirect, HttpStatusCode.Found,
+            HttpStatusCode.PermanentRedirect);
     }
 
     private static string ExtractAntiforgeryToken(string html)

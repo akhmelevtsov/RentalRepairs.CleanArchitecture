@@ -36,11 +36,9 @@ public class AdminLoginPageModel
     [Display(Name = "Password")]
     public string Password { get; set; } = string.Empty;
 
-    [Display(Name = "Remember me")]
-    public bool RememberMe { get; set; }
+    [Display(Name = "Remember me")] public bool RememberMe { get; set; }
 
     public string? ReturnUrl { get; set; }
-
 }
 
 public class TenantLoginPageModel
@@ -63,13 +61,10 @@ public class TenantLoginPageModel
     [Display(Name = "Unit Number")]
     public string UnitNumber { get; set; } = string.Empty;
 
-    [Display(Name = "Remember me")]
-    public bool RememberMe { get; set; }
+    [Display(Name = "Remember me")] public bool RememberMe { get; set; }
 
     public string? ReturnUrl { get; set; }
-
 }
-
 
 public class WorkerLoginPageModel
 {
@@ -87,8 +82,7 @@ public class WorkerLoginPageModel
     [Display(Name = "Specialization")]
     public string Specialization { get; set; } = string.Empty;
 
-    [Display(Name = "Remember me")]
-    public bool RememberMe { get; set; }
+    [Display(Name = "Remember me")] public bool RememberMe { get; set; }
 
     public string? ReturnUrl { get; set; }
 
@@ -103,6 +97,4 @@ public class WorkerLoginPageModel
         "Locksmith",
         "Appliance Repair"
     };
-
- 
 }

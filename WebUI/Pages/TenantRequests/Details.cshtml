@@ -36,7 +36,7 @@
                         @request?.Status
                     </span>
                 </div>
-                
+
                 <div class="card-body">
                     <!-- UI HELPER: Enhanced emergency alert with centralized logic -->
                     @if (Model.ShouldShowEmergencyAlert())
@@ -65,10 +65,11 @@
                             <small class="text-muted">@Model.GetProgressPercentage()%</small>
                         </div>
                         <div class="progress" style="height: 8px;">
-                            <div class="progress-bar bg-primary" role="progressbar" 
-                                 style="width: @(Model.GetProgressPercentage())%" 
-                                 aria-valuenow="@Model.GetProgressPercentage()" 
-                                 aria-valuemin="0" aria-valuemax="100"></div>
+                            <div class="progress-bar bg-primary" role="progressbar"
+                                 style="width: @(Model.GetProgressPercentage())%"
+                                 aria-valuenow="@Model.GetProgressPercentage()"
+                                 aria-valuemin="0" aria-valuemax="100">
+                            </div>
                         </div>
                         <small class="text-muted">@Model.GetStatusDescription()</small>
                     </div>
@@ -79,16 +80,16 @@
                             <dl class="row">
                                 <dt class="col-sm-4">Description:</dt>
                                 <dd class="col-sm-8">@request?.Description</dd>
-                                
+
                                 <!-- UI HELPER: Enhanced urgency display with icon and badge -->
                                 <dt class="col-sm-4">Urgency:</dt>
                                 <dd class="col-sm-8">
                                     <span class="@Model.GetUrgencyClass()">@request?.UrgencyLevel</span>
                                 </dd>
-                                
+
                                 <dt class="col-sm-4">Created:</dt>
                                 <dd class="col-sm-8">@Model.GetFormattedCreatedDate()</dd>
-                                
+
                                 @if (request?.ScheduledDate.HasValue == true)
                                 {
                                     <dt class="col-sm-4">Scheduled:</dt>
@@ -96,34 +97,34 @@
                                 }
                             </dl>
                         </div>
-                        
+
                         <div class="col-md-6">
                             <h6 class="text-dark fw-bold">Tenant Information</h6>
                             <dl class="row">
                                 <!-- Direct access to flattened tenant data -->
                                 <dt class="col-sm-4">Tenant:</dt>
                                 <dd class="col-sm-8">@request?.TenantFullName</dd>
-                                
+
                                 <dt class="col-sm-4">Email:</dt>
                                 <dd class="col-sm-8">
                                     <a href="mailto:@request?.TenantEmail">@request?.TenantEmail</a>
                                 </dd>
-                                
+
                                 <dt class="col-sm-4">Unit:</dt>
                                 <dd class="col-sm-8">@request?.TenantUnit</dd>
                             </dl>
-                            
+
                             <h6 class="text-dark fw-bold">Property Information</h6>
                             <dl class="row">
                                 <!-- Direct access to flattened property data -->
                                 <dt class="col-sm-4">Property:</dt>
                                 <dd class="col-sm-8">@request?.PropertyName</dd>
-                                
+
                                 <dt class="col-sm-4">Phone:</dt>
                                 <dd class="col-sm-8">
                                     <a href="tel:@request?.PropertyPhone">@request?.PropertyPhone</a>
                                 </dd>
-                                
+
                                 <!-- FIXED: Ensure proper HTML structure for superintendent field -->
                                 <dt class="col-sm-4">Superintendent</dt>
                                 <dd class="col-sm-8">@request?.SuperintendentFullName</dd>
@@ -142,14 +143,14 @@
                                     <dt class="col-sm-2">Assigned Worker:</dt>
                                     <dd class="col-sm-4">@request.AssignedWorkerEmail</dd>
                                 }
-                                
+
                                 @if (!string.IsNullOrEmpty(request?.WorkOrderNumber))
                                 {
                                     <dt class="col-sm-2">Work Order:</dt>
                                     <dd class="col-sm-4">@request.WorkOrderNumber</dd>
                                 }
                             </dl>
-                            
+
                             @if (!string.IsNullOrEmpty(request?.CompletionNotes))
                             {
                                 <div class="alert alert-info">
@@ -161,7 +162,7 @@
                 </div>
             </div>
         </div>
-        
+
         <div class="col-md-4">
             <!-- Action Panel -->
             <div class="card">
@@ -178,20 +179,20 @@
                             <a asp-page="/TenantRequests/Complete" asp-route-id="@request.Id" class="btn btn-success w-100 mb-2">
                                 <i class="fas fa-clipboard-check me-2"></i>Report Work Completed
                             </a>
-                            <hr />
+                            <hr/>
                         }
                     }
 
                     @{
                         var availableActions = Model.GetAvailableQuickActions();
-                        
+
                         // Filter out "Report Work Completed" action for Workers since they have domain-specific "Report Work Completed" button above
                         if (User.IsInRole("Worker"))
                         {
                             availableActions = availableActions.Where(a => a != "Report Work Completed").ToList();
                         }
                     }
-                    
+
                     @foreach (var action in availableActions)
                     {
                         @if (action == "Submit")
@@ -221,41 +222,41 @@
                         {
                             @if (action == "Assign Worker")
                             {
-                                <a asp-page="/TenantRequests/AssignWorker" asp-route-requestId="@request.Id" asp-route-returnUrl="@($"{HttpContext.Request.Path}{HttpContext.Request.QueryString}")" 
+                                <a asp-page="/TenantRequests/AssignWorker" asp-route-requestId="@request.Id" asp-route-returnUrl="@($"{HttpContext.Request.Path}{HttpContext.Request.QueryString}")"
                                    class="btn btn-outline-primary w-100 mb-2">
                                     <i class="fas fa-user-plus me-2"></i>@action
                                 </a>
                             }
                             else if (action == "Report Work Completed")
                             {
-                                <a asp-page="/TenantRequests/Complete" asp-route-id="@request.Id" asp-route-returnUrl="@($"{HttpContext.Request.Path}{HttpContext.Request.QueryString}")" 
+                                <a asp-page="/TenantRequests/Complete" asp-route-id="@request.Id" asp-route-returnUrl="@($"{HttpContext.Request.Path}{HttpContext.Request.QueryString}")"
                                    class="btn btn-outline-primary w-100 mb-2">
                                     <i class="fas fa-clipboard-check me-2"></i>@action
                                 </a>
                             }
                             else if (action == "Decline")
                             {
-                                <a asp-page="/TenantRequests/Decline" asp-route-id="@request.Id" 
+                                <a asp-page="/TenantRequests/Decline" asp-route-id="@request.Id"
                                    class="btn btn-outline-warning w-100 mb-2">
                                     <i class="fas fa-times-circle me-2"></i>@action
                                 </a>
                             }
                             else
                             {
-                                <a href="/tenant-requests/@(action.ToLower().Replace(" ", "-"))/@request.Id" 
+                                <a href="/tenant-requests/@(action.ToLower().Replace(" ", "-"))/@request.Id"
                                    class="btn btn-outline-primary w-100 mb-2">
                                     <i class="fas fa-cog me-2"></i>@action
                                 </a>
                             }
                         }
                     }
-                    
+
                     <!-- Smart Navigation Links - Uses ReturnUrl when available -->
                     @{
                         var returnUrl = ViewData["ReturnUrl"] as string;
                         var hasReturnUrl = !string.IsNullOrEmpty(returnUrl);
                     }
-                    
+
                     @if (hasReturnUrl)
                     {
                         <a href="@returnUrl" class="btn btn-outline-secondary w-100 mt-2">
@@ -339,7 +340,7 @@
             }
         });
     </script>
-    
+
     <style>
         /* Fix for definition list formatting to prevent stray colons */
         .row dl.row dt {

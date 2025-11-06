@@ -26,7 +26,7 @@ public class AuthenticationFunctionalTests : IClassFixture<WebApplicationTestFac
     {
         // Arrange
         _output.WriteLine("Testing unified authentication service with valid admin credentials");
-        
+
         using var scope = _factory.Services.CreateScope();
         var authService = scope.ServiceProvider.GetRequiredService<IAuthenticationService>();
 
@@ -54,7 +54,7 @@ public class AuthenticationFunctionalTests : IClassFixture<WebApplicationTestFac
     {
         // Arrange
         _output.WriteLine("Testing unified authentication service with tenant credentials");
-        
+
         using var scope = _factory.Services.CreateScope();
         var authService = scope.ServiceProvider.GetRequiredService<IAuthenticationService>();
 
@@ -84,7 +84,7 @@ public class AuthenticationFunctionalTests : IClassFixture<WebApplicationTestFac
     {
         // Arrange
         _output.WriteLine("Testing unified authentication service with worker credentials");
-        
+
         using var scope = _factory.Services.CreateScope();
         var authService = scope.ServiceProvider.GetRequiredService<IAuthenticationService>();
 
@@ -113,7 +113,7 @@ public class AuthenticationFunctionalTests : IClassFixture<WebApplicationTestFac
     {
         // Arrange
         _output.WriteLine("Testing unified authentication service with invalid credentials");
-        
+
         using var scope = _factory.Services.CreateScope();
         var authService = scope.ServiceProvider.GetRequiredService<IAuthenticationService>();
 
@@ -132,7 +132,7 @@ public class AuthenticationFunctionalTests : IClassFixture<WebApplicationTestFac
     {
         // Arrange
         _output.WriteLine("Testing login page loads correctly");
-        
+
         var client = _factory.CreateClient();
 
         // Act
@@ -141,17 +141,17 @@ public class AuthenticationFunctionalTests : IClassFixture<WebApplicationTestFac
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var content = await response.Content.ReadAsStringAsync();
-        
+
         // Verify unified login form elements are present
         content.Should().Contain("Sign in to your account");
         content.Should().Contain("Email Address");
         content.Should().Contain("Password");
         content.Should().Contain("Sign In");
-        
+
         // Fix: Verify actual login page content instead of outdated text
         content.Should().Contain("Welcome Back");
         content.Should().Contain("Development Login Help");
-        
+
         _output.WriteLine("Login page loads with unified login UI");
     }
 
@@ -160,12 +160,12 @@ public class AuthenticationFunctionalTests : IClassFixture<WebApplicationTestFac
     {
         // Arrange
         _output.WriteLine("Testing web-level login with mocked authentication service");
-        
+
         var mockAuthService = new Mock<IAuthenticationService>();
         mockAuthService.Setup(x => x.AuthenticateAsync("test@demo.com", "Demo123!"))
             .ReturnsAsync(AuthenticationResult.Success(
                 "test@demo.com",
-                "test@demo.com", 
+                "test@demo.com",
                 "Test User",
                 new List<string> { "SystemAdmin" }));
 
@@ -177,7 +177,7 @@ public class AuthenticationFunctionalTests : IClassFixture<WebApplicationTestFac
                 var descriptor = services.SingleOrDefault(d => d.ServiceType == typeof(IAuthenticationService));
                 if (descriptor != null)
                     services.Remove(descriptor);
-                
+
                 services.AddScoped(_ => mockAuthService.Object);
             });
         }).CreateClient();
@@ -194,10 +194,10 @@ public class AuthenticationFunctionalTests : IClassFixture<WebApplicationTestFac
         // Assert - Verify the mocked service would work
         var scopeFactory = _factory.Services.GetRequiredService<IServiceScopeFactory>();
         using var scope = scopeFactory.CreateScope();
-        
+
         // This part tests that our service replacement would work in integration
         mockAuthService.Verify(x => x.AuthenticateAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
-        
+
         _output.WriteLine("Web-level test setup successful with mocked service");
     }
 
@@ -206,18 +206,18 @@ public class AuthenticationFunctionalTests : IClassFixture<WebApplicationTestFac
     {
         // Arrange
         _output.WriteLine("Testing demo user service configuration");
-        
+
         using var scope = _factory.Services.CreateScope();
         var demoUserService = scope.ServiceProvider.GetService<IDemoUserService>();
 
         // Assert
         demoUserService.Should().NotBeNull();
-        
+
         if (demoUserService != null)
         {
             var isDemoMode = demoUserService.IsDemoModeEnabled();
             _output.WriteLine($"Demo mode enabled: {isDemoMode}");
-            
+
             if (isDemoMode)
             {
                 var defaultPassword = demoUserService.GetDefaultPassword();
@@ -225,7 +225,7 @@ public class AuthenticationFunctionalTests : IClassFixture<WebApplicationTestFac
                 _output.WriteLine($"Default password configured: {defaultPassword}");
             }
         }
-        
+
         _output.WriteLine("Demo user service properly configured");
     }
 
@@ -234,12 +234,13 @@ public class AuthenticationFunctionalTests : IClassFixture<WebApplicationTestFac
     {
         // Arrange
         _output.WriteLine("Testing all user roles have correct dashboard URLs for unified dashboard architecture");
-        
+
         var testUsers = new[]
         {
             ("admin@demo.com", "SystemAdmin", "/"), // SystemAdmin uses the unified Index dashboard
             ("tenant1.unit101@sunset.com", "Tenant", "/"), // Tenant uses unified Index dashboard
-            ("plumber.smith@workers.com", "Worker", "/") // Fix: Use correct email and Worker now uses unified Index dashboard
+            ("plumber.smith@workers.com", "Worker",
+                "/") // Fix: Use correct email and Worker now uses unified Index dashboard
         };
 
         using var scope = _factory.Services.CreateScope();
@@ -249,7 +250,7 @@ public class AuthenticationFunctionalTests : IClassFixture<WebApplicationTestFac
         foreach (var (email, expectedRole, expectedDashboard) in testUsers)
         {
             var result = await authService.AuthenticateAsync(email, "Demo123!");
-            
+
             if (result.IsSuccess)
             {
                 result.PrimaryRole.Should().Be(expectedRole);
@@ -261,7 +262,7 @@ public class AuthenticationFunctionalTests : IClassFixture<WebApplicationTestFac
                 _output.WriteLine($"{expectedRole}: {email} failed - {result.ErrorMessage}");
             }
         }
-        
+
         _output.WriteLine("All role-to-dashboard mappings verified for unified dashboard architecture");
     }
 }

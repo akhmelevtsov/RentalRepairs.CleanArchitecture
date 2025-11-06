@@ -26,7 +26,8 @@ public class AuthorizationDomainService
         }
 
         // Business Rule: Property superintendents can access their assigned properties
-        if (user.IsPropertySuperintendent() && user.Email.Equals(property.Superintendent.EmailAddress, StringComparison.OrdinalIgnoreCase))
+        if (user.IsPropertySuperintendent() &&
+            user.Email.Equals(property.Superintendent.EmailAddress, StringComparison.OrdinalIgnoreCase))
         {
             return true;
         }
@@ -52,7 +53,4 @@ public class AuthorizationDomainService
         // Business Rule: Only system administrators can manage workers
         return user.IsSystemAdmin();
     }
-
-
-
 }

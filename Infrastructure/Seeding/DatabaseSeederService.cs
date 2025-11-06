@@ -96,11 +96,11 @@ public class DatabaseSeederService : IDatabaseSeederService
         {
             var counts = await GetEntityCountsAsync(cancellationToken);
             var isSeeded = IsDataSufficient(counts);
-            
+
             _logger.LogInformation(
                 "Seeding status check: Properties={PropertyCount}, Tenants={TenantCount}, Workers={WorkerCount}, IsSeeded={IsSeeded}",
                 counts.Properties, counts.Tenants, counts.Workers, isSeeded);
-                
+
             return isSeeded;
         }
         catch (Exception ex)
@@ -179,7 +179,7 @@ public class DatabaseSeederService : IDatabaseSeederService
 
         // Generate test data
         var testData = GenerateTestData();
-        
+
         // Seed in proper dependency order
         await SeedPropertiesWithTenantsAsync(testData.Properties, cancellationToken);
         await SeedWorkersAsync(testData.Workers, cancellationToken);
@@ -192,7 +192,7 @@ public class DatabaseSeederService : IDatabaseSeederService
     /// </summary>
     private (List<TestPropertyData> Properties, List<TestWorkerData> Workers) GenerateTestData()
     {
-        _logger.LogDebug("Generating test data: {PropertyCount} properties, {WorkerCount} workers", 
+        _logger.LogDebug("Generating test data: {PropertyCount} properties, {WorkerCount} workers",
             _options.PropertyCount, _options.WorkerCount);
 
         var properties = SeedDataGenerator.GenerateProperties(_options.PropertyCount, _options.TenantsPerProperty);
@@ -208,7 +208,8 @@ public class DatabaseSeederService : IDatabaseSeederService
     /// <summary>
     /// Get current entity counts for seeding status check
     /// </summary>
-    private async Task<(int Properties, int Tenants, int Workers)> GetEntityCountsAsync(CancellationToken cancellationToken)
+    private async Task<(int Properties, int Tenants, int Workers)> GetEntityCountsAsync(
+        CancellationToken cancellationToken)
     {
         var propertyCount = await _propertyRepository.CountAsync(cancellationToken);
         var tenantCount = await _tenantRepository.CountAsync(cancellationToken);
@@ -226,15 +227,15 @@ public class DatabaseSeederService : IDatabaseSeederService
         var minTenants = Math.Max(9, _options.PropertyCount * _options.TenantsPerProperty);
         var minWorkers = Math.Max(10, _options.WorkerCount);
 
-        return counts.Properties >= minProperties && 
-               counts.Tenants >= minTenants && 
+        return counts.Properties >= minProperties &&
+               counts.Tenants >= minTenants &&
                counts.Workers >= minWorkers;
     }
 
     /// <summary>
     /// Load data needed for credentials generation using separate service scopes to avoid DbContext concurrency
     /// </summary>
-    private async Task<(IEnumerable<Domain.Entities.Property> Properties, IEnumerable<Domain.Entities.Worker> Workers)> 
+    private async Task<(IEnumerable<Domain.Entities.Property> Properties, IEnumerable<Domain.Entities.Worker> Workers)>
         LoadCredentialDataWithSeparateScopesAsync(CancellationToken cancellationToken)
     {
         // Create separate scopes to ensure each repository gets its own DbContext instance
@@ -258,12 +259,12 @@ public class DatabaseSeederService : IDatabaseSeederService
     /// <summary>
     /// Seed properties and their associated tenants
     /// </summary>
-    private async Task SeedPropertiesWithTenantsAsync(List<TestPropertyData> properties, CancellationToken cancellationToken)
+    private async Task SeedPropertiesWithTenantsAsync(List<TestPropertyData> properties,
+        CancellationToken cancellationToken)
     {
         _logger.LogInformation("Seeding {PropertyCount} properties with tenants...", properties.Count);
 
         foreach (var propertyData in properties)
-        {
             try
             {
                 var propertyId = await CreatePropertyAsync(propertyData, cancellationToken);
@@ -274,7 +275,6 @@ public class DatabaseSeederService : IDatabaseSeederService
                 _logger.LogError(ex, "Failed to seed property: {PropertyName}", propertyData.Name);
                 // Continue with other properties rather than failing completely
             }
-        }
 
         _logger.LogInformation("Property seeding completed");
     }
@@ -294,7 +294,8 @@ public class DatabaseSeederService : IDatabaseSeederService
                 StreetName = propertyData.Address.StreetName,
                 City = propertyData.Address.City,
                 PostalCode = propertyData.Address.PostalCode,
-                FullAddress = $"{propertyData.Address.StreetNumber} {propertyData.Address.StreetName}, {propertyData.Address.City}, {propertyData.Address.PostalCode}"
+                FullAddress =
+                    $"{propertyData.Address.StreetNumber} {propertyData.Address.StreetName}, {propertyData.Address.City}, {propertyData.Address.PostalCode}"
             },
             PhoneNumber = propertyData.PhoneNumber,
             Superintendent = new PersonContactInfoDto
@@ -310,8 +311,8 @@ public class DatabaseSeederService : IDatabaseSeederService
         };
 
         var propertyId = await _mediator.Send(command, cancellationToken);
-        
-        _logger.LogDebug("Created property: {PropertyName} ({PropertyCode}) - ID: {PropertyId}", 
+
+        _logger.LogDebug("Created property: {PropertyName} ({PropertyCode}) - ID: {PropertyId}",
             propertyData.Name, propertyData.Code, propertyId);
 
         return propertyId;
@@ -320,12 +321,12 @@ public class DatabaseSeederService : IDatabaseSeederService
     /// <summary>
     /// Create tenants for a specific property
     /// </summary>
-    private async Task CreateTenantsForPropertyAsync(Guid propertyId, List<TestTenantData> tenants, CancellationToken cancellationToken)
+    private async Task CreateTenantsForPropertyAsync(Guid propertyId, List<TestTenantData> tenants,
+        CancellationToken cancellationToken)
     {
         _logger.LogDebug("Creating {TenantCount} tenants for property {PropertyId}...", tenants.Count, propertyId);
 
         foreach (var tenantData in tenants)
-        {
             try
             {
                 var command = new RegisterTenantCommand
@@ -343,16 +344,15 @@ public class DatabaseSeederService : IDatabaseSeederService
                 };
 
                 var tenantId = await _mediator.Send(command, cancellationToken);
-                
-                _logger.LogDebug("Created tenant: {TenantName} in unit {Unit} - ID: {TenantId}", 
+
+                _logger.LogDebug("Created tenant: {TenantName} in unit {Unit} - ID: {TenantId}",
                     command.ContactInfo.FullName, tenantData.UnitNumber, tenantId);
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to create tenant {Email} in unit {Unit}", 
+                _logger.LogWarning(ex, "Failed to create tenant {Email} in unit {Unit}",
                     tenantData.ContactInfo.Email, tenantData.UnitNumber);
             }
-        }
     }
 
     /// <summary>
@@ -363,7 +363,6 @@ public class DatabaseSeederService : IDatabaseSeederService
         _logger.LogInformation("Seeding {WorkerCount} workers...", workers.Count);
 
         foreach (var workerData in workers)
-        {
             try
             {
                 var command = new RegisterWorkerCommand
@@ -380,16 +379,15 @@ public class DatabaseSeederService : IDatabaseSeederService
                 };
 
                 var workerId = await _mediator.Send(command, cancellationToken);
-                
-                _logger.LogDebug("Created worker: {WorkerName} ({Specialization}) - ID: {WorkerId}", 
+
+                _logger.LogDebug("Created worker: {WorkerName} ({Specialization}) - ID: {WorkerId}",
                     command.ContactInfo.FullName, workerData.Specialization, workerId);
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to create worker: {Email} ({Specialization})", 
+                _logger.LogWarning(ex, "Failed to create worker: {Email} ({Specialization})",
                     workerData.ContactInfo.Email, workerData.Specialization);
             }
-        }
 
         _logger.LogInformation("Worker seeding completed");
     }
@@ -402,11 +400,11 @@ public class DatabaseSeederService : IDatabaseSeederService
     /// Generate the markdown content for credentials file
     /// </summary>
     private string GenerateCredentialsContent(
-        IEnumerable<Domain.Entities.Property> properties, 
+        IEnumerable<Domain.Entities.Property> properties,
         IEnumerable<Domain.Entities.Worker> workers)
     {
         var sb = new StringBuilder();
-        
+
         AppendHeader(sb);
         AppendSystemAdmins(sb);
         AppendProperties(sb, properties);
@@ -448,25 +446,25 @@ public class DatabaseSeederService : IDatabaseSeederService
         sb.AppendLine("## ?? Properties & Superintendents");
         sb.AppendLine();
 
-        int index = 1;
+        var index = 1;
         foreach (var property in properties.OrderBy(p => p.Code))
         {
             sb.AppendLine($"### {index}. {property.Name} (`{property.Code}`)");
-            sb.AppendLine($"- **Superintendent**: `{property.Superintendent.EmailAddress}` / `{_options.DefaultPassword}`");
+            sb.AppendLine(
+                $"- **Superintendent**: `{property.Superintendent.EmailAddress}` / `{_options.DefaultPassword}`");
             sb.AppendLine($"- **Name**: {property.Superintendent.GetFullName()}");
             sb.AppendLine($"- **Address**: {property.Address.FullAddress}");
             sb.AppendLine($"- **Phone**: {property.PhoneNumber}");
-            
+
             if (property.Tenants.Any())
             {
                 sb.AppendLine();
                 sb.AppendLine("**Tenants:**");
                 foreach (var tenant in property.Tenants.OrderBy(t => t.UnitNumber))
-                {
-                    sb.AppendLine($"- Unit {tenant.UnitNumber}: `{tenant.ContactInfo.EmailAddress}` / `{_options.DefaultPassword}` ({tenant.ContactInfo.GetFullName()})");
-                }
+                    sb.AppendLine(
+                        $"- Unit {tenant.UnitNumber}: `{tenant.ContactInfo.EmailAddress}` / `{_options.DefaultPassword}` ({tenant.ContactInfo.GetFullName()})");
             }
-            
+
             sb.AppendLine();
             index++;
         }
@@ -476,7 +474,7 @@ public class DatabaseSeederService : IDatabaseSeederService
     {
         sb.AppendLine("## ?? Maintenance Workers");
         sb.AppendLine();
-        
+
         foreach (var worker in workers.OrderBy(w => w.Specialization).ThenBy(w => w.ContactInfo.GetFullName()))
         {
             sb.AppendLine($"- **`{worker.ContactInfo.EmailAddress}`** / `{_options.DefaultPassword}`");

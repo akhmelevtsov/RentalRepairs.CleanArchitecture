@@ -2,32 +2,39 @@ using MediatR;
 using Microsoft.Extensions.Logging;
 using RentalRepairs.Domain.Events.Workers;
 using RentalRepairs.Application.Interfaces;
+using RentalRepairs.Domain.Services;
 
 namespace RentalRepairs.Application.EventHandlers.Workers;
 
 /// <summary>
-/// Handles WorkerRegisteredEvent to process new worker registrations
+/// Handles WorkerRegisteredEvent to process new worker registrations.
+/// Phase 2: Now uses SpecializationDeterminationService for enum display names.
 /// </summary>
 public class WorkerRegisteredEventHandler : INotificationHandler<WorkerRegisteredEvent>
 {
     private readonly ILogger<WorkerRegisteredEventHandler> _logger;
     private readonly INotifyPartiesService _notificationService;
+    private readonly SpecializationDeterminationService _specializationService;
 
     public WorkerRegisteredEventHandler(
         ILogger<WorkerRegisteredEventHandler> logger,
-        INotifyPartiesService notificationService)
+        INotifyPartiesService notificationService,
+        SpecializationDeterminationService specializationService)
     {
         _logger = logger;
         _notificationService = notificationService;
+        _specializationService = specializationService;
     }
 
     public async Task Handle(WorkerRegisteredEvent notification, CancellationToken cancellationToken)
     {
         var worker = notification.Worker;
+        var specializationName = _specializationService.GetDisplayName(worker.Specialization);
 
-        _logger.LogInformation("Processing WorkerRegisteredEvent for worker {WorkerEmail} with specialization {Specialization}",
+        _logger.LogInformation(
+            "Processing WorkerRegisteredEvent for worker {WorkerEmail} with specialization {Specialization}",
             worker.ContactInfo.EmailAddress,
-            worker.Specialization ?? "Not specified");
+            specializationName);
 
         try
         {

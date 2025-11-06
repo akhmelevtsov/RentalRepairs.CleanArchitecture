@@ -41,33 +41,33 @@ public class CsrfProtectionTests : IClassFixture<WebApplicationTestFactory<Progr
 
         // Assert - Should be rejected due to missing CSRF token, authentication, or invalid ID
         _output.WriteLine($"Response status: {response.StatusCode}");
-        
+
         // CSRF protection working means we don't get a successful result
         if (response.IsSuccessStatusCode)
         {
             // If we got a successful response, check if it's actually processing the form
             var content = await response.Content.ReadAsStringAsync();
-            
+
             // If the response contains form validation errors or shows the form again,
             // it means CSRF validation might have passed incorrectly
-            content.Should().NotContain("Request submitted successfully", 
+            content.Should().NotContain("Request submitted successfully",
                 "Form should not process successfully without CSRF token");
-            
+
             _output.WriteLine("Response was successful but didn't process the form - acceptable");
         }
         else
         {
             // Any non-success response indicates proper protection
             response.StatusCode.Should().BeOneOf(
-                HttpStatusCode.BadRequest,     // CSRF validation failed
-                HttpStatusCode.Forbidden,      // CSRF validation failed
-                HttpStatusCode.Unauthorized,   // Authentication required
-                HttpStatusCode.Redirect,       // Redirected to login
-                HttpStatusCode.Found,          // Redirected to login
-                HttpStatusCode.NotFound,       // Invalid request ID or route not found
+                HttpStatusCode.BadRequest, // CSRF validation failed
+                HttpStatusCode.Forbidden, // CSRF validation failed
+                HttpStatusCode.Unauthorized, // Authentication required
+                HttpStatusCode.Redirect, // Redirected to login
+                HttpStatusCode.Found, // Redirected to login
+                HttpStatusCode.NotFound, // Invalid request ID or route not found
                 HttpStatusCode.MethodNotAllowed // POST not allowed without proper setup
             );
-            
+
             _output.WriteLine("CSRF protection working - POST without token properly rejected");
         }
     }
@@ -93,14 +93,14 @@ public class CsrfProtectionTests : IClassFixture<WebApplicationTestFactory<Progr
 
         // Assert - Should be rejected for various security reasons
         _output.WriteLine($"Response status: {response.StatusCode}");
-        
+
         if (response.IsSuccessStatusCode)
         {
             // Check if the form was actually processed
             var content = await response.Content.ReadAsStringAsync();
-            content.Should().NotContain("Request closed successfully", 
+            content.Should().NotContain("Request closed successfully",
                 "Form should not process successfully without CSRF token");
-            
+
             _output.WriteLine("Response was successful but didn't process the form - acceptable");
         }
         else
@@ -114,7 +114,7 @@ public class CsrfProtectionTests : IClassFixture<WebApplicationTestFactory<Progr
                 HttpStatusCode.NotFound,
                 HttpStatusCode.MethodNotAllowed
             );
-            
+
             _output.WriteLine("CSRF protection working - POST without token properly rejected");
         }
     }
@@ -145,13 +145,13 @@ public class CsrfProtectionTests : IClassFixture<WebApplicationTestFactory<Progr
 
         // Assert - Should be rejected
         _output.WriteLine($"Response status: {response.StatusCode}");
-        
+
         if (response.IsSuccessStatusCode)
         {
             var content = await response.Content.ReadAsStringAsync();
-            content.Should().NotContain("Request submitted successfully", 
+            content.Should().NotContain("Request submitted successfully",
                 "Form should not process successfully without CSRF token");
-            
+
             _output.WriteLine("Response was successful but didn't process the form - acceptable");
         }
         else
@@ -165,7 +165,7 @@ public class CsrfProtectionTests : IClassFixture<WebApplicationTestFactory<Progr
                 HttpStatusCode.NotFound,
                 HttpStatusCode.MethodNotAllowed
             );
-            
+
             _output.WriteLine("CSRF protection working - POST without token properly rejected");
         }
     }
@@ -193,13 +193,13 @@ public class CsrfProtectionTests : IClassFixture<WebApplicationTestFactory<Progr
 
         // Assert - Should be rejected
         _output.WriteLine($"Response status: {response.StatusCode}");
-        
+
         if (response.IsSuccessStatusCode)
         {
             var content = await response.Content.ReadAsStringAsync();
-            content.Should().NotContain("Worker assigned successfully", 
+            content.Should().NotContain("Worker assigned successfully",
                 "Form should not process successfully without CSRF token");
-            
+
             _output.WriteLine("Response was successful but didn't process the form - acceptable");
         }
         else
@@ -213,7 +213,7 @@ public class CsrfProtectionTests : IClassFixture<WebApplicationTestFactory<Progr
                 HttpStatusCode.NotFound,
                 HttpStatusCode.MethodNotAllowed
             );
-            
+
             _output.WriteLine("CSRF protection working - POST without token properly rejected");
         }
     }
@@ -238,11 +238,11 @@ public class CsrfProtectionTests : IClassFixture<WebApplicationTestFactory<Progr
 
         // Assert - Login page should allow POST without CSRF token to enable role switching
         _output.WriteLine($"Response status: {response.StatusCode}");
-        
+
         // The login page is designed to bypass CSRF validation for role switching scenarios
         // This is a deliberate security trade-off: login forms are lower risk and this enables
         // seamless user experience when switching between roles
-        
+
         if (response.IsSuccessStatusCode)
         {
             var content = await response.Content.ReadAsStringAsync();
@@ -264,7 +264,7 @@ public class CsrfProtectionTests : IClassFixture<WebApplicationTestFactory<Progr
                 HttpStatusCode.NotFound,
                 HttpStatusCode.MethodNotAllowed
             );
-            
+
             _output.WriteLine(" Login form returned non-success response - may still support role switching");
         }
     }
@@ -297,13 +297,13 @@ public class CsrfProtectionTests : IClassFixture<WebApplicationTestFactory<Progr
 
         // Assert - Should be rejected
         _output.WriteLine($"Response status: {response.StatusCode}");
-        
+
         if (response.IsSuccessStatusCode)
         {
             var content = await response.Content.ReadAsStringAsync();
-            content.Should().NotContain("registered successfully", 
+            content.Should().NotContain("registered successfully",
                 "Form should not process successfully without CSRF token");
-            
+
             _output.WriteLine("Response was successful but didn't process the form - acceptable");
         }
         else
@@ -317,7 +317,7 @@ public class CsrfProtectionTests : IClassFixture<WebApplicationTestFactory<Progr
                 HttpStatusCode.NotFound,
                 HttpStatusCode.MethodNotAllowed
             );
-            
+
             _output.WriteLine("CSRF protection working - POST without token properly rejected");
         }
     }
@@ -333,10 +333,10 @@ public class CsrfProtectionTests : IClassFixture<WebApplicationTestFactory<Progr
         // Test basic page accessibility - if antiforgery is misconfigured, pages won't load
         var response = await _client.GetAsync("/Account/Login");
         response.StatusCode.Should().BeOneOf(
-            HttpStatusCode.OK, 
-            HttpStatusCode.Redirect, 
+            HttpStatusCode.OK,
+            HttpStatusCode.Redirect,
             HttpStatusCode.Found);
-        
+
         _output.WriteLine("Antiforgery system is active - pages load correctly");
     }
 
@@ -361,24 +361,21 @@ public class CsrfProtectionTests : IClassFixture<WebApplicationTestFactory<Progr
             try
             {
                 var response = await _client.GetAsync(page);
-                
+
                 if (response.IsSuccessStatusCode)
                 {
                     successCount++;
                     _output.WriteLine($"{page} loads successfully");
-                    
+
                     // Optionally check for antiforgery token presence in successful responses
                     var content = await response.Content.ReadAsStringAsync();
-                    var hasAntiforgeryToken = content.Contains("__RequestVerificationToken") || 
-                                            content.Contains("@Html.AntiForgeryToken()") ||
-                                            content.Contains("asp-antiforgery=\"true\"");
-                    
-                    if (hasAntiforgeryToken)
-                    {
-                        _output.WriteLine($"   ? Contains antiforgery tokens");
-                    }
+                    var hasAntiforgeryToken = content.Contains("__RequestVerificationToken") ||
+                                              content.Contains("@Html.AntiForgeryToken()") ||
+                                              content.Contains("asp-antiforgery=\"true\"");
+
+                    if (hasAntiforgeryToken) _output.WriteLine($"   ? Contains antiforgery tokens");
                 }
-                else if (response.StatusCode == HttpStatusCode.Redirect || 
+                else if (response.StatusCode == HttpStatusCode.Redirect ||
                          response.StatusCode == HttpStatusCode.Found)
                 {
                     redirectCount++;
@@ -394,11 +391,11 @@ public class CsrfProtectionTests : IClassFixture<WebApplicationTestFactory<Progr
                 _output.WriteLine($" Error accessing {page}: {ex.Message}");
             }
         }
-        
+
         // At least some pages should be accessible via GET
-        (successCount + redirectCount).Should().BeGreaterThan(0, 
+        (successCount + redirectCount).Should().BeGreaterThan(0,
             "At least some pages should be accessible via GET requests");
-        
+
         _output.WriteLine($"GET request test completed: {successCount} successful, {redirectCount} redirected");
     }
 
@@ -410,10 +407,10 @@ public class CsrfProtectionTests : IClassFixture<WebApplicationTestFactory<Progr
 
         var response = await _client.GetAsync("/health");
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        
+
         var content = await response.Content.ReadAsStringAsync();
         content.Should().Contain("Healthy");
-        
+
         _output.WriteLine("Health check works correctly despite CSRF protection being enabled");
     }
 }

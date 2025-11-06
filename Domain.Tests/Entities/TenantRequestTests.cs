@@ -27,8 +27,8 @@ public class TenantRequestTests
     }
 
     [Theory]
-    [InlineData("", "Description", "Normal")]    // Empty title
-    [InlineData("Title", "Description", "")]     // Empty urgency
+    [InlineData("", "Description", "Normal")] // Empty title
+    [InlineData("Title", "Description", "")] // Empty urgency
     [InlineData("Title", "Description", "Invalid")] // Invalid urgency
     public void CreateNew_ShouldThrowException_WithInvalidInput(string title, string description, string urgencyLevel)
     {
@@ -65,9 +65,9 @@ public class TenantRequestTests
         request.Submit(); // Already submitted
 
         // Act & Assert
-        Action act = () => request.Submit();
+        var act = () => request.Submit();
         act.Should().Throw<TenantRequestDomainException>()
-           .WithMessage("*Draft status*");
+            .WithMessage("*Draft status*");
     }
 
     [Fact]
@@ -76,7 +76,7 @@ public class TenantRequestTests
         // Arrange
         var request = CreateTestTenantRequest();
         request.Submit();
-        
+
         var futureDate = DateTime.UtcNow.AddDays(1);
         const string workerEmail = "worker@test.com";
         const string workOrderNumber = "WO-123";
@@ -99,13 +99,13 @@ public class TenantRequestTests
         // Arrange
         var request = CreateTestTenantRequest();
         request.Submit();
-        
+
         var invalidDate = DateTime.Parse(dateString);
 
         // Act & Assert
-        Action act = () => request.Schedule(invalidDate, "worker@test.com", "WO-123");
+        var act = () => request.Schedule(invalidDate, "worker@test.com", "WO-123");
         act.Should().Throw<TenantRequestDomainException>()
-           .WithMessage("*must be in the future*");
+            .WithMessage("*must be today or in the future*");
     }
 
     [Theory]
@@ -116,11 +116,11 @@ public class TenantRequestTests
         // Arrange
         var request = CreateTestTenantRequest();
         request.Submit();
-        
+
         var futureDate = DateTime.UtcNow.AddDays(1);
 
         // Act & Assert
-        Action act = () => request.Schedule(futureDate, workerEmail, workOrderNumber);
+        var act = () => request.Schedule(futureDate, workerEmail, workOrderNumber);
         act.Should().Throw<TenantRequestDomainException>();
     }
 
@@ -137,7 +137,7 @@ public class TenantRequestTests
         request.Status.Should().Be(TenantRequestStatus.Done);
         request.WorkCompletedSuccessfully.Should().BeTrue();
         request.CompletionNotes.Should().Be("Work completed successfully");
-        request.CompletedDate.Should().BeCloseTo(DateTime.UtcNow, precision: TimeSpan.FromSeconds(5));
+        request.CompletedDate.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
         request.DomainEvents.Should().Contain(e => e is TenantRequestCompletedEvent);
     }
 
@@ -257,9 +257,9 @@ public class TenantRequestTests
         var request = CreateCompletedRequest();
 
         // Act & Assert
-        Action act = () => request.UpdateTenantInformation("New Name", "new@email.com", "102", "New Property");
+        var act = () => request.UpdateTenantInformation("New Name", "new@email.com", "102", "New Property");
         act.Should().Throw<TenantRequestDomainException>()
-           .WithMessage("*cannot update tenant information*");
+            .WithMessage("*cannot update tenant information*");
     }
 
     private static TenantRequest CreateTestTenantRequest()

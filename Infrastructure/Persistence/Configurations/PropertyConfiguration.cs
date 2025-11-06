@@ -11,7 +11,7 @@ public class PropertyConfiguration : IEntityTypeConfiguration<Property>
         builder.ToTable("Properties");
 
         builder.HasKey(p => p.Id);
-        
+
         // Configure Guid ID
         builder.Property(p => p.Id)
             .IsRequired()
@@ -89,8 +89,8 @@ public class PropertyConfiguration : IEntityTypeConfiguration<Property>
                 // Convert List<string> to string - handle null/empty cases
                 v => v != null && v.Any() ? string.Join(';', v) : string.Empty,
                 // Convert string to List<string> - handle null/empty cases
-                v => string.IsNullOrEmpty(v) 
-                    ? new List<string>() 
+                v => string.IsNullOrEmpty(v)
+                    ? new List<string>()
                     : v.Split(';', StringSplitOptions.RemoveEmptyEntries).ToList())
             .HasColumnName("Units")
             .HasMaxLength(1000);

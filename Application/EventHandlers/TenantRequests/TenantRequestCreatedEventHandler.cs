@@ -24,9 +24,9 @@ public class TenantRequestCreatedEventHandler : INotificationHandler<TenantReque
     public async Task Handle(TenantRequestCreatedEvent notification, CancellationToken cancellationToken)
     {
         var request = notification.TenantRequest;
-        
-        _logger.LogInformation("Processing TenantRequestCreatedEvent for request {RequestCode} by tenant {TenantName}", 
-            request.Code, 
+
+        _logger.LogInformation("Processing TenantRequestCreatedEvent for request {RequestCode} by tenant {TenantName}",
+            request.Code,
             request.TenantFullName);
 
         try
@@ -37,12 +37,12 @@ public class TenantRequestCreatedEventHandler : INotificationHandler<TenantReque
             // Notify superintendent of new request pending review
             await _notificationService.NotifySuperintendentOfNewRequestAsync(request, cancellationToken);
 
-            _logger.LogInformation("Successfully processed TenantRequestCreatedEvent for request {RequestCode}", 
+            _logger.LogInformation("Successfully processed TenantRequestCreatedEvent for request {RequestCode}",
                 request.Code);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error processing TenantRequestCreatedEvent for request {RequestCode}", 
+            _logger.LogError(ex, "Error processing TenantRequestCreatedEvent for request {RequestCode}",
                 request.Code);
             throw;
         }

@@ -26,10 +26,7 @@ public class RegisterPropertyCommandHandler : IRequestHandler<RegisterPropertyCo
     {
         // Cross-aggregate validation (Application layer responsibility)
         var exists = await _propertyRepository.ExistsByCodeAsync(request.Code, cancellationToken);
-        if (exists)
-        {
-            throw new InvalidOperationException($"Property with code '{request.Code}' already exists");
-        }
+        if (exists) throw new InvalidOperationException($"Property with code '{request.Code}' already exists");
 
         // Create value objects
         var address = new PropertyAddress(

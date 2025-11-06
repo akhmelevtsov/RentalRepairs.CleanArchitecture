@@ -34,9 +34,9 @@
                     <!-- ? CSRF PROTECTED: Form with antiforgery token -->
                     <form method="post">
                         @Html.AntiForgeryToken() <!-- ? CSRF Protection -->
-                        
+
                         <div asp-validation-summary="ModelOnly" class="text-danger mb-4"></div>
-                        
+
                         <!-- Tenant Information Section (Read-only) -->
                         <div class="card mb-4 border-info">
                             <div class="card-header bg-info text-white">
@@ -90,12 +90,12 @@
                         </div>
 
                         <!-- Hidden fields to maintain the model binding -->
-                        <input type="hidden" asp-for="TenantRequest.PropertyCode" />
-                        <input type="hidden" asp-for="TenantRequest.UnitNumber" />
-                        <input type="hidden" asp-for="TenantRequest.TenantFirstName" />
-                        <input type="hidden" asp-for="TenantRequest.TenantLastName" />
-                        <input type="hidden" asp-for="TenantRequest.TenantEmail" />
-                        <input type="hidden" asp-for="TenantRequest.TenantPhone" />
+                        <input type="hidden" asp-for="TenantRequest.PropertyCode"/>
+                        <input type="hidden" asp-for="TenantRequest.UnitNumber"/>
+                        <input type="hidden" asp-for="TenantRequest.TenantFirstName"/>
+                        <input type="hidden" asp-for="TenantRequest.TenantLastName"/>
+                        <input type="hidden" asp-for="TenantRequest.TenantEmail"/>
+                        <input type="hidden" asp-for="TenantRequest.TenantPhone"/>
 
                         <!-- Editable Fields Section -->
                         <div class="card mb-4 border-success">
@@ -188,7 +188,7 @@
 </div>
 
 @section Scripts {
-    <partial name="_ValidationScriptsPartial" />
+    <partial name="_ValidationScriptsPartial"/>
     <script>
         // Show additional warning for critical/emergency requests
         document.getElementById('urgencyLevelSelect')?.addEventListener('change', function() {

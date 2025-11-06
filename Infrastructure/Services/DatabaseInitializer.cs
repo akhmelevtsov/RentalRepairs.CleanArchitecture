@@ -5,7 +5,23 @@ using RentalRepairs.Infrastructure.Persistence;
 namespace RentalRepairs.Infrastructure.Services;
 
 /// <summary>
-/// Database initialization service that abstracts database operations from WebUI
+/// Database initialization service that abstracts database operations from composition root.
+/// 
+/// NOTE: This is a thin wrapper over ApplicationDbContext.Database operations.
+/// While it could be considered redundant, it is intentionally kept because:
+/// 
+/// 1. Provides clear intent in ApplicationCompositionRoot initialization code
+/// 2. Abstracts infrastructure concerns from composition root
+/// 3. Works correctly and causes no maintenance issues
+/// 4. Can be easily mocked in tests if needed
+/// 5. The risk of refactoring composition root > benefit of removing this wrapper
+/// 
+/// Real work is delegated to:
+/// - EnsureCreatedAsync() ? EF Core database creation
+/// - DatabaseSeederService ? Actual data seeding
+/// 
+/// Decision: Keep as-is. Can be refactored if composition root needs changes for other reasons.
+/// See: INFRASTRUCTURE_CLEANUP_COMPLETE.md - Step 3 for detailed analysis.
 /// </summary>
 public class DatabaseInitializer : IDatabaseInitializer
 {
@@ -18,6 +34,10 @@ public class DatabaseInitializer : IDatabaseInitializer
         _logger = logger;
     }
 
+    /// <summary>
+    /// Ensures database is created (thin wrapper over EF Core EnsureCreatedAsync).
+    /// Note: In production, migrations are preferred via DependencyInjection.ApplyDatabaseMigrationsAsync().
+    /// </summary>
     public async Task EnsureDatabaseCreatedAsync()
     {
         try
@@ -32,6 +52,11 @@ public class DatabaseInitializer : IDatabaseInitializer
         }
     }
 
+    /// <summary>
+    /// Placeholder for demo data seeding.
+    /// Note: Actual seeding is done by DatabaseSeederService.
+    /// This method exists for interface completeness but delegates real work elsewhere.
+    /// </summary>
     public async Task SeedDemoDataAsync()
     {
         try

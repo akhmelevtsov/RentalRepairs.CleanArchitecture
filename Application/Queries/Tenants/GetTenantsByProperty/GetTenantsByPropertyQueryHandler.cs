@@ -24,16 +24,11 @@ public class GetTenantsByPropertyQueryHandler : IRequestHandler<GetTenantsByProp
             .Include(t => t.Requests)
             .AsQueryable();
 
-        if (request.PropertyId != Guid.Empty)
-        {
-            query = query.Where(t => t.PropertyId == request.PropertyId);
-        }
+        if (request.PropertyId != Guid.Empty) query = query.Where(t => t.PropertyId == request.PropertyId);
 
         if (request.WithActiveRequestsOnly)
-        {
-            query = query.Where(t => t.Requests.Any(r => r.Status == Domain.Enums.TenantRequestStatus.Submitted || 
-                                                        r.Status == Domain.Enums.TenantRequestStatus.Scheduled));
-        }
+            query = query.Where(t => t.Requests.Any(r => r.Status == Domain.Enums.TenantRequestStatus.Submitted ||
+                                                         r.Status == Domain.Enums.TenantRequestStatus.Scheduled));
 
         var tenants = await query
             .OrderBy(t => t.UnitNumber)

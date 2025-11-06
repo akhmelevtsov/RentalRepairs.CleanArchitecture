@@ -27,7 +27,8 @@ public class TenantContactInfoChangedEventHandler : INotificationHandler<TenantC
         var oldContactInfo = notification.OldContactInfo;
         var newContactInfo = notification.NewContactInfo;
 
-        _logger.LogInformation("Processing TenantContactInfoChangedEvent for tenant in unit {UnitNumber}: {OldContact} -> {NewContact}",
+        _logger.LogInformation(
+            "Processing TenantContactInfoChangedEvent for tenant in unit {UnitNumber}: {OldContact} -> {NewContact}",
             tenant.UnitNumber,
             oldContactInfo.GetFullName(),
             newContactInfo.GetFullName());

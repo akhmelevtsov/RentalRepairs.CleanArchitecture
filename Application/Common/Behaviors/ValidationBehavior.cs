@@ -23,20 +23,18 @@ public class ValidationBehavior<TRequest, TResponse> : IPipelineBehavior<TReques
         _logger = logger;
     }
 
-    public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
+    public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next,
+        CancellationToken cancellationToken)
     {
-        if (!_validators.Any())
-        {
-            return await next();
-        }
+        if (!_validators.Any()) return await next();
 
         var context = new ValidationContext<TRequest>(request);
-        
+
         // Run all validators in parallel for performance
         var validationResults = await Task.WhenAll(
             _validators.Select(v => v.ValidateAsync(context, cancellationToken))
         );
-        
+
         var failures = validationResults
             .Where(r => !r.IsValid)
             .SelectMany(r => r.Errors)
@@ -51,7 +49,7 @@ public class ValidationBehavior<TRequest, TResponse> : IPipelineBehavior<TReques
                 failures.Length,
                 string.Join("; ", failures.Select(f => f.ErrorMessage))
             );
-            
+
             throw new Common.Exceptions.ValidationException(failures);
         }
 

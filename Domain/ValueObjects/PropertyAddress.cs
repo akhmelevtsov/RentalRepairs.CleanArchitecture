@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using RentalRepairs.Domain.Common;
 
 namespace RentalRepairs.Domain.ValueObjects;
 
@@ -6,7 +7,7 @@ namespace RentalRepairs.Domain.ValueObjects;
 /// Self-validating value object that represents a property address.
 /// Serves as the single source of truth for property address validation rules.
 /// </summary>
-public sealed class PropertyAddress
+public sealed class PropertyAddress : ValueObject
 {
     #region Private Fields
 
@@ -122,20 +123,20 @@ public sealed class PropertyAddress
         {
             throw new ArgumentException("Street number cannot be empty", nameof(streetNumber));
         }
-            
+
         streetNumber = streetNumber.Trim();
-        
+
         if (streetNumber.Length > 10)
         {
             throw new ArgumentException("Street number cannot exceed 10 characters", nameof(streetNumber));
         }
-            
+
         // Street numbers should contain at least one digit (not pure alphabetic)
         if (!_streetNumberRegex.IsMatch(streetNumber))
         {
             throw new ArgumentException("Street number must contain at least one digit", nameof(streetNumber));
         }
-            
+
         return streetNumber;
     }
 
@@ -148,14 +149,14 @@ public sealed class PropertyAddress
         {
             throw new ArgumentException("Street name cannot be empty", nameof(streetName));
         }
-            
+
         streetName = streetName.Trim();
-        
+
         if (streetName.Length > 100)
         {
             throw new ArgumentException("Street name cannot exceed 100 characters", nameof(streetName));
         }
-            
+
         return streetName;
     }
 
@@ -168,14 +169,14 @@ public sealed class PropertyAddress
         {
             throw new ArgumentException("City cannot be empty", nameof(city));
         }
-            
+
         city = city.Trim();
-        
+
         if (city.Length > 50)
         {
             throw new ArgumentException("City cannot exceed 50 characters", nameof(city));
         }
-            
+
         return city;
     }
 
@@ -188,48 +189,33 @@ public sealed class PropertyAddress
         {
             throw new ArgumentException("Postal code cannot be empty", nameof(postalCode));
         }
-            
+
         postalCode = postalCode.Trim();
-        
+
         // Basic postal code validation - supports various formats, preserves original case
         if (!_postalCodeRegex.IsMatch(postalCode))
         {
-            throw new ArgumentException("Postal code must be 3-10 characters containing letters, numbers, spaces, or hyphens", nameof(postalCode));
+            throw new ArgumentException(
+                "Postal code must be 3-10 characters containing letters, numbers, spaces, or hyphens",
+                nameof(postalCode));
         }
-            
+
         return postalCode;
     }
 
     #endregion
 
-    #region Equality and Hash Code
+    #region ValueObject Implementation
 
-    public override bool Equals(object? obj)
+    /// <summary>
+    /// Implements equality comparison using ValueObject base class pattern.
+    /// </summary>
+    protected override IEnumerable<object> GetEqualityComponents()
     {
-        if (obj is not PropertyAddress other) 
-        {
-            return false;
-        }
-            
-        return StreetNumber == other.StreetNumber && 
-               StreetName == other.StreetName && 
-               City == other.City && 
-               PostalCode == other.PostalCode;
-    }
-
-    public override int GetHashCode()
-    {
-        return HashCode.Combine(StreetNumber, StreetName, City, PostalCode);
-    }
-
-    public static bool operator ==(PropertyAddress? left, PropertyAddress? right)
-    {
-        return Equals(left, right);
-    }
-
-    public static bool operator !=(PropertyAddress? left, PropertyAddress? right)
-    {
-        return !Equals(left, right);
+        yield return StreetNumber;
+        yield return StreetName;
+        yield return City;
+        yield return PostalCode;
     }
 
     public override string ToString()

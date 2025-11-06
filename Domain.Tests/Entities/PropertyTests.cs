@@ -18,7 +18,8 @@ public class PropertyTests
         var units = new List<string> { "101", "102", "103" };
 
         // Act
-        var property = new Property("Test Property", "PROP001", address, "555-1234", superintendent, units, "noreply@test.com");
+        var property = new Property("Test Property", "PROP001", address, "555-1234", superintendent, units,
+            "noreply@test.com");
 
         // Assert
         property.Should().NotBeNull();
@@ -34,8 +35,8 @@ public class PropertyTests
     }
 
     [Theory]
-    [InlineData("", "PROP001")]     // Empty name
-    [InlineData("Property", "")]    // Empty code
+    [InlineData("", "PROP001")] // Empty name
+    [InlineData("Property", "")] // Empty code
     public void Property_ShouldThrowException_WithInvalidStringParameters(string name, string code)
     {
         // Arrange
@@ -56,7 +57,8 @@ public class PropertyTests
         var units = new List<string> { "101" };
 
         // Act & Assert
-        Action act = () => new Property("Test Property", "PROP001", null!, "555-1234", superintendent, units, "noreply@test.com");
+        Action act = () =>
+            new Property("Test Property", "PROP001", null!, "555-1234", superintendent, units, "noreply@test.com");
         act.Should().Throw<ArgumentNullException>();
     }
 
@@ -68,7 +70,8 @@ public class PropertyTests
         var units = new List<string> { "101" };
 
         // Act & Assert
-        Action act = () => new Property("Test Property", "PROP001", address, "555-1234", null!, units, "noreply@test.com");
+        Action act = () =>
+            new Property("Test Property", "PROP001", address, "555-1234", null!, units, "noreply@test.com");
         act.Should().Throw<ArgumentNullException>();
     }
 
@@ -81,9 +84,10 @@ public class PropertyTests
         var emptyUnits = new List<string>();
 
         // Act & Assert
-        Action act = () => new Property("Test Property", "PROP001", address, "555-1234", superintendent, emptyUnits, "noreply@test.com");
+        Action act = () => new Property("Test Property", "PROP001", address, "555-1234", superintendent, emptyUnits,
+            "noreply@test.com");
         act.Should().Throw<PropertyDomainException>()
-           .WithMessage("*must have at least one unit*");
+            .WithMessage("*must have at least one unit*");
     }
 
     [Fact]
@@ -95,9 +99,10 @@ public class PropertyTests
         var duplicateUnits = new List<string> { "101", "102", "101" }; // Duplicate 101
 
         // Act & Assert
-        Action act = () => new Property("Test Property", "PROP001", address, "555-1234", superintendent, duplicateUnits, "noreply@test.com");
+        Action act = () => new Property("Test Property", "PROP001", address, "555-1234", superintendent, duplicateUnits,
+            "noreply@test.com");
         act.Should().Throw<PropertyDomainException>()
-           .WithMessage("*duplicate unit numbers*");
+            .WithMessage("*duplicate unit numbers*");
     }
 
     [Fact]
@@ -153,7 +158,7 @@ public class PropertyTests
         // Act & Assert
         Action act = () => property.RegisterTenant(tenantContact, "999"); // Unit doesn't exist
         act.Should().Throw<PropertyDomainException>()
-           .WithMessage("*does not exist*");
+            .WithMessage("*does not exist*");
     }
 
     [Fact]
@@ -163,13 +168,13 @@ public class PropertyTests
         var property = CreateTestProperty();
         var tenant1Contact = new PersonContactInfo("Jane", "Smith", "jane@test.com", "555-9999");
         var tenant2Contact = new PersonContactInfo("Bob", "Johnson", "bob@test.com", "555-8888");
-        
+
         property.RegisterTenant(tenant1Contact, "101"); // Occupy unit 101
 
         // Act & Assert
         Action act = () => property.RegisterTenant(tenant2Contact, "101"); // Try to occupy same unit
         act.Should().Throw<PropertyDomainException>()
-           .WithMessage("*already occupied*");
+            .WithMessage("*already occupied*");
     }
 
     [Fact]
@@ -194,7 +199,7 @@ public class PropertyTests
         var property = CreateTestProperty();
 
         // Act & Assert
-        Action act = () => property.UpdateSuperintendent(null!);
+        var act = () => property.UpdateSuperintendent(null!);
         act.Should().Throw<ArgumentNullException>();
     }
 
@@ -219,9 +224,9 @@ public class PropertyTests
         var property = CreateTestProperty();
 
         // Act & Assert
-        Action act = () => property.AddUnit("101"); // Unit already exists
+        var act = () => property.AddUnit("101"); // Unit already exists
         act.Should().Throw<PropertyDomainException>()
-           .WithMessage("*already exists*");
+            .WithMessage("*already exists*");
     }
 
     [Fact]
@@ -245,9 +250,9 @@ public class PropertyTests
         var property = CreateTestProperty();
 
         // Act & Assert
-        Action act = () => property.RemoveUnit("999");
+        var act = () => property.RemoveUnit("999");
         act.Should().Throw<PropertyDomainException>()
-           .WithMessage("*does not exist*");
+            .WithMessage("*does not exist*");
     }
 
     [Fact]
@@ -259,9 +264,9 @@ public class PropertyTests
         property.RegisterTenant(tenantContact, "101"); // Occupy unit 101
 
         // Act & Assert
-        Action act = () => property.RemoveUnit("101");
+        var act = () => property.RemoveUnit("101");
         act.Should().Throw<PropertyDomainException>()
-           .WithMessage("*currently occupied*");
+            .WithMessage("*currently occupied*");
     }
 
     [Fact]
@@ -274,7 +279,7 @@ public class PropertyTests
 
         // Act & Assert
         property.IsUnitAvailable("101").Should().BeFalse(); // Occupied
-        property.IsUnitAvailable("102").Should().BeTrue();  // Available
+        property.IsUnitAvailable("102").Should().BeTrue(); // Available
         property.IsUnitAvailable("999").Should().BeFalse(); // Doesn't exist
     }
 
@@ -303,7 +308,7 @@ public class PropertyTests
         var property = CreateTestProperty(); // 3 units total
         var tenant1Contact = new PersonContactInfo("Jane", "Smith", "jane@test.com", "555-9999");
         var tenant2Contact = new PersonContactInfo("Bob", "Johnson", "bob@test.com", "555-8888");
-        
+
         property.RegisterTenant(tenant1Contact, "101"); // 1 occupied
         property.RegisterTenant(tenant2Contact, "102"); // 2 occupied
 
@@ -315,7 +320,7 @@ public class PropertyTests
     }
 
     [Fact]
-    public void GetStatistics_ShouldReturnCorrectStatistics()
+    public void CalculateMetrics_ShouldReturnCorrectMetrics()
     {
         // Arrange
         var property = CreateTestProperty();
@@ -323,19 +328,14 @@ public class PropertyTests
         property.RegisterTenant(tenantContact, "101");
 
         // Act
-        var stats = property.GetStatistics();
+        var metrics = property.CalculateMetrics();
 
         // Assert
-        stats.Should().ContainKey("PropertyName");
-        stats.Should().ContainKey("TotalUnits");
-        stats.Should().ContainKey("OccupiedUnits");
-        stats.Should().ContainKey("AvailableUnits");
-        stats.Should().ContainKey("OccupancyRate");
-        
-        stats["PropertyName"].Should().Be("Test Property");
-        stats["TotalUnits"].Should().Be(3);
-        stats["OccupiedUnits"].Should().Be(1);
-        stats["AvailableUnits"].Should().Be(2);
+        metrics.TotalUnits.Should().Be(3);
+        metrics.OccupiedUnits.Should().Be(1);
+        metrics.VacantUnits.Should().Be(2);
+        metrics.OccupancyRate.Should().BeApproximately(0.3333, 0.001);
+        metrics.RequiresAttention.Should().BeTrue(); // Occupancy < 80%
     }
 
     private static Property CreateTestProperty()
@@ -343,7 +343,7 @@ public class PropertyTests
         var address = new PropertyAddress("123", "Test Street", "Test City", "12345");
         var superintendent = new PersonContactInfo("John", "Superintendent", "john@super.com", "555-1234");
         var units = new List<string> { "101", "102", "103" };
-        
+
         return new Property("Test Property", "PROP001", address, "555-1234", superintendent, units, "noreply@test.com");
     }
 }

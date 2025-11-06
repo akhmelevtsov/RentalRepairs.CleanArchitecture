@@ -1,6 +1,7 @@
 using RentalRepairs.Domain.Entities;
 using RentalRepairs.Domain.Enums;
 using RentalRepairs.Domain.Specifications.TenantRequests;
+using RentalRepairs.Domain.Common;
 using Xunit;
 using FluentAssertions;
 
@@ -47,7 +48,7 @@ public class TenantRequestSpecificationsTests
         // Set one request to have the specific property ID
         var targetRequest = requests.First();
         // Note: This would typically be set during creation, but for testing we'll assume it exists
-        
+
         var spec = new TenantRequestByPropertySpecification(propertyId);
 
         // Act & Assert - Since our test data doesn't have real property IDs, 
@@ -112,8 +113,8 @@ public class TenantRequestSpecificationsTests
 
         // Assert
         filteredRequests.Should().HaveCount(3); // Submitted + Scheduled requests
-        filteredRequests.Should().OnlyContain(r => 
-            r.Status == TenantRequestStatus.Submitted || 
+        filteredRequests.Should().OnlyContain(r =>
+            r.Status == TenantRequestStatus.Submitted ||
             r.Status == TenantRequestStatus.Scheduled);
     }
 
@@ -207,16 +208,16 @@ public class TenantRequestSpecificationsTests
             "Property 5", "555-5555", "Super 5", "super5@test.com");
 
         // Set different statuses
-        request1.Submit(); // Submitted
-        request2.Submit(); // Submitted
-        
-        request3.Submit();
-        request3.Schedule(DateTime.UtcNow.AddDays(1), "worker@test.com", "WO-003"); // Scheduled
-        
+        request1.SubmitForReview(); // Submitted
+        request2.SubmitForReview(); // Submitted
+
+        request3.SubmitForReview();
+        request3.ScheduleWork(DateTime.UtcNow.AddDays(1), "worker@test.com", "WO-003"); // Scheduled
+
         // request4 stays in Draft
-        
-        request5.Submit();
-        request5.Schedule(DateTime.UtcNow.AddDays(2), "worker@test.com", "WO-005");
+
+        request5.SubmitForReview();
+        request5.ScheduleWork(DateTime.UtcNow.AddDays(2), "worker@test.com", "WO-005");
         request5.ReportWorkCompleted(true, "Completed"); // Done
 
         requests.AddRange(new[] { request1, request2, request3, request4, request5 });
@@ -233,15 +234,13 @@ public class TenantRequestSpecificationsTests
             "Old Property", "555-9999", "Old Super", "oldsuper@test.com");
 
         // Submit the request to make it overdue
-        request.Submit();
+        request.SubmitForReview();
 
-        // Use reflection to set the CreatedAt date to simulate an old request
-        // Note: In a real scenario, this would be handled by the persistence layer
-        var createdAtProperty = typeof(TenantRequest).BaseType!.GetProperty("CreatedAt");
-        if (createdAtProperty != null && createdAtProperty.CanWrite)
-        {
-            createdAtProperty.SetValue(request, DateTime.UtcNow.AddDays(-daysOld));
-        }
+        // Use explicit interface implementation to set the CreatedAt date
+        // This properly works with the new BaseEntity implementation
+        var auditableEntity = (IAuditableEntity)request;
+        auditableEntity.CreatedAt = DateTime.UtcNow.AddDays(-daysOld);
+        auditableEntity.UpdatedAt = DateTime.UtcNow.AddDays(-daysOld);
 
         return request;
     }

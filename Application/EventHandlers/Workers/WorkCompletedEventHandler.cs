@@ -28,7 +28,8 @@ public class WorkCompletedEventHandler : INotificationHandler<WorkCompletedEvent
         var successful = notification.Successful;
         var notes = notification.Notes;
 
-        _logger.LogInformation("Processing WorkCompletedEvent for worker {WorkerEmail} on work order {WorkOrderNumber}: {Status}",
+        _logger.LogInformation(
+            "Processing WorkCompletedEvent for worker {WorkerEmail} on work order {WorkOrderNumber}: {Status}",
             worker.ContactInfo.EmailAddress,
             assignment.WorkOrderNumber,
             successful ? "Successful" : "Failed");

@@ -31,8 +31,8 @@ public class IndexPageIntegrationTests : IClassFixture<WebApplicationTestFactory
 
         // Assert - Should either return OK or redirect to login (both acceptable)
         response.StatusCode.Should().BeOneOf(
-            HttpStatusCode.OK, 
-            HttpStatusCode.Redirect, 
+            HttpStatusCode.OK,
+            HttpStatusCode.Redirect,
             HttpStatusCode.Found,
             HttpStatusCode.PermanentRedirect);
 
@@ -55,12 +55,12 @@ public class IndexPageIntegrationTests : IClassFixture<WebApplicationTestFactory
 
         // Assert - Should either show content or redirect to login
         response.StatusCode.Should().BeOneOf(
-            HttpStatusCode.OK, 
-            HttpStatusCode.Redirect, 
+            HttpStatusCode.OK,
+            HttpStatusCode.Redirect,
             HttpStatusCode.Found,
             HttpStatusCode.PermanentRedirect);
-        
-        if (response.StatusCode == HttpStatusCode.Redirect || 
+
+        if (response.StatusCode == HttpStatusCode.Redirect ||
             response.StatusCode == HttpStatusCode.Found ||
             response.StatusCode == HttpStatusCode.PermanentRedirect)
         {

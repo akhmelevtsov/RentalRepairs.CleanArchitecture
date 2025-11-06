@@ -26,21 +26,22 @@ public class DemoUserService : IDemoUserService
         _logger = logger;
     }
 
-    public bool IsDemoModeEnabled() => _settings.EnableDemoMode;
+    public bool IsDemoModeEnabled()
+    {
+        return _settings.EnableDemoMode;
+    }
 
-    public string GetDefaultPassword() => _settings.DefaultPassword;
+    public string GetDefaultPassword()
+    {
+        return _settings.DefaultPassword;
+    }
 
     public async Task<DemoUserValidationResult> ValidateUserAsync(string email, string password)
     {
-        if (!_settings.EnableDemoMode)
-        {
-            return DemoUserValidationResult.Failure("Demo mode is not enabled");
-        }
+        if (!_settings.EnableDemoMode) return DemoUserValidationResult.Failure("Demo mode is not enabled");
 
         if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
-        {
             return DemoUserValidationResult.Failure("Email and password are required");
-        }
 
         // Check for lockout (security measure remains)
         if (IsUserLockedOut(email))
@@ -53,7 +54,7 @@ public class DemoUserService : IDemoUserService
         }
 
         var normalizedEmail = email.ToLowerInvariant();
-        
+
         if (!_settings.DemoUsers.TryGetValue(normalizedEmail, out var infrastructureUser))
         {
             RecordFailedAttempt(email, "User not found");
@@ -79,7 +80,7 @@ public class DemoUserService : IDemoUserService
         _logger.LogInformation("Demo user {Email} authenticated successfully - concurrent logins allowed", email);
 
         // Convert Infrastructure model to Application model
-        var applicationUser = new RentalRepairs.Application.Common.Interfaces.DemoUserCredential
+        var applicationUser = new Application.Common.Interfaces.DemoUserCredential
         {
             Email = infrastructureUser.Email,
             HashedPassword = infrastructureUser.HashedPassword,
@@ -93,18 +94,18 @@ public class DemoUserService : IDemoUserService
         return DemoUserValidationResult.Success(applicationUser);
     }
 
-    public async Task<RentalRepairs.Application.Common.Interfaces.DemoUserCredential?> GetDemoUserAsync(string email)
+    public async Task<Application.Common.Interfaces.DemoUserCredential?> GetDemoUserAsync(string email)
     {
         if (!_settings.EnableDemoMode)
             return null;
 
         var normalizedEmail = email.ToLowerInvariant();
-        
+
         if (!_settings.DemoUsers.TryGetValue(normalizedEmail, out var infrastructureUser))
             return null;
 
         // Convert Infrastructure model to Application model
-        return new RentalRepairs.Application.Common.Interfaces.DemoUserCredential
+        return new Application.Common.Interfaces.DemoUserCredential
         {
             Email = infrastructureUser.Email,
             HashedPassword = infrastructureUser.HashedPassword,
@@ -116,7 +117,8 @@ public class DemoUserService : IDemoUserService
         };
     }
 
-    public async Task<bool> RegisterDemoUserAsync(string email, string password, string displayName, List<string> roles, Dictionary<string, string>? claims = null)
+    public async Task<bool> RegisterDemoUserAsync(string email, string password, string displayName, List<string> roles,
+        Dictionary<string, string>? claims = null)
     {
         if (!_settings.EnableDemoMode || !_settings.Security.AllowUserRegistration)
         {
@@ -140,7 +142,7 @@ public class DemoUserService : IDemoUserService
 
         var hashedPassword = _passwordService.HashPassword(password);
 
-        var newUser = new RentalRepairs.Infrastructure.Authentication.Models.DemoUserCredential
+        var newUser = new Models.DemoUserCredential
         {
             Email = normalizedEmail,
             HashedPassword = hashedPassword,
@@ -153,20 +155,20 @@ public class DemoUserService : IDemoUserService
 
         _settings.DemoUsers[normalizedEmail] = newUser;
 
-        _logger.LogInformation("Demo user {Email} registered successfully with roles: {Roles}", 
+        _logger.LogInformation("Demo user {Email} registered successfully with roles: {Roles}",
             email, string.Join(", ", roles ?? new List<string>()));
 
         return true;
     }
 
-    public async Task<List<RentalRepairs.Application.Common.Interfaces.DemoUserInfo>> GetDemoUsersForDisplayAsync()
+    public async Task<List<DemoUserInfo>> GetDemoUsersForDisplayAsync()
     {
         if (!_settings.EnableDemoMode || !_settings.Security.ShowDemoCredentials)
-            return new List<RentalRepairs.Application.Common.Interfaces.DemoUserInfo>();
+            return new List<DemoUserInfo>();
 
         return _settings.DemoUsers.Values
             .Where(u => u.IsActive)
-            .Select(u => new RentalRepairs.Application.Common.Interfaces.DemoUserInfo
+            .Select(u => new DemoUserInfo
             {
                 Email = u.Email,
                 DisplayName = u.DisplayName,
@@ -189,7 +191,8 @@ public class DemoUserService : IDemoUserService
 
         if (_settings.DemoUsers.Any())
         {
-            _logger.LogInformation("Demo users already configured ({Count} users) - concurrent logins enabled", _settings.DemoUsers.Count);
+            _logger.LogInformation("Demo users already configured ({Count} users) - concurrent logins enabled",
+                _settings.DemoUsers.Count);
             return;
         }
 
@@ -199,7 +202,7 @@ public class DemoUserService : IDemoUserService
         var hashedPassword = _passwordService.HashPassword(_settings.DefaultPassword);
 
         // Create default demo users using Infrastructure models
-        var defaultUsers = new Dictionary<string, RentalRepairs.Infrastructure.Authentication.Models.DemoUserCredential>
+        var defaultUsers = new Dictionary<string, Models.DemoUserCredential>
         {
             // System Administrator
             ["admin@demo.com"] = new()
@@ -418,12 +421,10 @@ public class DemoUserService : IDemoUserService
             }
         };
 
-        foreach (var (email, user) in defaultUsers)
-        {
-            _settings.DemoUsers[email] = user;
-        }
+        foreach (var (email, user) in defaultUsers) _settings.DemoUsers[email] = user;
 
-        _logger.LogInformation("Initialized {Count} default demo users with concurrent login support", defaultUsers.Count);
+        _logger.LogInformation("Initialized {Count} default demo users with concurrent login support",
+            defaultUsers.Count);
     }
 
     #region Private Login Attempt Tracking (Security - Keep for rate limiting)
@@ -435,7 +436,7 @@ public class DemoUserService : IDemoUserService
 
         var attempts = _loginAttempts[email];
         var cutoffTime = DateTime.UtcNow.AddMinutes(-_settings.Security.LockoutDurationMinutes);
-        
+
         // Remove old attempts
         attempts.RemoveAll(a => a.AttemptTime < cutoffTime);
 
@@ -491,10 +492,7 @@ public class DemoUserService : IDemoUserService
 
     private void ClearFailedAttempts(string email)
     {
-        if (_loginAttempts.ContainsKey(email))
-        {
-            _loginAttempts[email].Clear();
-        }
+        if (_loginAttempts.ContainsKey(email)) _loginAttempts[email].Clear();
     }
 
     #endregion

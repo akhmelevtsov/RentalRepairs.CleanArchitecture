@@ -9,7 +9,8 @@ namespace RentalRepairs.Domain.Events.Properties;
 /// </summary>
 public class TenantContactInfoChangedEvent : BaseEvent
 {
-    public TenantContactInfoChangedEvent(Tenant tenant, PersonContactInfo oldContactInfo, PersonContactInfo newContactInfo)
+    public TenantContactInfoChangedEvent(Tenant tenant, PersonContactInfo oldContactInfo,
+        PersonContactInfo newContactInfo)
     {
         Tenant = tenant ?? throw new ArgumentNullException(nameof(tenant));
         OldContactInfo = oldContactInfo ?? throw new ArgumentNullException(nameof(oldContactInfo));

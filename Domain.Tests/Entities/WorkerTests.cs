@@ -1,6 +1,7 @@
 using RentalRepairs.Domain.Entities;
 using RentalRepairs.Domain.ValueObjects;
 using RentalRepairs.Domain.Events.Workers;
+using RentalRepairs.Domain.Enums;
 using Xunit;
 using FluentAssertions;
 
@@ -21,7 +22,7 @@ public class WorkerTests
         worker.Should().NotBeNull();
         worker.ContactInfo.Should().Be(contactInfo);
         worker.IsActive.Should().BeTrue();
-        worker.Specialization.Should().BeNull();
+        worker.Specialization.Should().Be(WorkerSpecialization.GeneralMaintenance); // Default enum value
         worker.Notes.Should().BeNull();
         worker.DomainEvents.Should().HaveCount(1);
         worker.DomainEvents.First().Should().BeOfType<WorkerRegisteredEvent>();
@@ -34,21 +35,10 @@ public class WorkerTests
         var worker = CreateTestWorker();
 
         // Act
-        worker.SetSpecialization("Plumbing");
+        worker.SetSpecialization(WorkerSpecialization.Plumbing);
 
         // Assert
-        worker.Specialization.Should().Be("Plumbing");
-    }
-
-    [Fact]
-    public void SetSpecialization_ShouldThrowException_WithEmptyValue()
-    {
-        // Arrange
-        var worker = CreateTestWorker();
-
-        // Act & Assert
-        Action act = () => worker.SetSpecialization("");
-        act.Should().Throw<ArgumentException>();
+        worker.Specialization.Should().Be(WorkerSpecialization.Plumbing);
     }
 
     [Fact]
@@ -193,7 +183,7 @@ public class WorkerTests
         var worker = CreateTestWorker();
 
         // Act & Assert
-        Action act = () => worker.AssignToWork("", DateTime.UtcNow.AddDays(1));
+        var act = () => worker.AssignToWork("", DateTime.UtcNow.AddDays(1));
         act.Should().Throw<ArgumentException>();
     }
 
@@ -204,9 +194,9 @@ public class WorkerTests
         var worker = CreateTestWorker();
 
         // Act & Assert - Domain logic in Worker.AssignToWork should still enforce business rules
-        Action act = () => worker.AssignToWork("WO-12345", DateTime.UtcNow.AddDays(-1));
+        var act = () => worker.AssignToWork("WO-12345", DateTime.UtcNow.AddDays(-1));
         act.Should().Throw<ArgumentException>()
-            .WithMessage("Scheduled date must be in the future*");
+            .WithMessage("Scheduled date must be today or in the future*");
     }
 
     [Fact]
@@ -217,7 +207,7 @@ public class WorkerTests
         worker.Deactivate();
 
         // Act & Assert
-        Action act = () => worker.AssignToWork("WO-12345", DateTime.UtcNow.AddDays(1));
+        var act = () => worker.AssignToWork("WO-12345", DateTime.UtcNow.AddDays(1));
         act.Should().Throw<InvalidOperationException>();
     }
 
@@ -247,71 +237,8 @@ public class WorkerTests
         var worker = CreateTestWorker();
 
         // Act & Assert
-        Action act = () => worker.CompleteWork("NONEXISTENT", true);
+        var act = () => worker.CompleteWork("NONEXISTENT", true);
         act.Should().Throw<InvalidOperationException>();
-    }
-
-    [Fact]
-    public void HasSpecializedSkills_ShouldReturnTrue_WhenNoSpecializationRequired()
-    {
-        // Arrange
-        var worker = CreateTestWorker();
-
-        // Act & Assert
-        worker.HasSpecializedSkills("").Should().BeTrue();
-        worker.HasSpecializedSkills(null).Should().BeTrue();
-    }
-
-    [Fact]
-    public void HasSpecializedSkills_ShouldReturnTrue_WhenSkillsMatch()
-    {
-        // Arrange
-        var worker = CreateTestWorker();
-        worker.SetSpecialization("Plumbing");
-
-        // Act & Assert
-        worker.HasSpecializedSkills("Plumbing").Should().BeTrue();
-    }
-
-    [Fact]
-    public void HasSpecializedSkills_ShouldReturnTrue_WhenGeneralMaintenanceWorker()
-    {
-        // Arrange
-        var worker = CreateTestWorker();
-        worker.SetSpecialization("General Maintenance");
-
-        // Act & Assert
-        worker.HasSpecializedSkills("Plumbing").Should().BeTrue();
-        worker.HasSpecializedSkills("Electrical").Should().BeTrue();
-    }
-
-    [Fact]
-    public void DetermineRequiredSpecialization_ShouldReturnCorrectSpecialization()
-    {
-        // Act & Assert
-        Worker.DetermineRequiredSpecialization("Leaky faucet", "Water dripping").Should().Be("Plumbing");
-        Worker.DetermineRequiredSpecialization("Light not working", "Electrical outlet issue").Should().Be("Electrical");
-        Worker.DetermineRequiredSpecialization("Heater broken", "HVAC system failure").Should().Be("HVAC");
-        Worker.DetermineRequiredSpecialization(string.Empty, string.Empty).Should().Be("General Maintenance");
-    }
-
-    [Fact]
-    public void WorkAssignment_ValueObject_ShouldAllowPastDatesForEntityFrameworkHydration()
-    {
-        // Arrange - Historical data scenario (past scheduled date that would have been valid when created)
-        var pastScheduledDate = DateTime.Today.AddDays(-1);
-        
-        // Act - The WorkAssignment value object constructor should now allow past dates
-        // This enables Entity Framework to load historical data without validation errors
-        var assignment = new WorkAssignment("WO-12345", pastScheduledDate, "Historical work assignment");
-
-        // Assert - Should not throw exception and should be properly created
-        assignment.Should().NotBeNull();
-        assignment.WorkOrderNumber.Should().Be("WO-12345");
-        assignment.ScheduledDate.Should().Be(pastScheduledDate);
-        assignment.Notes.Should().Be("Historical work assignment");
-        assignment.IsCompleted.Should().BeFalse();
-        assignment.IsOverdue().Should().BeTrue("because the scheduled date is in the past and it's not completed");
     }
 
     private static Worker CreateTestWorker()

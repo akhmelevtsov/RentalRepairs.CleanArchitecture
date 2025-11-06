@@ -7,7 +7,7 @@ namespace RentalRepairs.Domain.Specifications.Workers;
 /// </summary>
 public class WorkersAvailableForSchedulingSpecification : BaseSpecification<Worker>
 {
-    public WorkersAvailableForSchedulingSpecification() 
+    public WorkersAvailableForSchedulingSpecification()
         : base(w => w.IsActive)
     {
         ApplyOrderBy(w => w.ContactInfo.LastName);

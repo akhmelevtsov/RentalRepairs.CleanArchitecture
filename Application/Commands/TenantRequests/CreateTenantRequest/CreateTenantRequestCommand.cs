@@ -14,7 +14,7 @@ public class CreateTenantRequestCommand : ICommand<Guid>
     public string Description { get; set; } = default!;
     public string UrgencyLevel { get; set; } = default!;
     public string TenantEmail { get; set; } = default!;
-    
+
     // Additional properties for creating complete tenant request
     public string TenantFullName { get; set; } = default!;
     public string TenantUnit { get; set; } = default!;

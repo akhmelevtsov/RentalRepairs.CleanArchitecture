@@ -13,7 +13,6 @@ namespace RentalRepairs.Infrastructure.Authentication;
 /// </summary>
 public class AuthenticationService : IAuthenticationService
 {
-    private readonly IPropertyService? _propertyService;
     private readonly IWorkerService? _workerService;
     private readonly IHttpContextAccessor? _httpContextAccessor;
     private readonly ILogger<AuthenticationService> _logger;
@@ -22,13 +21,11 @@ public class AuthenticationService : IAuthenticationService
     public AuthenticationService(
         ILogger<AuthenticationService> logger,
         IDemoUserService demoUserService,
-        IPropertyService? propertyService = null,
         IWorkerService? workerService = null,
         IHttpContextAccessor? httpContextAccessor = null)
     {
         _logger = logger;
         _demoUserService = demoUserService;
-        _propertyService = propertyService;
         _workerService = workerService;
         _httpContextAccessor = httpContextAccessor;
     }
@@ -55,21 +52,16 @@ public class AuthenticationService : IAuthenticationService
                 var validationResult = await _demoUserService.ValidateUserAsync(email, password);
 
                 if (!validationResult.IsValid)
-                {
                     return AuthenticationResult.Failure(
                         validationResult.ErrorMessage ?? "Invalid credentials",
                         validationResult.IsLockedOut,
                         validationResult.LockoutEndTime);
-                }
 
                 var user = validationResult.User!;
-                
+
                 // Create claims dictionary for result
                 var claimsDict = new Dictionary<string, object>();
-                foreach (var claim in user.Claims)
-                {
-                    claimsDict[claim.Key] = claim.Value;
-                }
+                foreach (var claim in user.Claims) claimsDict[claim.Key] = claim.Value;
 
                 // Create successful authentication result with role detection
                 var result = AuthenticationResult.Success(
@@ -79,8 +71,9 @@ public class AuthenticationService : IAuthenticationService
                     user.Roles.ToList(),
                     claimsDict);
 
-                _logger.LogInformation("User {Email} authenticated successfully with role(s): {Roles}, redirecting to: {DashboardUrl}", 
-                    email, 
+                _logger.LogInformation(
+                    "User {Email} authenticated successfully with role(s): {Roles}, redirecting to: {DashboardUrl}",
+                    email,
                     string.Join(", ", user.Roles),
                     result.DashboardUrl);
 
@@ -141,7 +134,7 @@ public class AuthenticationService : IAuthenticationService
             {
                 var tokenTime = DateTimeOffset.FromUnixTimeSeconds(timestamp).DateTime;
                 var expirationTime = tokenTime.AddHours(8);
-                
+
                 return DateTime.UtcNow <= expirationTime;
             }
 
@@ -185,20 +178,20 @@ public class AuthenticationService : IAuthenticationService
         switch (result.PrimaryRole)
         {
             case "Tenant":
-                _logger.LogDebug("Tenant authenticated - Property: {PropertyCode}, Unit: {UnitNumber}", 
+                _logger.LogDebug("Tenant authenticated - Property: {PropertyCode}, Unit: {UnitNumber}",
                     result.PropertyCode, result.UnitNumber);
                 break;
-                
+
             case "Worker":
-                _logger.LogDebug("Worker authenticated - Specialization: {Specialization}", 
+                _logger.LogDebug("Worker authenticated - Specialization: {Specialization}",
                     result.WorkerSpecialization);
                 break;
-                
+
             case "PropertySuperintendent":
-                _logger.LogDebug("Superintendent authenticated - Property: {PropertyCode}", 
+                _logger.LogDebug("Superintendent authenticated - Property: {PropertyCode}",
                     result.PropertyCode);
                 break;
-                
+
             case "SystemAdmin":
                 _logger.LogDebug("System Admin authenticated - Full access granted");
                 break;

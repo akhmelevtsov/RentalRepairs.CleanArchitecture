@@ -22,9 +22,7 @@ public class DeclineTenantRequestCommandHandler : IRequestHandler<DeclineTenantR
             .FirstOrDefaultAsync(tr => tr.Id == request.TenantRequestId, cancellationToken);
 
         if (tenantRequest == null)
-        {
             throw new InvalidOperationException($"Tenant request with ID {request.TenantRequestId} not found");
-        }
 
         // Use rich domain model method
         tenantRequest.Decline(request.Reason);

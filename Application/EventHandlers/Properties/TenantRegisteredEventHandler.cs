@@ -26,7 +26,8 @@ public class TenantRegisteredEventHandler : INotificationHandler<TenantRegistere
         var tenant = notification.Tenant;
         var property = notification.Property;
 
-        _logger.LogInformation("Processing TenantRegisteredEvent for tenant {TenantName} in unit {UnitNumber} at property {PropertyCode}",
+        _logger.LogInformation(
+            "Processing TenantRegisteredEvent for tenant {TenantName} in unit {UnitNumber} at property {PropertyCode}",
             tenant.ContactInfo.GetFullName(),
             tenant.UnitNumber,
             tenant.PropertyCode);

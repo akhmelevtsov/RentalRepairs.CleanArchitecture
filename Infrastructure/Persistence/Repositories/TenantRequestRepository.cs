@@ -44,7 +44,8 @@ public class TenantRequestRepository : BaseRepository<TenantRequest>, ITenantReq
     /// <summary>
     /// ? Get all tenant requests with specific status
     /// </summary>
-    public async Task<IEnumerable<TenantRequest>> GetByStatusAsync(TenantRequestStatus status, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<TenantRequest>> GetByStatusAsync(TenantRequestStatus status,
+        CancellationToken cancellationToken = default)
     {
         return await Context.TenantRequests
             .Where(tr => tr.Status == status)
@@ -79,7 +80,8 @@ public class TenantRequestRepository : BaseRepository<TenantRequest>, ITenantReq
     /// <summary>
     /// ? Fixed: Use Guid for tenantId parameter
     /// </summary>
-    public async Task<IEnumerable<TenantRequest>> GetByTenantIdAsync(Guid tenantId, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<TenantRequest>> GetByTenantIdAsync(Guid tenantId,
+        CancellationToken cancellationToken = default)
     {
         return await Context.TenantRequests
             .Where(tr => tr.TenantId == tenantId)
@@ -90,7 +92,8 @@ public class TenantRequestRepository : BaseRepository<TenantRequest>, ITenantReq
     /// <summary>
     /// ? Fixed: Use Guid for propertyId parameter and work with direct foreign key
     /// </summary>
-    public async Task<IEnumerable<TenantRequest>> GetByPropertyIdAsync(Guid propertyId, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<TenantRequest>> GetByPropertyIdAsync(Guid propertyId,
+        CancellationToken cancellationToken = default)
     {
         return await Context.TenantRequests
             .Where(tr => tr.PropertyId == propertyId)
@@ -101,7 +104,8 @@ public class TenantRequestRepository : BaseRepository<TenantRequest>, ITenantReq
     /// <summary>
     /// ? Get all tenant requests assigned to specific worker
     /// </summary>
-    public async Task<IEnumerable<TenantRequest>> GetByWorkerEmailAsync(string workerEmail, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<TenantRequest>> GetByWorkerEmailAsync(string workerEmail,
+        CancellationToken cancellationToken = default)
     {
         return await Context.TenantRequests
             .Where(tr => tr.AssignedWorkerEmail == workerEmail)
@@ -116,7 +120,8 @@ public class TenantRequestRepository : BaseRepository<TenantRequest>, ITenantReq
     /// <summary>
     /// ? Get tenant requests by urgency level
     /// </summary>
-    public async Task<IEnumerable<TenantRequest>> GetByUrgencyLevelAsync(string urgencyLevel, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<TenantRequest>> GetByUrgencyLevelAsync(string urgencyLevel,
+        CancellationToken cancellationToken = default)
     {
         return await Context.TenantRequests
             .Where(tr => tr.UrgencyLevel == urgencyLevel)
@@ -128,7 +133,8 @@ public class TenantRequestRepository : BaseRepository<TenantRequest>, ITenantReq
     /// ? Get overdue tenant requests older than specified threshold
     /// Fixed: Single clear method with explicit parameter
     /// </summary>
-    public async Task<IEnumerable<TenantRequest>> GetOverdueRequestsAsync(int daysThreshold, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<TenantRequest>> GetOverdueRequestsAsync(int daysThreshold,
+        CancellationToken cancellationToken = default)
     {
         var cutoffDate = DateTime.UtcNow.AddDays(-daysThreshold);
         return await Context.TenantRequests
@@ -144,7 +150,8 @@ public class TenantRequestRepository : BaseRepository<TenantRequest>, ITenantReq
     /// <summary>
     /// ? Get tenant requests using specification pattern for complex queries
     /// </summary>
-    public async Task<IEnumerable<TenantRequest>> GetBySpecificationAsync(ISpecification<TenantRequest> specification, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<TenantRequest>> GetBySpecificationAsync(ISpecification<TenantRequest> specification,
+        CancellationToken cancellationToken = default)
     {
         return await ApplySpecification(specification).ToListAsync(cancellationToken);
     }

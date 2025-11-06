@@ -103,11 +103,11 @@ public class RequestAuthorizationPolicy
     {
         return userRole switch
         {
-            "SystemAdmin" => 1,        // Highest priority
+            "SystemAdmin" => 1, // Highest priority
             "PropertySuperintendent" => 2,
             "Worker" => 3,
-            "Tenant" => 4,             // Lowest priority
-            _ => int.MaxValue          // Unknown roles have no priority
+            "Tenant" => 4, // Lowest priority
+            _ => int.MaxValue // Unknown roles have no priority
         };
     }
 

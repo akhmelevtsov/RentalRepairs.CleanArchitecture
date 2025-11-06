@@ -7,7 +7,7 @@ namespace RentalRepairs.Domain.Specifications.Workers;
 /// </summary>
 public class WorkerByEmailSpecification : BaseSpecification<Worker>
 {
-    public WorkerByEmailSpecification(string email) 
+    public WorkerByEmailSpecification(string email)
         : base(w => w.ContactInfo.EmailAddress == email)
     {
     }

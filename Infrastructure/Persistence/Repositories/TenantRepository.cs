@@ -21,7 +21,8 @@ public class TenantRepository : BaseRepository<Tenant>, ITenantRepository
     /// <summary>
     /// ? Fixed: Use Guid for propertyId parameter
     /// </summary>
-    public async Task<Tenant?> GetByPropertyAndUnitAsync(Guid propertyId, string unitNumber, CancellationToken cancellationToken = default)
+    public async Task<Tenant?> GetByPropertyAndUnitAsync(Guid propertyId, string unitNumber,
+        CancellationToken cancellationToken = default)
     {
         return await Context.Tenants
             .FirstOrDefaultAsync(t => t.PropertyId == propertyId && t.UnitNumber == unitNumber, cancellationToken);
@@ -30,7 +31,8 @@ public class TenantRepository : BaseRepository<Tenant>, ITenantRepository
     /// <summary>
     /// ? Fixed: Use Guid for propertyId parameter
     /// </summary>
-    public async Task<IEnumerable<Tenant>> GetByPropertyIdAsync(Guid propertyId, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<Tenant>> GetByPropertyIdAsync(Guid propertyId,
+        CancellationToken cancellationToken = default)
     {
         return await Context.Tenants
             .Where(t => t.PropertyId == propertyId)
@@ -43,11 +45,11 @@ public class TenantRepository : BaseRepository<Tenant>, ITenantRepository
     /// </summary>
     public async Task<IEnumerable<Tenant>> GetWithActiveRequestsAsync(CancellationToken cancellationToken = default)
     {
-        var activeStatuses = new[] 
-        { 
+        var activeStatuses = new[]
+        {
             Domain.Enums.TenantRequestStatus.Draft,
-            Domain.Enums.TenantRequestStatus.Submitted, 
-            Domain.Enums.TenantRequestStatus.Scheduled 
+            Domain.Enums.TenantRequestStatus.Submitted,
+            Domain.Enums.TenantRequestStatus.Scheduled
         };
 
         return await Context.Tenants
@@ -62,7 +64,8 @@ public class TenantRepository : BaseRepository<Tenant>, ITenantRepository
     /// ? Implemented: Check if tenant exists in specific unit
     /// Fixed to join with Properties table instead of using navigation property
     /// </summary>
-    public async Task<bool> ExistsInUnitAsync(string propertyCode, string unitNumber, CancellationToken cancellationToken = default)
+    public async Task<bool> ExistsInUnitAsync(string propertyCode, string unitNumber,
+        CancellationToken cancellationToken = default)
     {
         return await Context.Tenants
             .Where(t => t.PropertyCode == propertyCode && t.UnitNumber == unitNumber)
@@ -73,7 +76,8 @@ public class TenantRepository : BaseRepository<Tenant>, ITenantRepository
     /// ? Implemented: Get tenant request through tenant aggregate
     /// Fixed: Use Guid for tenantRequestId parameter
     /// </summary>
-    public async Task<TenantRequest?> GetTenantRequestByIdAsync(Guid tenantRequestId, CancellationToken cancellationToken = default)
+    public async Task<TenantRequest?> GetTenantRequestByIdAsync(Guid tenantRequestId,
+        CancellationToken cancellationToken = default)
     {
         return await Context.TenantRequests
             .FirstOrDefaultAsync(tr => tr.Id == tenantRequestId, cancellationToken);
@@ -82,7 +86,8 @@ public class TenantRepository : BaseRepository<Tenant>, ITenantRepository
     /// <summary>
     /// ? Implemented: Specification pattern support
     /// </summary>
-    public async Task<IEnumerable<Tenant>> GetBySpecificationAsync(ISpecification<Tenant> specification, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<Tenant>> GetBySpecificationAsync(ISpecification<Tenant> specification,
+        CancellationToken cancellationToken = default)
     {
         return await ApplySpecification(specification).ToListAsync(cancellationToken);
     }

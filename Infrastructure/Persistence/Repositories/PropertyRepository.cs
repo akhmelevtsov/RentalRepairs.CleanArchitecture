@@ -40,7 +40,8 @@ public class PropertyRepository : BaseRepository<Property>, IPropertyRepository
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<IEnumerable<Property>> GetBySuperintendentEmailAsync(string email, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<Property>> GetBySuperintendentEmailAsync(string email,
+        CancellationToken cancellationToken = default)
     {
         return await Context.Properties
             .Where(p => p.Superintendent.EmailAddress == email)
@@ -52,7 +53,8 @@ public class PropertyRepository : BaseRepository<Property>, IPropertyRepository
 
     #region ? Specification Pattern Implementation
 
-    public async Task<IEnumerable<Property>> GetBySpecificationAsync(ISpecification<Property> specification, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<Property>> GetBySpecificationAsync(ISpecification<Property> specification,
+        CancellationToken cancellationToken = default)
     {
         return await ApplySpecification(specification).ToListAsync(cancellationToken);
     }

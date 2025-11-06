@@ -5,7 +5,9 @@ using RentalRepairs.Application.DTOs;
 
 namespace RentalRepairs.Application.Queries.TenantRequests.GetTenantRequestsForProperty;
 
-public class GetTenantRequestsForPropertyQueryHandler : IRequestHandler<GetTenantRequestsForPropertyQuery, List<TenantRequestDto>>
+public class
+    GetTenantRequestsForPropertyQueryHandler : IRequestHandler<GetTenantRequestsForPropertyQuery,
+    List<TenantRequestDto>>
 {
     private readonly IApplicationDbContext _context;
 
@@ -17,15 +19,16 @@ public class GetTenantRequestsForPropertyQueryHandler : IRequestHandler<GetTenan
     /// <summary>
     /// ? Fixed: Use direct EF query since handler uses IApplicationDbContext with proper Property join
     /// </summary>
-    public async Task<List<TenantRequestDto>> Handle(GetTenantRequestsForPropertyQuery request, CancellationToken cancellationToken)
+    public async Task<List<TenantRequestDto>> Handle(GetTenantRequestsForPropertyQuery request,
+        CancellationToken cancellationToken)
     {
         // Join with Properties to get the actual PropertyName and PropertyCode
         var tenantRequests = await _context.TenantRequests
             .Where(tr => tr.PropertyId == request.PropertyId)
             .Join(_context.Properties,
-                  tr => tr.PropertyId,
-                  p => p.Id,
-                  (tr, p) => new { TenantRequest = tr, Property = p })
+                tr => tr.PropertyId,
+                p => p.Id,
+                (tr, p) => new { TenantRequest = tr, Property = p })
             .OrderByDescending(joined => joined.TenantRequest.CreatedAt)
             .Select(joined => new TenantRequestDto
             {
@@ -60,5 +63,4 @@ public class GetTenantRequestsForPropertyQueryHandler : IRequestHandler<GetTenan
 
         return tenantRequests;
     }
-
 }

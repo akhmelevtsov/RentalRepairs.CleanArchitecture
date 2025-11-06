@@ -85,7 +85,7 @@ public class DomainExceptionTests
     public void DomainException_ShouldBeProperlyConstructed()
     {
         // This test ensures domain exceptions have proper constructors and inheritance
-        
+
         // Arrange & Act
         var tenantRequestException = new TenantRequestDomainException("Test message");
         var propertyException = new PropertyDomainException("Test message");
@@ -95,7 +95,7 @@ public class DomainExceptionTests
         tenantRequestException.Should().BeAssignableTo<DomainException>();
         propertyException.Should().BeAssignableTo<DomainException>();
         workerException.Should().BeAssignableTo<DomainException>();
-        
+
         // All should ultimately inherit from Exception
         tenantRequestException.Should().BeAssignableTo<Exception>();
         propertyException.Should().BeAssignableTo<Exception>();

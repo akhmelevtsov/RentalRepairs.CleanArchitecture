@@ -131,16 +131,16 @@ public class ViewModelValidationTests
         var programType = typeof(Program);
         programType.Should().NotBeNull();
 
-        var indexModelType = typeof(RentalRepairs.WebUI.Pages.IndexModel);
+        var indexModelType = typeof(Pages.IndexModel);
         indexModelType.Should().NotBeNull();
 
-        var registerModelType = typeof(RentalRepairs.WebUI.Pages.Properties.RegisterModel);
+        var registerModelType = typeof(Pages.Properties.RegisterModel);
         registerModelType.Should().NotBeNull();
 
-        var submitModelType = typeof(RentalRepairs.WebUI.Pages.TenantRequests.SubmitModel);
+        var submitModelType = typeof(Pages.TenantRequests.SubmitModel);
         submitModelType.Should().NotBeNull();
 
-        var loginModelType = typeof(RentalRepairs.WebUI.Pages.Account.LoginModel);
+        var loginModelType = typeof(Pages.Account.LoginModel);
         loginModelType.Should().NotBeNull();
     }
 
@@ -148,7 +148,7 @@ public class ViewModelValidationTests
     public void Step14_Mapster_Config_Exists()
     {
         // Validate Mapster mapping configuration exists (not AutoMapper)
-        var mappingConfigType = typeof(RentalRepairs.WebUI.Mappings.ApplicationToViewModelMappingConfig);
+        var mappingConfigType = typeof(Mappings.ApplicationToViewModelMappingConfig);
         mappingConfigType.Should().NotBeNull();
         mappingConfigType.Namespace.Should().Be("RentalRepairs.WebUI.Mappings");
     }

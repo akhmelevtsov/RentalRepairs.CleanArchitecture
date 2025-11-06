@@ -15,7 +15,8 @@ public class RegisterPropertyCommandValidator : AbstractValidator<RegisterProper
         RuleFor(x => x.Code)
             .NotEmpty().WithMessage("Property code is required")
             .MaximumLength(50).WithMessage("Property code must not exceed 50 characters")
-            .Matches(@"^[A-Z0-9\-]+$").WithMessage("Property code must contain only uppercase letters, numbers, and hyphens");
+            .Matches(@"^[A-Z0-9\-]+$")
+            .WithMessage("Property code must contain only uppercase letters, numbers, and hyphens");
 
         RuleFor(x => x.PhoneNumber)
             .NotEmpty().WithMessage("Phone number is required")

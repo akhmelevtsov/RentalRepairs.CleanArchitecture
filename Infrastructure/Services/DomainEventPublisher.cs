@@ -40,17 +40,15 @@ public class DomainEventPublisher : IDomainEventPublisher
         try
         {
             // Publish events sequentially to maintain order and handle dependencies
-            foreach (var domainEvent in domainEvents)
-            {
-                await PublishSingleEvent(domainEvent, cancellationToken);
-            }
+            foreach (var domainEvent in domainEvents) await PublishSingleEvent(domainEvent, cancellationToken);
 
             _logger.LogInformation("Successfully published {EventCount} domain events", domainEvents.Count);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to publish domain events. {EventCount} events were not processed", domainEvents.Count);
-            
+            _logger.LogError(ex, "Failed to publish domain events. {EventCount} events were not processed",
+                domainEvents.Count);
+
             // ? Re-add events back to entities if publishing failed
             ReAddEventsToEntities(domainEventEntities, domainEvents);
             throw;
@@ -60,7 +58,7 @@ public class DomainEventPublisher : IDomainEventPublisher
     /// <summary>
     /// ? Publish a specific domain event immediately
     /// </summary>
-    public async Task PublishEventAsync<TEvent>(TEvent domainEvent, CancellationToken cancellationToken = default) 
+    public async Task PublishEventAsync<TEvent>(TEvent domainEvent, CancellationToken cancellationToken = default)
         where TEvent : class
     {
         if (domainEvent == null) return;
@@ -104,10 +102,7 @@ public class DomainEventPublisher : IDomainEventPublisher
             .ToList();
 
         // ? Clear events after extraction to prevent re-publishing
-        foreach (var entity in domainEventEntities)
-        {
-            entity.ClearDomainEvents();
-        }
+        foreach (var entity in domainEventEntities) entity.ClearDomainEvents();
 
         return domainEvents;
     }
@@ -120,9 +115,9 @@ public class DomainEventPublisher : IDomainEventPublisher
         try
         {
             _logger.LogTrace("Publishing domain event {EventType} with ID {EventId}", eventType, eventId);
-            
+
             await _mediator.Publish(domainEvent, cancellationToken);
-            
+
             _logger.LogTrace("Successfully published domain event {EventType} with ID {EventId}", eventType, eventId);
         }
         catch (Exception ex)
@@ -135,9 +130,9 @@ public class DomainEventPublisher : IDomainEventPublisher
     private void ReAddEventsToEntities(BaseEntity[] entities, List<BaseEvent> events)
     {
         // This is a simplified re-addition - in a real scenario you'd need to track which events belong to which entities
-        _logger.LogWarning("Re-adding {EventCount} domain events to {EntityCount} entities due to publishing failure", 
+        _logger.LogWarning("Re-adding {EventCount} domain events to {EntityCount} entities due to publishing failure",
             events.Count, entities.Length);
-            
+
         // For now, we'll just log the failure and not re-add to prevent endless loops
         // In production, you might want to store failed events for retry processing
     }

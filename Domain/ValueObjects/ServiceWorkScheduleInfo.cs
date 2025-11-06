@@ -38,50 +38,75 @@ public sealed class ServiceWorkScheduleInfo : ValueObject
 
     /// <summary>Gets the scheduled service date (immutable)</summary>
     public DateTime ServiceDate { get; private init; }
-    
+
     /// <summary>Gets the assigned worker's email address (immutable, normalized)</summary>
     public string WorkerEmail { get; private init; }
-    
+
     /// <summary>Gets the work order number (immutable, normalized)</summary>
     public string WorkOrderNumber { get; private init; }
-    
+
     /// <summary>Gets the work order sequence number (immutable)</summary>
     public int WorkOrderSequence { get; private init; }
 
     /// <summary>Creates a new instance with updated service date</summary>
     public ServiceWorkScheduleInfo WithServiceDate(DateTime serviceDate)
-        => new(serviceDate, WorkerEmail, WorkOrderNumber, WorkOrderSequence);
+    {
+        return new ServiceWorkScheduleInfo(serviceDate, WorkerEmail, WorkOrderNumber, WorkOrderSequence);
+    }
 
     /// <summary>Creates a new instance with updated worker email</summary>
     public ServiceWorkScheduleInfo WithWorkerEmail(string workerEmail)
-        => new(ServiceDate, workerEmail, WorkOrderNumber, WorkOrderSequence);
+    {
+        return new ServiceWorkScheduleInfo(ServiceDate, workerEmail, WorkOrderNumber, WorkOrderSequence);
+    }
 
     /// <summary>Creates a new instance with updated work order number</summary>
     public ServiceWorkScheduleInfo WithWorkOrderNumber(string workOrderNumber)
-        => new(ServiceDate, WorkerEmail, workOrderNumber, WorkOrderSequence);
+    {
+        return new ServiceWorkScheduleInfo(ServiceDate, WorkerEmail, workOrderNumber, WorkOrderSequence);
+    }
 
     /// <summary>Creates a new instance with updated sequence number</summary>
     public ServiceWorkScheduleInfo WithWorkOrderSequence(int workOrderSequence)
-        => new(ServiceDate, WorkerEmail, WorkOrderNumber, workOrderSequence);
+    {
+        return new ServiceWorkScheduleInfo(ServiceDate, WorkerEmail, WorkOrderNumber, workOrderSequence);
+    }
 
     /// <summary>Creates a new instance for rescheduling with a new date and incremented sequence</summary>
     public ServiceWorkScheduleInfo Reschedule(DateTime newServiceDate)
-        => new(newServiceDate, WorkerEmail, WorkOrderNumber, WorkOrderSequence + 1);
+    {
+        return new ServiceWorkScheduleInfo(newServiceDate, WorkerEmail, WorkOrderNumber, WorkOrderSequence + 1);
+    }
 
     /// <summary>Gets the service date formatted as a short date string</summary>
-    public string GetFormattedServiceDate() => ServiceDate.ToString("yyyy-MM-dd");
+    public string GetFormattedServiceDate()
+    {
+        return ServiceDate.ToString("yyyy-MM-dd");
+    }
 
     /// <summary>Gets the service date formatted as a full date and time string</summary>
-    public string GetFormattedServiceDateTime() => ServiceDate.ToString("yyyy-MM-dd HH:mm");
+    public string GetFormattedServiceDateTime()
+    {
+        return ServiceDate.ToString("yyyy-MM-dd HH:mm");
+    }
 
     /// <summary>Checks if the service is scheduled for today</summary>
-    public bool IsScheduledForToday() => ServiceDate.Date == DateTime.Today;
+    public bool IsScheduledForToday()
+    {
+        return ServiceDate.Date == DateTime.Today;
+    }
 
     /// <summary>Checks if the service is overdue</summary>
-    public bool IsOverdue() => ServiceDate < DateTime.UtcNow;
+    public bool IsOverdue()
+    {
+        return ServiceDate < DateTime.UtcNow;
+    }
 
     /// <summary>Gets the number of days until the service date (negative if overdue)</summary>
-    public int DaysUntilService() => (ServiceDate.Date - DateTime.Today).Days;
+    public int DaysUntilService()
+    {
+        return (ServiceDate.Date - DateTime.Today).Days;
+    }
 
     private static DateTime ValidateServiceDate(DateTime serviceDate)
     {
@@ -113,7 +138,7 @@ public sealed class ServiceWorkScheduleInfo : ValueObject
         }
 
         string normalized = workerEmail.Trim().ToLowerInvariant();
-        
+
         if (normalized.Length > 254)
         {
             throw new ArgumentException("Worker email cannot exceed 254 characters");
@@ -135,7 +160,7 @@ public sealed class ServiceWorkScheduleInfo : ValueObject
         }
 
         string normalized = workOrderNumber.Trim().ToUpperInvariant();
-        
+
         if (normalized.Length < 3)
         {
             throw new ArgumentException("Work order number must be at least 3 characters long");
@@ -177,6 +202,9 @@ public sealed class ServiceWorkScheduleInfo : ValueObject
         yield return WorkOrderSequence;
     }
 
-    public override string ToString() => 
-        $"Work Order {WorkOrderNumber} (#{WorkOrderSequence}) scheduled for {GetFormattedServiceDate()} with {WorkerEmail}";
+    public override string ToString()
+    {
+        return
+            $"Work Order {WorkOrderNumber} (#{WorkOrderSequence}) scheduled for {GetFormattedServiceDate()} with {WorkerEmail}";
+    }
 }

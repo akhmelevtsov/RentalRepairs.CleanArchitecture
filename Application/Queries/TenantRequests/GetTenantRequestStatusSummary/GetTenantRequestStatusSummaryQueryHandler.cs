@@ -7,7 +7,9 @@ namespace RentalRepairs.Application.Queries.TenantRequests.GetTenantRequestStatu
 /// Handler for tenant request status summary analytics.
 /// Provides efficient database aggregation for status distribution reporting.
 /// </summary>
-public class GetTenantRequestStatusSummaryQueryHandler : IRequestHandler<GetTenantRequestStatusSummaryQuery, Dictionary<string, int>>
+public class
+    GetTenantRequestStatusSummaryQueryHandler : IRequestHandler<GetTenantRequestStatusSummaryQuery,
+    Dictionary<string, int>>
 {
     private readonly IApplicationDbContext _context;
 
@@ -16,7 +18,8 @@ public class GetTenantRequestStatusSummaryQueryHandler : IRequestHandler<GetTena
         _context = context;
     }
 
-    public async Task<Dictionary<string, int>> Handle(GetTenantRequestStatusSummaryQuery request, CancellationToken cancellationToken)
+    public async Task<Dictionary<string, int>> Handle(GetTenantRequestStatusSummaryQuery request,
+        CancellationToken cancellationToken)
     {
         // Efficient database aggregation - much faster than loading entities
         return await Task.FromResult(_context.TenantRequests

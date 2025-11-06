@@ -52,7 +52,8 @@ public class PropertyTestDataBuilder
         return this;
     }
 
-    public PropertyTestDataBuilder WithSuperintendent(string firstName, string lastName, string email, string? phone = null)
+    public PropertyTestDataBuilder WithSuperintendent(string firstName, string lastName, string email,
+        string? phone = null)
     {
         _superintendent = new PersonContactInfo(firstName, lastName, email, phone);
         return this;
@@ -75,17 +76,26 @@ public class PropertyTestDataBuilder
         return new Property(_name, _code, _address, _phoneNumber, _superintendent, _units, _noReplyEmail);
     }
 
-    public static PropertyTestDataBuilder Default() => new PropertyTestDataBuilder();
-    
-    public static PropertyTestDataBuilder ForApartmentComplex() => new PropertyTestDataBuilder()
-        .WithName("Sunset Apartments")
-        .WithCode("SA001")
-        .WithAddress("456", "Oak Avenue", "Downtown", "98765")
-        .WithUnits("101", "102", "103", "201", "202", "203");
+    public static PropertyTestDataBuilder Default()
+    {
+        return new PropertyTestDataBuilder();
+    }
 
-    public static PropertyTestDataBuilder ForSingleFamily() => new PropertyTestDataBuilder()
-        .WithName("Family Home")
-        .WithCode("FH001")
-        .WithAddress("789", "Pine Street", "Suburbia", "54321")
-        .WithUnits("Main");
+    public static PropertyTestDataBuilder ForApartmentComplex()
+    {
+        return new PropertyTestDataBuilder()
+            .WithName("Sunset Apartments")
+            .WithCode("SA001")
+            .WithAddress("456", "Oak Avenue", "Downtown", "98765")
+            .WithUnits("101", "102", "103", "201", "202", "203");
+    }
+
+    public static PropertyTestDataBuilder ForSingleFamily()
+    {
+        return new PropertyTestDataBuilder()
+            .WithName("Family Home")
+            .WithCode("FH001")
+            .WithAddress("789", "Pine Street", "Suburbia", "54321")
+            .WithUnits("Main");
+    }
 }

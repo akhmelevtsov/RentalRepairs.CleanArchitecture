@@ -7,7 +7,7 @@ namespace RentalRepairs.Application.Common.Behaviors;
 /// MediatR behavior that handles unhandled exceptions and provides centralized logging.
 /// Follows Clean Architecture patterns with standardized American English spelling.
 /// </summary>
-public class UnhandledExceptionBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse> 
+public class UnhandledExceptionBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
     where TRequest : notnull
 {
     private readonly ILogger<TRequest> _logger;
@@ -17,7 +17,8 @@ public class UnhandledExceptionBehavior<TRequest, TResponse> : IPipelineBehavior
         _logger = logger;
     }
 
-    public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
+    public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next,
+        CancellationToken cancellationToken)
     {
         try
         {
@@ -27,7 +28,8 @@ public class UnhandledExceptionBehavior<TRequest, TResponse> : IPipelineBehavior
         {
             var requestName = typeof(TRequest).Name;
 
-            _logger.LogError(ex, "Clean Architecture Request: Unhandled Exception for Request {Name} {@Request}", requestName, request);
+            _logger.LogError(ex, "Clean Architecture Request: Unhandled Exception for Request {Name} {@Request}",
+                requestName, request);
 
             throw;
         }

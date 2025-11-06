@@ -185,56 +185,6 @@ public class Property : BaseEntity, IAggregateRoot
         };
     }
 
-    /// <summary>
-    ///     Business logic: Calculates property performance score based on multiple factors.
-    ///     Encapsulates complex business rules for property evaluation.
-    /// </summary>
-    public double CalculatePerformanceScore()
-    {
-        double occupancyScore = GetOccupancyRate() * 100;
-        double maintenanceScore = CalculateMaintenanceScore();
-        double tenantSatisfactionScore = CalculateTenantSatisfactionScore();
-
-        // Weighted average: 50% occupancy, 30% maintenance, 20% satisfaction
-        return occupancyScore * 0.5 + maintenanceScore * 0.3 + tenantSatisfactionScore * 0.2;
-    }
-
-    /// <summary>
-    ///     Business logic: Evaluates if property can accommodate additional tenants.
-    /// </summary>
-    public bool CanAccommodateAdditionalTenants()
-    {
-        return GetAvailableUnits().Any();
-    }
-
-    /// <summary>
-    ///     Business logic: Gets revenue potential based on occupancy.
-    ///     Simplified calculation for demonstration.
-    /// </summary>
-    public double CalculateRevenuePotential(double averageRentPerUnit = 1000)
-    {
-        return Units.Count * averageRentPerUnit * GetOccupancyRate();
-    }
-
-    public Dictionary<string, object> GetStatistics()
-    {
-        IEnumerable<string> availableUnits = GetAvailableUnits();
-
-        return new Dictionary<string, object>
-        {
-            ["PropertyName"] = Name,
-            ["PropertyCode"] = Code,
-            ["TotalUnits"] = Units.Count,
-            ["OccupiedUnits"] = _tenants.Count,
-            ["AvailableUnits"] = availableUnits.Count(),
-            ["OccupancyRate"] = GetOccupancyRate(),
-            ["SuperintendentName"] = Superintendent.GetFullName(),
-            ["SuperintendentEmail"] = Superintendent.EmailAddress,
-            ["RequiresAttention"] = RequiresAttention(),
-            ["PerformanceScore"] = CalculatePerformanceScore()
-        };
-    }
-
     private static void ValidatePropertyCreation(
         string name,
         string code,
@@ -319,46 +269,4 @@ public class Property : BaseEntity, IAggregateRoot
                unitNumber.Length <= 10 &&
                Regex.IsMatch(unitNumber, @"^[A-Za-z0-9\-\s]+$");
     }
-
-    #region Private Business Logic Methods
-
-    /// <summary>
-    ///     Business logic: Calculates maintenance score based on property characteristics.
-    ///     Simplified calculation - in production would consider request history, age, etc.
-    /// </summary>
-    private double CalculateMaintenanceScore()
-    {
-        // Simplified scoring based on unit count (larger properties may have more maintenance challenges)
-        double baseScore = 85.0;
-
-        switch (Units.Count)
-        {
-            case > 50:
-                baseScore -= 10; // Large properties have more maintenance complexity
-                break;
-            case < 10:
-                baseScore += 5; // Small properties easier to maintain
-                break;
-        }
-
-        return Math.Max(0, Math.Min(100, baseScore));
-    }
-
-    /// <summary>
-    ///     Business logic: Estimates tenant satisfaction score based on property metrics.
-    ///     Simplified calculation - in production would use actual tenant feedback.
-    /// </summary>
-    private double CalculateTenantSatisfactionScore()
-    {
-        const double baseScore = 80.0;
-
-        // Higher occupancy often indicates tenant satisfaction
-        double occupancyBonus = GetOccupancyRate() * 20; // Up to 20 point bonus
-
-        return Math.Max(0, Math.Min(100, baseScore + occupancyBonus));
-    }
-
- 
-
-    #endregion
 }

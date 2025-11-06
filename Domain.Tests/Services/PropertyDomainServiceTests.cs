@@ -52,8 +52,9 @@ public class PropertyDomainServiceTests
         var noReplyEmail = "noreply@test.com";
 
         // Act & Assert
-        Assert.Throws<ArgumentException>(() => 
-            _policyService.ValidatePropertyCreation(invalidName, code, address, phoneNumber, superintendent, units, noReplyEmail));
+        Assert.Throws<ArgumentException>(() =>
+            _policyService.ValidatePropertyCreation(invalidName, code, address, phoneNumber, superintendent, units,
+                noReplyEmail));
     }
 
     [Fact]
@@ -69,8 +70,9 @@ public class PropertyDomainServiceTests
         var noReplyEmail = "noreply@test.com";
 
         // Act & Assert
-        Assert.Throws<PropertyDomainException>(() => 
-            _policyService.ValidatePropertyCreation(name, code, address, phoneNumber, superintendent, units, noReplyEmail));
+        Assert.Throws<PropertyDomainException>(() =>
+            _policyService.ValidatePropertyCreation(name, code, address, phoneNumber, superintendent, units,
+                noReplyEmail));
     }
 
     [Fact]
@@ -86,8 +88,9 @@ public class PropertyDomainServiceTests
         var noReplyEmail = "noreply@test.com";
 
         // Act & Assert - Pure business rule validation
-        Assert.Throws<PropertyDomainException>(() => 
-            _policyService.ValidatePropertyCreation(name, code, address, phoneNumber, superintendent, units, noReplyEmail));
+        Assert.Throws<PropertyDomainException>(() =>
+            _policyService.ValidatePropertyCreation(name, code, address, phoneNumber, superintendent, units,
+                noReplyEmail));
     }
 
     [Fact]
@@ -111,7 +114,7 @@ public class PropertyDomainServiceTests
         var nonexistentUnit = "999"; // This unit doesn't exist in the test property
 
         // Act & Assert - Business rule: can only register in existing units
-        Assert.Throws<PropertyDomainException>(() => 
+        Assert.Throws<PropertyDomainException>(() =>
             _policyService.ValidateTenantRegistration(property, contactInfo, nonexistentUnit));
     }
 
@@ -138,11 +141,11 @@ public class PropertyDomainServiceTests
     {
         // Arrange
         var property = CreateTestProperty();
-        
+
         // Register a tenant to make unit 101 unavailable
         var existingTenantContact = new PersonContactInfo("John", "Existing", "john@test.com", "555-1111");
         property.RegisterTenant(existingTenantContact, "101");
-        
+
         var tenantContactInfo = new PersonContactInfo("Jane", "Smith", "jane@test.com", "555-9876");
         var preferredUnit = "101"; // This unit is now occupied
 

@@ -52,6 +52,7 @@ public class CreateTenantRequestCommandValidator : AbstractValidator<CreateTenan
 
 /// <summary>
 /// ? Validator for scheduling service work
+/// Phase 3: Fixed to use date-only comparison
 /// </summary>
 public class ScheduleServiceWorkCommandValidator : AbstractValidator<ScheduleServiceWorkCommand>
 {
@@ -61,9 +62,10 @@ public class ScheduleServiceWorkCommandValidator : AbstractValidator<ScheduleSer
             .NotEqual(Guid.Empty)
             .WithMessage("TenantRequestId must be a valid Guid");
 
+        // Phase 3 FIX: Use .Date comparison to allow scheduling for today or future dates
         RuleFor(x => x.ScheduledDate)
-            .GreaterThan(DateTime.UtcNow)
-            .WithMessage("ScheduledDate must be in the future");
+            .Must(date => date.Date >= DateTime.Today)
+            .WithMessage("ScheduledDate must be today or in the future");
 
         RuleFor(x => x.WorkerEmail)
             .NotEmpty()

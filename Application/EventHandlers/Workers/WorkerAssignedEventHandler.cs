@@ -26,7 +26,8 @@ public class WorkerAssignedEventHandler : INotificationHandler<WorkerAssignedEve
         var worker = notification.Worker;
         var assignment = notification.Assignment;
 
-        _logger.LogInformation("Processing WorkerAssignedEvent for worker {WorkerEmail} assigned to work order {WorkOrderNumber} on {ScheduledDate}",
+        _logger.LogInformation(
+            "Processing WorkerAssignedEvent for worker {WorkerEmail} assigned to work order {WorkOrderNumber} on {ScheduledDate}",
             worker.ContactInfo.EmailAddress,
             assignment.WorkOrderNumber,
             assignment.ScheduledDate);

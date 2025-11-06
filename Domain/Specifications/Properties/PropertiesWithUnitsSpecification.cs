@@ -7,7 +7,7 @@ namespace RentalRepairs.Domain.Specifications.Properties;
 /// </summary>
 public class PropertiesWithUnitsSpecification : BaseSpecification<Property>
 {
-    public PropertiesWithUnitsSpecification(List<string> unitNumbers) 
+    public PropertiesWithUnitsSpecification(List<string> unitNumbers)
         : base(p => p.Units.Any(u => unitNumbers.Contains(u)))
     {
     }

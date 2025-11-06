@@ -166,7 +166,7 @@ public class TenantRequestEmergencyOverrideTests
         var request = TenantRequest.CreateNew(
             "TEST-001",
             "Test Request",
-            "Test Description", 
+            "Test Description",
             "Normal",
             Guid.NewGuid(),
             Guid.NewGuid(),
@@ -249,11 +249,11 @@ public class TenantRequestEmergencyOverrideTests
             "jane@super.com");
 
         request.Submit();
-        
+
         // Manually set status to Scheduled without proper worker assignment (edge case)
         // This simulates a data corruption scenario
         request.GetType().GetProperty("Status")?.SetValue(request, TenantRequestStatus.Scheduled);
-        
+
         return request;
     }
 

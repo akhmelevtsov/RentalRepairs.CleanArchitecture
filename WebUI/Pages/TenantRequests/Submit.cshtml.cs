@@ -35,14 +35,11 @@ public class SubmitModel : PageModel
         _logger = logger;
     }
 
-    [BindProperty]
-    public SubmitTenantRequestPageViewModel TenantRequest { get; set; } = new();
+    [BindProperty] public SubmitTenantRequestPageViewModel TenantRequest { get; set; } = new();
 
-    [TempData]
-    public string? SuccessMessage { get; set; }
-    
-    [TempData] 
-    public string? ErrorMessage { get; set; }
+    [TempData] public string? SuccessMessage { get; set; }
+
+    [TempData] public string? ErrorMessage { get; set; }
 
     // Display properties for the Razor page
     public string DisplayPropertyCode { get; set; } = string.Empty;
@@ -79,10 +76,7 @@ public class SubmitModel : PageModel
     /// </summary>
     public IActionResult OnGetGenerateRandom()
     {
-        if (!IsDemoModeEnabled)
-        {
-            return BadRequest("Random generation only available in demo mode");
-        }
+        if (!IsDemoModeEnabled) return BadRequest("Random generation only available in demo mode");
 
         try
         {
@@ -119,15 +113,16 @@ public class SubmitModel : PageModel
         try
         {
             // ? CSRF Protection: Token validation happens automatically
-            
+
             // Ensure tenant info is populated from claims for security
             await PopulateTenantInfoFromClaims();
             await PopulateTenantPhoneFromDatabase(); // Ensure phone is populated
 
             if (!ModelState.IsValid)
             {
-                _logger.LogWarning("Model validation failed for tenant request submission by {Email}. Errors: {Errors}", 
-                    TenantRequest.TenantEmail, string.Join("; ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage)));
+                _logger.LogWarning("Model validation failed for tenant request submission by {Email}. Errors: {Errors}",
+                    TenantRequest.TenantEmail,
+                    string.Join("; ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage)));
                 return Page();
             }
 
@@ -135,17 +130,19 @@ public class SubmitModel : PageModel
             var property = await _mediator.Send(new GetPropertyByCodeQuery(TenantRequest.PropertyCode));
             if (property == null)
             {
-                _logger.LogError("Property not found for code {PropertyCode} during request submission by {Email}", 
+                _logger.LogError("Property not found for code {PropertyCode} during request submission by {Email}",
                     TenantRequest.PropertyCode, TenantRequest.TenantEmail);
                 ModelState.AddModelError(string.Empty, "Invalid property code.");
                 return Page();
             }
 
             // Verify tenant exists and matches authenticated user
-            var tenant = await _mediator.Send(new GetTenantByPropertyAndUnitQuery(property.Id, TenantRequest.UnitNumber));
+            var tenant =
+                await _mediator.Send(new GetTenantByPropertyAndUnitQuery(property.Id, TenantRequest.UnitNumber));
             if (tenant == null)
             {
-                _logger.LogError("Tenant not found for property {PropertyId} and unit {Unit} during request submission by {Email}", 
+                _logger.LogError(
+                    "Tenant not found for property {PropertyId} and unit {Unit} during request submission by {Email}",
                     property.Id, TenantRequest.UnitNumber, TenantRequest.TenantEmail);
                 ModelState.AddModelError(string.Empty, "Tenant not found for this property and unit.");
                 return Page();
@@ -154,13 +151,14 @@ public class SubmitModel : PageModel
             // Security check: Verify email matches authenticated user
             if (!tenant.ContactInfo.EmailAddress.Equals(TenantRequest.TenantEmail, StringComparison.OrdinalIgnoreCase))
             {
-                _logger.LogWarning("Email mismatch for tenant request submission: {AuthEmail} vs {TenantEmail}", 
+                _logger.LogWarning("Email mismatch for tenant request submission: {AuthEmail} vs {TenantEmail}",
                     TenantRequest.TenantEmail, tenant.ContactInfo.EmailAddress);
                 ModelState.AddModelError(string.Empty, "Authentication error. Please log out and log back in.");
                 return Page();
             }
 
-            _logger.LogInformation("Creating tenant request for {Email} with urgency {Urgency} and description length {DescLength}", 
+            _logger.LogInformation(
+                "Creating tenant request for {Email} with urgency {Urgency} and description length {DescLength}",
                 TenantRequest.TenantEmail, TenantRequest.UrgencyLevel, TenantRequest.ProblemDescription?.Length ?? 0);
 
             // Create tenant request using Application layer command with all required properties
@@ -172,69 +170,70 @@ public class SubmitModel : PageModel
                 Title = CreateRequestTitle(TenantRequest.ProblemDescription),
                 Description = TenantRequest.ProblemDescription,
                 UrgencyLevel = TenantRequest.UrgencyLevel,
-                
+
                 // Additional required properties for complete tenant request
                 TenantFullName = tenant.ContactInfo.FullName, // Use FullName property directly
                 TenantUnit = tenant.UnitNumber,
                 PropertyName = property.Name,
                 PropertyPhone = property.PhoneNumber ?? "Not available", // Use PhoneNumber property
-                SuperintendentFullName = property.Superintendent?.FullName ?? "Not assigned", // Use Superintendent.FullName
-                SuperintendentEmail = property.Superintendent?.EmailAddress ?? "Not available" // Use Superintendent.EmailAddress
+                SuperintendentFullName =
+                    property.Superintendent?.FullName ?? "Not assigned", // Use Superintendent.FullName
+                SuperintendentEmail =
+                    property.Superintendent?.EmailAddress ?? "Not available" // Use Superintendent.EmailAddress
             };
 
             var requestId = await _mediator.Send(command);
 
-            SuccessMessage = "Your maintenance request has been submitted successfully. You will receive a confirmation email shortly.";
-            
-            _logger.LogInformation("Tenant request {RequestId} created successfully for tenant {TenantEmail}", 
+            SuccessMessage =
+                "Your maintenance request has been submitted successfully. You will receive a confirmation email shortly.";
+
+            _logger.LogInformation("Tenant request {RequestId} created successfully for tenant {TenantEmail}",
                 requestId, TenantRequest.TenantEmail);
-                
+
             // Redirect to index page which automatically shows correct role-based dashboard
             return RedirectToPage("/Index");
         }
-        catch (RentalRepairs.Domain.Exceptions.MaxPendingRequestsExceededException ex)
+        catch (Domain.Exceptions.MaxPendingRequestsExceededException ex)
         {
-            _logger.LogWarning("Tenant {Email} exceeded maximum pending requests limit: {Message}", 
+            _logger.LogWarning("Tenant {Email} exceeded maximum pending requests limit: {Message}",
                 TenantRequest.TenantEmail, ex.Message);
-            
+
             ErrorMessage = $"You have reached the maximum number of pending requests ({ex.MaxAllowed}). " +
-                          $"Please wait for some of your existing requests to be processed before submitting new ones. " +
-                          $"Current pending requests: {ex.CurrentCount}";
-            
+                           $"Please wait for some of your existing requests to be processed before submitting new ones. " +
+                           $"Current pending requests: {ex.CurrentCount}";
+
             return Page();
         }
-        catch (RentalRepairs.Application.Common.Exceptions.ValidationException ex)
+        catch (Application.Common.Exceptions.ValidationException ex)
         {
-            _logger.LogWarning("Validation failed for tenant request submission by {Email}: {ValidationErrors}", 
+            _logger.LogWarning("Validation failed for tenant request submission by {Email}: {ValidationErrors}",
                 TenantRequest.TenantEmail, string.Join("; ", ex.Errors.SelectMany(kvp => kvp.Value).ToArray()));
-            
+
             // Add validation errors to ModelState
             foreach (var error in ex.Errors)
-            {
-                foreach (var errorMessage in error.Value)
-                {
-                    ModelState.AddModelError(error.Key, errorMessage);
-                }
-            }
-            
+            foreach (var errorMessage in error.Value)
+                ModelState.AddModelError(error.Key, errorMessage);
+
             return Page();
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error submitting tenant request for {TenantEmail}. Request details: Title='{Title}', Urgency='{Urgency}', Description length={DescLength}", 
-                TenantRequest.TenantEmail, 
-                CreateRequestTitle(TenantRequest.ProblemDescription ?? ""), 
+            _logger.LogError(ex,
+                "Error submitting tenant request for {TenantEmail}. Request details: Title='{Title}', Urgency='{Urgency}', Description length={DescLength}",
+                TenantRequest.TenantEmail,
+                CreateRequestTitle(TenantRequest.ProblemDescription ?? ""),
                 TenantRequest.UrgencyLevel,
                 TenantRequest.ProblemDescription?.Length ?? 0);
-                
+
             // Provide more specific error message based on exception type
             ErrorMessage = ex switch
             {
                 ArgumentException argEx => $"Invalid request data: {argEx.Message}",
                 InvalidOperationException invOpEx => $"Cannot submit request: {invOpEx.Message}",
-                _ => "An error occurred while submitting your request. Please try again. If the problem persists, please contact support."
+                _ =>
+                    "An error occurred while submitting your request. Please try again. If the problem persists, please contact support."
             };
-            
+
             return Page();
         }
     }
@@ -270,7 +269,8 @@ public class SubmitModel : PageModel
     /// </summary>
     public string GetUrgencyWarningMessage()
     {
-        return "Critical requests will be prioritized and you will be contacted as soon as possible. For immediate life-threatening situations, please call 911.";
+        return
+            "Critical requests will be prioritized and you will be contacted as soon as possible. For immediate life-threatening situations, please call 911.";
     }
 
     #endregion
@@ -282,10 +282,7 @@ public class SubmitModel : PageModel
     /// </summary>
     private async Task PopulateTenantInfoFromClaims()
     {
-        if (User.Identity?.IsAuthenticated != true)
-        {
-            throw new UnauthorizedAccessException("User must be authenticated");
-        }
+        if (User.Identity?.IsAuthenticated != true) throw new UnauthorizedAccessException("User must be authenticated");
 
         // Extract information from authentication claims
         var tenantEmail = User.FindFirst(ClaimTypes.Email)?.Value ?? "";
@@ -295,9 +292,7 @@ public class SubmitModel : PageModel
         var unitNumber = User.FindFirst("unit_number")?.Value ?? "";
 
         if (string.IsNullOrEmpty(tenantEmail) || string.IsNullOrEmpty(propertyCode))
-        {
             throw new InvalidOperationException("Missing required tenant claims");
-        }
 
         // Set display properties for Razor page
         DisplayTenantEmail = tenantEmail;
@@ -331,7 +326,8 @@ public class SubmitModel : PageModel
             if (property != null)
             {
                 // Get tenant details including phone
-                var tenant = await _mediator.Send(new GetTenantByPropertyAndUnitQuery(property.Id, TenantRequest.UnitNumber));
+                var tenant =
+                    await _mediator.Send(new GetTenantByPropertyAndUnitQuery(property.Id, TenantRequest.UnitNumber));
                 if (tenant != null)
                 {
                     DisplayTenantPhone = tenant.ContactInfo.MobilePhone ?? "Not provided";
@@ -356,8 +352,8 @@ public class SubmitModel : PageModel
             return "Maintenance Request";
 
         // Create title from first part of description, truncated appropriately
-        var title = problemDescription.Length <= 50 
-            ? problemDescription 
+        var title = problemDescription.Length <= 50
+            ? problemDescription
             : problemDescription[..47] + "...";
 
         return title;

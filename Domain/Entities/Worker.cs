@@ -9,6 +9,7 @@ namespace RentalRepairs.Domain.Entities;
 /// <summary>
 /// Worker entity representing a maintenance worker in the rental repairs system.
 /// Contains business logic for work assignments, specializations, and availability.
+/// Phase 2: Now uses WorkerSpecialization enum for type safety.
 /// </summary>
 public class Worker : BaseEntity, IAggregateRoot
 {
@@ -20,8 +21,8 @@ public class Worker : BaseEntity, IAggregateRoot
 
     #region Constructors
 
-    protected Worker() 
-    { 
+    protected Worker()
+    {
         // For EF Core
         ContactInfo = null!;
     }
@@ -39,7 +40,7 @@ public class Worker : BaseEntity, IAggregateRoot
 
     public PersonContactInfo ContactInfo { get; private set; } = null!;
     public bool IsActive { get; private set; }
-    public string? Specialization { get; private set; }
+    public WorkerSpecialization Specialization { get; private set; } = WorkerSpecialization.GeneralMaintenance;
     public string? Notes { get; private set; }
 
     public IReadOnlyCollection<WorkAssignment> Assignments => _assignments.AsReadOnly();
@@ -48,15 +49,9 @@ public class Worker : BaseEntity, IAggregateRoot
 
     #region Public Business Methods
 
-
-    public void SetSpecialization(string specialization)
+    public void SetSpecialization(WorkerSpecialization specialization)
     {
-        if (string.IsNullOrWhiteSpace(specialization))
-        {
-            throw new ArgumentException("Specialization cannot be empty", nameof(specialization));
-        }
-
-        string? oldSpecialization = Specialization;
+        WorkerSpecialization oldSpecialization = Specialization;
         Specialization = specialization;
 
         if (oldSpecialization != specialization)
@@ -72,8 +67,8 @@ public class Worker : BaseEntity, IAggregateRoot
             return;
         }
 
-        Notes = string.IsNullOrWhiteSpace(Notes) 
-            ? notes 
+        Notes = string.IsNullOrWhiteSpace(Notes)
+            ? notes
             : $"{Notes}\n{DateTime.UtcNow:yyyy-MM-dd}: {notes}";
     }
 
@@ -100,14 +95,12 @@ public class Worker : BaseEntity, IAggregateRoot
         return IsActive;
     }
 
-
-
     /// <summary>
     /// Checks if the worker is available for work on the specified date.
-    /// Updated to prevent time-based conflicts and limit daily assignments.
+    /// Updated to check capacity limit (max 2 assignments per day).
     /// </summary>
     /// <param name="workDate">The date to check availability for.</param>
-    /// <param name="duration">Optional duration (currently not used in logic).</param>
+    /// <param name="duration">Optional duration (not used - kept for backward compatibility).</param>
     /// <returns>True if the worker is available.</returns>
     public bool IsAvailableForWork(DateTime workDate, TimeSpan? duration = null)
     {
@@ -121,44 +114,26 @@ public class Worker : BaseEntity, IAggregateRoot
             return false;
         }
 
-        // Check internal assignments for availability
+        // Check capacity for the date
         DateTime startOfDay = workDate.Date;
         DateTime endOfDay = startOfDay.AddDays(1).AddTicks(-1);
 
-        var assignmentsOnDate = _assignments.Where(a => 
-            a.ScheduledDate >= startOfDay && 
+        var assignmentsOnDate = _assignments.Where(a =>
+            a.ScheduledDate >= startOfDay &&
             a.ScheduledDate <= endOfDay &&
             !a.IsCompleted).ToList();
 
-        // Business Rule: Limit to 2 assignments per day (reduced from 3)
+        // Business Rule: Limit to 2 assignments per day
         if (assignmentsOnDate.Count >= 2)
         {
             return false;
-        }
-
-        // Business Rule: Check for time-based conflicts if we have a specific time
-        if (duration.HasValue)
-        {
-            DateTime proposedEnd = workDate.Add(duration.Value);
-            
-            foreach (WorkAssignment? assignment in assignmentsOnDate)
-            {
-                // Assume each assignment takes 4 hours
-                DateTime assignmentEnd = assignment.ScheduledDate.Add(TimeSpan.FromHours(4));
-                
-                // Check for overlap
-                if (workDate < assignmentEnd && proposedEnd > assignment.ScheduledDate)
-                {
-                    return false; // Time conflict detected
-                }
-            }
         }
 
         return true;
     }
 
     /// <summary>
-    /// Assigns work to this worker with enhanced conflict detection.
+    /// Assigns work to this worker with capacity validation.
     /// </summary>
     /// <param name="workOrderNumber">The work order number.</param>
     /// <param name="scheduledDate">The scheduled date for the work.</param>
@@ -170,9 +145,10 @@ public class Worker : BaseEntity, IAggregateRoot
             throw new ArgumentException("Work order number cannot be empty", nameof(workOrderNumber));
         }
 
-        if (scheduledDate <= DateTime.UtcNow)
+        // FIX: Compare dates only to allow scheduling for today or future dates
+        if (scheduledDate.Date < DateTime.UtcNow.Date)
         {
-            throw new ArgumentException("Scheduled date must be in the future", nameof(scheduledDate));
+            throw new ArgumentException("Scheduled date must be today or in the future", nameof(scheduledDate));
         }
 
         if (!IsActive)
@@ -180,35 +156,20 @@ public class Worker : BaseEntity, IAggregateRoot
             throw new InvalidOperationException("Cannot assign work to inactive worker");
         }
 
-        // Enhanced availability check with time-based conflict detection
+        // Check capacity: Limit to 2 assignments per day
         DateTime startOfDay = scheduledDate.Date;
         DateTime endOfDay = startOfDay.AddDays(1).AddTicks(-1);
 
-        var assignmentsOnDate = _assignments.Where(a => 
-            a.ScheduledDate >= startOfDay && 
+        var assignmentsOnDate = _assignments.Where(a =>
+            a.ScheduledDate >= startOfDay &&
             a.ScheduledDate <= endOfDay &&
             !a.IsCompleted).ToList();
 
         // Business Rule: Limit to 2 assignments per day
         if (assignmentsOnDate.Count >= 2)
         {
-            throw new InvalidOperationException($"Worker already has {assignmentsOnDate.Count} assignments on {scheduledDate:yyyy-MM-dd}. Maximum is 2 per day.");
-        }
-
-        // Business Rule: Check for time-based conflicts (assume 4-hour duration per assignment)
-        DateTime proposedEnd = scheduledDate.Add(TimeSpan.FromHours(4));
-        
-        foreach (WorkAssignment? existingAssignment in assignmentsOnDate)
-        {
-            DateTime assignmentEnd = existingAssignment.ScheduledDate.Add(TimeSpan.FromHours(4));
-            
-            // Check for overlap
-            if (scheduledDate < assignmentEnd && proposedEnd > existingAssignment.ScheduledDate)
-            {
-                throw new InvalidOperationException(
-                    $"Worker has a time conflict on {scheduledDate:yyyy-MM-dd}. " +
-                    $"Existing assignment at {existingAssignment.ScheduledDate:HH:mm} would overlap with proposed assignment at {scheduledDate:HH:mm}.");
-            }
+            throw new InvalidOperationException(
+                $"Worker already has {assignmentsOnDate.Count} assignments on {scheduledDate:yyyy-MM-dd}. Maximum is 2 per day.");
         }
 
         // Create and add the assignment
@@ -234,7 +195,7 @@ public class Worker : BaseEntity, IAggregateRoot
 
         // Create a new completed assignment and replace the old one
         WorkAssignment completedAssignment = assignment.Complete(successful, completionNotes);
-        
+
         _assignments.Remove(assignment);
         _assignments.Add(completedAssignment);
 
@@ -250,152 +211,11 @@ public class Worker : BaseEntity, IAggregateRoot
     public int GetUpcomingWorkloadCount(DateTime fromDate, int daysAhead = 7)
     {
         DateTime endDate = fromDate.AddDays(daysAhead);
-        
-        return _assignments.Count(a => 
-            a.ScheduledDate >= fromDate && 
+
+        return _assignments.Count(a =>
+            a.ScheduledDate >= fromDate &&
             a.ScheduledDate <= endDate &&
             !a.IsCompleted);
-    }
-
-    /// <summary>
-    /// Checks if the worker has the required specialized skills.
-    /// </summary>
-    /// <param name="requiredSpecialization">The required specialization.</param>
-    /// <returns>True if the worker has the required skills.</returns>
-    public bool HasSpecializedSkills(string requiredSpecialization)
-    {
-        if (string.IsNullOrWhiteSpace(requiredSpecialization))
-        {
-            return true; // No specific specialization required
-        }
-
-        if (string.IsNullOrWhiteSpace(Specialization))
-        {
-            return requiredSpecialization.Equals("General Maintenance", StringComparison.OrdinalIgnoreCase);
-        }
-
-        // Exact match
-        if (Specialization.Equals(requiredSpecialization, StringComparison.OrdinalIgnoreCase))
-        {
-            return true;
-        }
-
-        // General Maintenance can handle anything
-        if (Specialization.Equals("General Maintenance", StringComparison.OrdinalIgnoreCase))
-        {
-            return true;
-        }
-
-        // Handle common specialization variations
-        string normalizedWorkerSpec = NormalizeSpecialization(Specialization);
-        string normalizedRequiredSpec = NormalizeSpecialization(requiredSpecialization);
-
-        return normalizedWorkerSpec.Equals(normalizedRequiredSpec, StringComparison.OrdinalIgnoreCase);
-    }
-
-    /// <summary>
-    /// Determines the required specialization based on the work title and description.
-    /// </summary>
-    /// <param name="title">The work title.</param>
-    /// <param name="description">The work description.</param>
-    /// <returns>The required specialization.</returns>
-    public static string DetermineRequiredSpecialization(string title, string description)
-    {
-        if (string.IsNullOrWhiteSpace(title) && string.IsNullOrWhiteSpace(description))
-        {
-            return "General Maintenance";
-        }
-
-        string text = $"{title} {description}".ToLowerInvariant();
-
-        // Simple keyword-based specialization determination
-        // IMPORTANT: Order matters! Check more specific keywords before general ones
-        
-        if (ContainsKeywords(text, "plumb", "leak", "water", "drain", "pipe", "faucet", "toilet"))
-        {
-            return "Plumbing";
-        }
-
-        if (ContainsKeywords(text, "electric", "power", "outlet", "wiring", "light", "switch", "breaker"))
-        {
-            return "Electrical";
-        }
-
-        if (ContainsKeywords(text, "heat", "hvac", "air", "furnace", "thermostat", "cooling", "ventilation"))
-        {
-            return "HVAC";
-        }
-
-        // Check Locksmith BEFORE Carpentry since "lock" is more specific than "door"
-        if (ContainsKeywords(text, "lock", "key", "security", "deadbolt"))
-        {
-            return "Locksmith";
-        }
-
-        if (ContainsKeywords(text, "paint", "wall", "ceiling", "trim", "brush", "roller"))
-        {
-            return "Painting";
-        }
-
-        // Check Carpentry after Locksmith to avoid "door" conflicts with "lock"
-        if (ContainsKeywords(text, "wood", "cabinet", "door", "frame", "carpenter", "build"))
-        {
-            return "Carpentry";
-        }
-
-        if (ContainsKeywords(text, "appliance", "refrigerator", "washer", "dryer", "dishwasher", "oven"))
-        {
-            return "Appliance Repair";
-        }
-
-        return "General Maintenance"; // Default
-    }
-
-    #endregion
-
-    #region Private Helper Methods
-
-    /// <summary>
-    /// Normalizes specialization names to handle common variations.
-    /// </summary>
-    /// <param name="specialization">The specialization to normalize.</param>
-    /// <returns>The normalized specialization name.</returns>
-    private static string NormalizeSpecialization(string specialization)
-    {
-        if (string.IsNullOrWhiteSpace(specialization))
-        {
-            return "General Maintenance";
-        }
-
-        string normalized = specialization.Trim();
-
-        // Handle common variations
-        return normalized.ToLowerInvariant() switch
-        {
-            "plumber" => "Plumbing",
-            "plumbing" => "Plumbing",
-            "electrician" => "Electrical", 
-            "electrical" => "Electrical",
-            "hvac" => "HVAC",
-            "hvac technician" => "HVAC",
-            "heating" => "HVAC",
-            "cooling" => "HVAC",
-            "painter" => "Painting",
-            "painting" => "Painting",
-            "carpenter" => "Carpentry",
-            "carpentry" => "Carpentry",
-            "locksmith" => "Locksmith",
-            "appliance repair" => "Appliance Repair",
-            "appliance technician" => "Appliance Repair",
-            "general maintenance" => "General Maintenance",
-            "maintenance" => "General Maintenance",
-            _ => specialization // Return original if no mapping found
-        };
-    }
-
-    private static bool ContainsKeywords(string text, params string[] keywords)
-    {
-        return keywords.Any(keyword => text.Contains(keyword));
     }
 
     #endregion
@@ -405,11 +225,17 @@ public class Worker : BaseEntity, IAggregateRoot
     /// <summary>
     /// Domain method to validate if this worker can be assigned to a request.
     /// Follows Option 2: Rich Domain Entity Approach for business rule validation.
+    /// Phase 2: Now uses SpecializationDeterminationService for validation.
     /// </summary>
     /// <param name="scheduledDate">The proposed scheduled date for the work</param>
     /// <param name="workOrderNumber">The work order number</param>
     /// <param name="requiredSpecialization">Optional required specialization</param>
-    public void ValidateCanBeAssignedToRequest(DateTime scheduledDate, string workOrderNumber, string? requiredSpecialization = null)
+    /// <param name="specializationService">Domain service for specialization validation</param>
+    public void ValidateCanBeAssignedToRequest(
+        DateTime scheduledDate,
+        string workOrderNumber,
+        WorkerSpecialization requiredSpecialization,
+        Services.SpecializationDeterminationService specializationService)
     {
         // Business rule: Worker must be active
         if (!IsActive)
@@ -417,21 +243,22 @@ public class Worker : BaseEntity, IAggregateRoot
             throw new WorkerNotAvailableException(ContactInfo.EmailAddress, "Worker is inactive");
         }
 
-        // Business rule: Scheduled date must be in the future
-        if (scheduledDate <= DateTime.UtcNow)
+        // Business rule: Scheduled date must be today or in the future
+        // FIX: Compare dates only to allow scheduling for today
+        if (scheduledDate.Date < DateTime.UtcNow.Date)
         {
             throw new InvalidAssignmentParametersException(
-                nameof(scheduledDate), 
-                scheduledDate, 
-                "Scheduled date must be in the future");
+                nameof(scheduledDate),
+                scheduledDate,
+                "Scheduled date must be today or in the future");
         }
 
         // Business rule: Work order number is required
         if (string.IsNullOrWhiteSpace(workOrderNumber))
         {
             throw new InvalidAssignmentParametersException(
-                nameof(workOrderNumber), 
-                workOrderNumber, 
+                nameof(workOrderNumber),
+                workOrderNumber,
                 "Work order number is required");
         }
 
@@ -439,364 +266,206 @@ public class Worker : BaseEntity, IAggregateRoot
         if (!IsAvailableForWork(scheduledDate))
         {
             throw new WorkerNotAvailableException(
-                ContactInfo.EmailAddress, 
+                ContactInfo.EmailAddress,
                 $"Worker is not available on {scheduledDate:yyyy-MM-dd}");
         }
 
         // Business rule: Worker must have required specialization
-        if (!string.IsNullOrWhiteSpace(requiredSpecialization) && 
-            !HasSpecializedSkills(requiredSpecialization))
+        if (!specializationService.CanHandleWork(Specialization, requiredSpecialization))
         {
             throw new WorkerNotAvailableException(
-                ContactInfo.EmailAddress, 
+                ContactInfo.EmailAddress,
                 $"Worker does not have required specialization: {requiredSpecialization}");
         }
     }
 
- 
     #endregion
 
-    #region Slot-Based Availability
+    #region Booking Availability Methods - Phase 1 Enhancement
 
     /// <summary>
-    /// Checks if the worker is available for a specific scheduling slot
+    /// Gets dates where worker is fully booked (2+ assignments) within date range.
+    /// Emergency requests can override this limit.
     /// </summary>
-    public bool IsAvailableForSlot(SchedulingSlot slot)
+    /// <param name="startDate">Start date of the range</param>
+    /// <param name="endDate">End date of the range</param>
+    /// <param name="includeEmergencyOverride">If true, emergency requests are not counted toward booking limit</param>
+    /// <returns>List of dates where worker has 2 or more non-completed assignments</returns>
+    public List<DateTime> GetBookedDatesInRange(DateTime startDate, DateTime endDate,
+        bool includeEmergencyOverride = false)
+    {
+        var bookedDates = new List<DateTime>();
+
+        if (!IsActive)
+        {
+            return bookedDates;
+        }
+
+        // Iterate through each date in range
+        for (DateTime date = startDate.Date; date <= endDate.Date; date = date.AddDays(1))
+        {
+            DateTime dayStart = date;
+            DateTime dayEnd = date.AddDays(1).AddTicks(-1);
+
+            int assignmentCount = _assignments.Count(a =>
+                a.ScheduledDate >= dayStart &&
+                a.ScheduledDate <= dayEnd &&
+                !a.IsCompleted);
+
+            // For emergency override, we allow 3+ assignments (emergency can override the 2-per-day limit)
+            int maxAssignments = includeEmergencyOverride ? 3 : 2;
+
+            if (assignmentCount >= maxAssignments)
+            {
+                bookedDates.Add(date);
+            }
+        }
+
+        return bookedDates;
+    }
+
+    /// <summary>
+    /// Gets dates where worker has 1 of 2 slots filled (partial availability) within date range.
+    /// </summary>
+    /// <param name="startDate">Start date of the range</param>
+    /// <param name="endDate">End date of the range</param>
+    /// <returns>List of dates where worker has exactly 1 non-completed assignment</returns>
+    public List<DateTime> GetPartiallyBookedDatesInRange(DateTime startDate, DateTime endDate)
+    {
+        var partialDates = new List<DateTime>();
+
+        if (!IsActive)
+        {
+            return partialDates;
+        }
+
+        // Iterate through each date in range
+        for (DateTime date = startDate.Date; date <= endDate.Date; date = date.AddDays(1))
+        {
+            DateTime dayStart = date;
+            DateTime dayEnd = date.AddDays(1).AddTicks(-1);
+
+            int assignmentCount = _assignments.Count(a =>
+                a.ScheduledDate >= dayStart &&
+                a.ScheduledDate <= dayEnd &&
+                !a.IsCompleted);
+
+            // Exactly 1 assignment = partial availability
+            if (assignmentCount == 1)
+            {
+                partialDates.Add(date);
+            }
+        }
+
+        return partialDates;
+    }
+
+    /// <summary>
+    /// Returns availability score for a specific date: 0 = fully booked, 1 = partially available, 2 = fully available.
+    /// For emergency requests, allows 3 assignments per day (override the normal 2-per-day limit).
+    /// </summary>
+    /// <param name="date">The date to check</param>
+    /// <param name="isEmergencyRequest">If true, emergency bypass rules apply</param>
+    /// <returns>0 (fully booked), 1 (partially available), or 2 (fully available)</returns>
+    public int GetAvailabilityScoreForDate(DateTime date, bool isEmergencyRequest = false)
     {
         if (!IsActive)
         {
-            return false;
+            return 0;
         }
 
-        if (slot.Date < DateTime.Today)
+        if (date < DateTime.Today)
         {
-            return false;
+            return 0;
         }
 
-        // Check internal assignments for slot conflicts
-        IEnumerable<WorkAssignment> existingAssignments = _assignments.Where(a => 
-            a.ScheduledDate.Date == slot.Date && 
+        DateTime dayStart = date.Date;
+        DateTime dayEnd = date.AddDays(1).AddTicks(-1);
+
+        int assignmentCount = _assignments.Count(a =>
+            a.ScheduledDate >= dayStart &&
+            a.ScheduledDate <= dayEnd &&
             !a.IsCompleted);
 
-        foreach (WorkAssignment? assignment in existingAssignments)
+        // Emergency requests can override the 2-per-day limit
+        if (isEmergencyRequest)
         {
-            // Create a slot for the existing assignment (assume 4-hour window)
-            TimeSpan assignmentStart = assignment.ScheduledDate.TimeOfDay;
-            TimeSpan assignmentEnd = assignmentStart.Add(TimeSpan.FromHours(4));
-            var assignmentSlot = new SchedulingSlot(slot.Date, assignmentStart, assignmentEnd);
-            
-            if (slot.OverlapsWith(assignmentSlot))
+            // For emergency: 0-2 assignments = fully/partially available, 3+ = not available
+            if (assignmentCount >= 3)
             {
-                return false;
+                return 0; // Fully booked even with emergency override
+            }
+
+            // Return 2 if 0 assignments, 1 if 1-2 assignments (still allows emergency as 3rd)
+            if (assignmentCount == 0)
+            {
+                return 2; // Fully available
+            }
+
+            return 1; // Partial availability (can still accept emergency as 2nd or 3rd)
+        }
+
+        // Normal requests: 0 assignments = 2 (fully available), 1 assignment = 1 (partial), 2+ = 0 (booked)
+        return Math.Max(0, 2 - assignmentCount);
+    }
+
+    /// <summary>
+    /// Finds the next date where worker is fully available (0 assignments).
+    /// Used for ordering workers by availability.
+    /// </summary>
+    /// <param name="startDate">Starting date to search from</param>
+    /// <param name="maxDaysAhead">Maximum number of days to search ahead (default 60)</param>
+    /// <returns>Next fully available date, or null if none found within range</returns>
+    public DateTime? GetNextFullyAvailableDate(DateTime startDate, int maxDaysAhead = 60)
+    {
+        if (!IsActive)
+        {
+            return null;
+        }
+
+        DateTime searchStart = startDate.Date < DateTime.Today ? DateTime.Today : startDate.Date;
+        DateTime searchEnd = searchStart.AddDays(maxDaysAhead);
+
+        for (DateTime date = searchStart; date <= searchEnd; date = date.AddDays(1))
+        {
+            int score = GetAvailabilityScoreForDate(date, false);
+            if (score == 2) // Fully available (0 assignments)
+            {
+                return date;
             }
         }
 
-        return true;
-    }
-
-
- 
-    /// <summary>
-    /// Checks if the worker is certified for emergency response.
-    /// Business rule for emergency request assignment.
-    /// </summary>
-    public bool IsEmergencyResponseCapable()
-    {
-        // Business rule: Only active workers with specific specializations can handle emergencies
-        if (!IsActive)
-        {
-            return false;
-        }
-
-        // For now, assume all workers can handle emergencies
-        // In a real system, this would check certifications
-        return true;
-    }
-
-    #endregion
-
-    #region Request Assignment Business Logic - Step 2: Push Logic to Aggregates
-
-    /// <summary>
-    /// Calculates this worker's score for a specific tenant request.
-    /// Encapsulates worker-specific scoring logic within the aggregate.
-    /// </summary>
-    /// <param name="request">The tenant request to score against</param>
-    /// <returns>Score where higher values indicate better suitability</returns>
-    public int CalculateScoreForRequest(TenantRequest request)
-    {
-        int score = 0;
-
-        // Base score for active workers
-        if (!IsActive)
-        {
-            return 0; // Inactive workers get no score
-        }
-
-        score += 100; // Base score for active worker
-
-        // Score based on specialization match (higher is better)
-        string requiredSpecialization = DetermineRequiredSpecialization(request.Title, request.Description);
-        if (HasSpecializedSkills(requiredSpecialization))
-        {
-            // Give exact match the highest score
-            if (Specialization?.Equals(requiredSpecialization, StringComparison.OrdinalIgnoreCase) == true)
-            {
-                score += 200; // Exact specialization match gets highest score
-            }
-            else
-            {
-                score += 100; // General maintenance or other specialization
-            }
-        }
-
-        // Score based on availability
-        if (IsAvailableForWork(DateTime.Today.AddDays(1)))
-        {
-            score += 50;
-        }
-
-        // Score based on current workload (lower workload = better score)
-        int upcomingWorkload = GetUpcomingWorkloadCount(DateTime.UtcNow);
-        score += Math.Max(0, (10 - upcomingWorkload) * 10); // Less workload = higher score
-
-        // Emergency request handling bonus
-        if (request.IsEmergency && IsEmergencyResponseCapable())
-        {
-            score += 30;
-        }
-
-        return score;
+        return null; // No fully available date found within range
     }
 
     /// <summary>
-    /// Determines if this worker can be assigned to a specific tenant request.
-    /// Encapsulates all worker-specific assignment business rules within the aggregate.
+    /// Calculates an overall availability score for ordering workers.
+    /// Lower score = better availability (sooner available date + lower workload).
     /// </summary>
-    /// <param name="request">The tenant request to check</param>
-    /// <returns>True if the worker can be assigned to the request</returns>
-    public bool CanBeAssignedToRequest(TenantRequest request)
-    {
-        if (request == null)
-        {
-            return false;
-        }
-
-        // Business rule 1: Worker must be active
-        if (!IsActive)
-        {
-            return false;
-        }
-
-        // Business rule 2: Request must be in assignable status
-        if (!IsRequestAssignable(request))
-        {
-            return false;
-        }
-
-        // Business rule 3: Worker must have required specialization
-        string requiredSpecialization = DetermineRequiredSpecialization(request.Title, request.Description);
-        if (!HasSpecializedSkills(requiredSpecialization))
-        {
-            return false;
-        }
-
-        // Business rule 4: Worker must be available (not overloaded)
-        if (IsOverloaded())
-        {
-            return false;
-        }
-
-        return true;
-    }
-
-    /// <summary>
-    /// Calculates this worker's confidence level for completing a specific request.
-    /// Encapsulates worker-specific confidence assessment within the aggregate.
-    /// </summary>
-    /// <param name="request">The tenant request to assess</param>
-    /// <returns>Confidence level between 0.0 and 1.0</returns>
-    public double CalculateRecommendationConfidence(TenantRequest request)
-    {
-        if (request == null || !IsActive)
-        {
-            return 0.0;
-        }
-
-        string requiredSpecialization = DetermineRequiredSpecialization(request.Title, request.Description);
-
-        if (!HasSpecializedSkills(requiredSpecialization))
-        {
-            return 0.70; // Lower confidence without specialization match
-        }
-
-        // Higher confidence for exact specialization match
-        if (Specialization?.Equals(requiredSpecialization, StringComparison.OrdinalIgnoreCase) == true)
-        {
-            return request.IsEmergency ? 0.95 : 0.90;
-        }
-        else
-        {
-            return request.IsEmergency ? 0.85 : 0.80;
-        }
-
-    }
-
-    /// <summary>
-    /// Generates reasoning for why this worker is recommended for a request.
-    /// Encapsulates worker-specific reasoning logic within the aggregate.
-    /// </summary>
-    /// <param name="request">The tenant request to generate reasoning for</param>
-    /// <returns>Human-readable reasoning string</returns>
-    public string GenerateRecommendationReasoning(TenantRequest request)
+    /// <param name="referenceDate">The reference date for calculation (typically today or preferred service date)</param>
+    /// <returns>Availability score where lower values indicate better availability</returns>
+    public int CalculateAvailabilityScore(DateTime referenceDate)
     {
         if (!IsActive)
         {
-            return "Worker is inactive";
+            return int.MaxValue; // Inactive workers get worst score
         }
 
-        var reasons = new List<string>();
+        // Find next fully available date
+        DateTime? nextAvailable = GetNextFullyAvailableDate(referenceDate, 60);
 
-        string requiredSpecialization = DetermineRequiredSpecialization(request.Title, request.Description);
-        if (HasSpecializedSkills(requiredSpecialization))
-        {
-            reasons.Add(Specialization?.Equals(requiredSpecialization, StringComparison.OrdinalIgnoreCase) == true
-                ? $"Has exact {requiredSpecialization} specialization"
-                : $"Can handle {requiredSpecialization} work");
-        }
+        // Calculate days until next available date
+        int daysUntilAvailable = nextAvailable.HasValue
+            ? (nextAvailable.Value - referenceDate.Date).Days
+            : 999; // If no availability in 60 days, use high penalty
 
-        if (IsAvailableForWork(DateTime.Today.AddDays(1)))
-        {
-            reasons.Add("Available for immediate assignment");
-        }
+        // Get current workload
+        int currentWorkload = GetUpcomingWorkloadCount(DateTime.UtcNow, 30);
 
-        if (request.IsEmergency && IsEmergencyResponseCapable())
-        {
-            reasons.Add("Qualified for emergency requests");
-        }
-
-        int workload = GetUpcomingWorkloadCount(DateTime.UtcNow);
-        switch (workload)
-        {
-            case 0:
-                reasons.Add("No current workload");
-                break;
-            case <= 2:
-                reasons.Add("Light current workload");
-                break;
-        }
-
-        return reasons.Any() ? string.Join("; ", reasons) : "General maintenance capability";
+        // Score formula: (days_until_available * 100) + current_workload
+        // This prioritizes workers who are available sooner, then by lower workload
+        return daysUntilAvailable * 100 + currentWorkload;
     }
-
-    /// <summary>
-    /// ✅ STEP 2: Business logic moved from WorkerAssignmentPolicyService to Worker aggregate.
-    /// Estimates how long this worker would need to complete a specific request.
-    /// Encapsulates worker-specific time estimation logic within the aggregate.
-    /// </summary>
-    /// <param name="request">The tenant request to estimate time for</param>
-    /// <returns>Estimated completion time</returns>
-    public TimeSpan EstimateCompletionTime(TenantRequest request)
-    {
-        if (!IsActive)
-        {
-            return TimeSpan.Zero;
-        }
-
-        // Base time estimation
-        var baseTime = TimeSpan.FromHours(2);
-
-        // Emergency requests get priority timing
-        if (request.IsEmergency)
-        {
-            return baseTime;
-        }
-
-        // Specialization affects efficiency
-        string requiredSpecialization = DetermineRequiredSpecialization(request.Title, request.Description);
-        if (!HasSpecializedSkills(requiredSpecialization))
-        {
-            return TimeSpan.FromHours(3);
-        }
-
-        // Exact match = most efficient
-        if (Specialization?.Equals(requiredSpecialization, StringComparison.OrdinalIgnoreCase) == true)
-        {
-            return baseTime;
-        }
-
-        return TimeSpan.FromHours(2.5); // General maintenance takes slightly longer
-
-        // No specialization match = longer time
-    }
-
-    /// <summary>
-    /// Validates if this worker can be assigned to a request with detailed error information.
-    /// Encapsulates worker-specific validation logic within the aggregate.
-    /// </summary>
-    /// <param name="request">The tenant request to validate assignment for</param>
-    /// <param name="scheduledDate">The proposed scheduled date</param>
-    /// <returns>Validation result with success/failure and error details</returns>
-    public AssignmentValidationResult ValidateAssignmentToRequest(TenantRequest request, DateTime scheduledDate)
-    {
-        if (!IsActive)
-        {
-            return AssignmentValidationResult.Failure($"Worker '{ContactInfo.GetFullName()}' is not active");
-        }
-
-        if (!IsRequestAssignable(request))
-        {
-            return AssignmentValidationResult.Failure($"Request is not in assignable status (current: {request.Status})");
-        }
-
-        if (scheduledDate <= DateTime.UtcNow)
-        {
-            return AssignmentValidationResult.Failure("Scheduled date must be in the future");
-        }
-
-        if (!IsAvailableForWork(scheduledDate))
-        {
-            return AssignmentValidationResult.Failure($"Worker is not available on {scheduledDate:yyyy-MM-dd}");
-        }
-
-        string requiredSpecialization = DetermineRequiredSpecialization(request.Title, request.Description);
-        if (!HasSpecializedSkills(requiredSpecialization))
-        {
-            return AssignmentValidationResult.Failure($"Worker does not have required specialization: {requiredSpecialization}");
-        }
-
-        if (IsOverloaded())
-        {
-            return AssignmentValidationResult.Failure("Worker is currently overloaded");
-        }
-
-        return AssignmentValidationResult.Success();
-    }
-
-    #region Private Helper Methods for Request Assignment
-
-    /// <summary>
-    /// Determines if a request is in a status that allows worker assignment.
-    /// </summary>
-    /// <param name="request">The request to check</param>
-    /// <returns>True if the request can have workers assigned</returns>
-    private static bool IsRequestAssignable(TenantRequest request)
-    {
-        return request.Status is TenantRequestStatus.Submitted or TenantRequestStatus.Failed;
-    }
-
-    /// <summary>
-    /// Determines if this worker is currently overloaded with assignments.
-    /// </summary>
-    /// <returns>True if the worker has too many active assignments</returns>
-    private bool IsOverloaded()
-    {
-        // Business rule: Worker is overloaded if they have more than 5 active assignments
-        int activeAssignments = _assignments.Count(a => !a.IsCompleted);
-        return activeAssignments > 5;
-    }
-
-    #endregion
 
     #endregion
 }

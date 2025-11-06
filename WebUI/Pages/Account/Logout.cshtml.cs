@@ -33,9 +33,9 @@ public class LogoutModel : PageModel
         {
             // Clear authentication (no session management needed)
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-            
+
             _logger.LogInformation("User logged out successfully - concurrent logins supported");
-            
+
             TempData["Success"] = "You have been logged out successfully.";
             return RedirectToPage("/Account/Login");
         }

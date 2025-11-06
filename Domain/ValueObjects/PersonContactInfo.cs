@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using RentalRepairs.Domain.Common;
 
 namespace RentalRepairs.Domain.ValueObjects;
 
@@ -6,7 +7,7 @@ namespace RentalRepairs.Domain.ValueObjects;
 /// Self-validating value object that represents person contact information.
 /// Serves as the single source of truth for person contact validation rules.
 /// </summary>
-public sealed class PersonContactInfo
+public sealed class PersonContactInfo : ValueObject
 {
     #region Private Fields and Constants
 
@@ -91,6 +92,7 @@ public sealed class PersonContactInfo
         {
             name += $" ({MobilePhone})";
         }
+
         return name;
     }
 
@@ -150,25 +152,26 @@ public sealed class PersonContactInfo
         {
             throw new ArgumentException("First name cannot be empty", nameof(firstName));
         }
-            
+
         firstName = firstName.Trim();
-        
+
         if (firstName.Length < 2)
         {
             throw new ArgumentException("First name must be at least 2 characters", nameof(firstName));
         }
-            
+
         if (firstName.Length > 50)
         {
             throw new ArgumentException("First name cannot exceed 50 characters", nameof(firstName));
         }
-            
+
         // Names should only contain letters, spaces, hyphens, and apostrophes
         if (!NameRegex.IsMatch(firstName))
         {
-            throw new ArgumentException("First name can only contain letters, spaces, hyphens, and apostrophes", nameof(firstName));
+            throw new ArgumentException("First name can only contain letters, spaces, hyphens, and apostrophes",
+                nameof(firstName));
         }
-            
+
         return firstName;
     }
 
@@ -181,25 +184,26 @@ public sealed class PersonContactInfo
         {
             throw new ArgumentException("Last name cannot be empty", nameof(lastName));
         }
-            
+
         lastName = lastName.Trim();
-        
+
         if (lastName.Length < 2)
         {
             throw new ArgumentException("Last name must be at least 2 characters", nameof(lastName));
         }
-            
+
         if (lastName.Length > 50)
         {
             throw new ArgumentException("Last name cannot exceed 50 characters", nameof(lastName));
         }
-            
+
         // Names should only contain letters, spaces, hyphens, and apostrophes
         if (!NameRegex.IsMatch(lastName))
         {
-            throw new ArgumentException("Last name can only contain letters, spaces, hyphens, and apostrophes", nameof(lastName));
+            throw new ArgumentException("Last name can only contain letters, spaces, hyphens, and apostrophes",
+                nameof(lastName));
         }
-            
+
         return lastName;
     }
 
@@ -212,15 +216,15 @@ public sealed class PersonContactInfo
         {
             throw new ArgumentException("Email address cannot be empty", nameof(emailAddress));
         }
-            
+
         emailAddress = emailAddress.Trim().ToLowerInvariant();
-        
+
         // Enhanced email validation
         if (emailAddress.Length > 254) // RFC compliant
         {
             throw new ArgumentException("Email address cannot exceed 254 characters", nameof(emailAddress));
         }
-            
+
         // Check for basic structure
         if (!emailAddress.Contains("@"))
         {
@@ -235,19 +239,21 @@ public sealed class PersonContactInfo
 
         string localPart = parts[0];
         string domainPart = parts[1];
-        
+
         // Local part validation
-        if (string.IsNullOrEmpty(localPart) || localPart.StartsWith(".") || localPart.EndsWith(".") || localPart.Contains(".."))
+        if (string.IsNullOrEmpty(localPart) || localPart.StartsWith(".") || localPart.EndsWith(".") ||
+            localPart.Contains(".."))
         {
             throw new ArgumentException("Email address must be valid", nameof(emailAddress));
         }
-            
+
         // Domain part validation
-        if (string.IsNullOrEmpty(domainPart) || !domainPart.Contains(".") || domainPart.StartsWith(".") || domainPart.EndsWith("."))
+        if (string.IsNullOrEmpty(domainPart) || !domainPart.Contains(".") || domainPart.StartsWith(".") ||
+            domainPart.EndsWith("."))
         {
             throw new ArgumentException("Email address must be valid", nameof(emailAddress));
         }
-            
+
         return emailAddress;
     }
 
@@ -260,53 +266,38 @@ public sealed class PersonContactInfo
         {
             return null;
         }
-            
+
         mobilePhone = mobilePhone.Trim();
-        
+
         // Basic phone validation - allows international formats
         if (!PhoneRegex.IsMatch(mobilePhone))
         {
-            throw new ArgumentException("Mobile phone must contain only numbers, spaces, hyphens, parentheses, and optional plus sign", nameof(mobilePhone));
+            throw new ArgumentException(
+                "Mobile phone must contain only numbers, spaces, hyphens, parentheses, and optional plus sign",
+                nameof(mobilePhone));
         }
-            
+
         if (mobilePhone.Length > 20)
         {
             throw new ArgumentException("Mobile phone cannot exceed 20 characters", nameof(mobilePhone));
         }
-            
+
         return mobilePhone;
     }
 
     #endregion
 
-    #region Equality and Hash Code
+    #region ValueObject Implementation
 
-    public override bool Equals(object? obj)
+    /// <summary>
+    /// Implements equality comparison using ValueObject base class pattern.
+    /// </summary>
+    protected override IEnumerable<object> GetEqualityComponents()
     {
-        if (obj is not PersonContactInfo other) 
-        {
-            return false;
-        }
-            
-        return FirstName == other.FirstName && 
-               LastName == other.LastName && 
-               EmailAddress == other.EmailAddress && 
-               MobilePhone == other.MobilePhone;
-    }
-
-    public override int GetHashCode()
-    {
-        return HashCode.Combine(FirstName, LastName, EmailAddress, MobilePhone);
-    }
-
-    public static bool operator ==(PersonContactInfo? left, PersonContactInfo? right)
-    {
-        return Equals(left, right);
-    }
-
-    public static bool operator !=(PersonContactInfo? left, PersonContactInfo? right)
-    {
-        return !Equals(left, right);
+        yield return FirstName;
+        yield return LastName;
+        yield return EmailAddress;
+        yield return MobilePhone ?? string.Empty;
     }
 
     public override string ToString()

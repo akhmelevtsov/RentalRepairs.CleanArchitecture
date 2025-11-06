@@ -22,24 +22,20 @@ public class RegisterModel : PageModel
         _logger = logger;
     }
 
-    [BindProperty]
-    public RegisterDemoUserViewModel Register { get; set; } = new();
+    [BindProperty] public RegisterDemoUserViewModel Register { get; set; } = new();
 
     // ? Use Application layer type instead of Infrastructure type
-    public List<RentalRepairs.Application.Common.Interfaces.DemoUserInfo> ExistingDemoUsers { get; set; } = new();
+    public List<Application.Common.Interfaces.DemoUserInfo> ExistingDemoUsers { get; set; } = new();
 
     // ? Expose demo mode status for the Razor page
     public bool IsDemoModeEnabled => _demoUserService.IsDemoModeEnabled();
-    
+
     // Property to determine if registration is allowed
     public bool IsRegistrationDisabled => IsDemoModeEnabled; // In demo mode, registration is disabled
 
     public async Task<IActionResult> OnGetAsync()
     {
-        if (!_demoUserService.IsDemoModeEnabled())
-        {
-            return NotFound("Demo registration is not available");
-        }
+        if (!_demoUserService.IsDemoModeEnabled()) return NotFound("Demo registration is not available");
 
         await LoadExistingDemoUsers();
         return Page();
@@ -57,10 +53,7 @@ public class RegisterModel : PageModel
 
         await LoadExistingDemoUsers();
 
-        if (!ModelState.IsValid)
-        {
-            return Page();
-        }
+        if (!ModelState.IsValid) return Page();
 
         try
         {
@@ -100,12 +93,14 @@ public class RegisterModel : PageModel
 
             if (success)
             {
-                TempData["Success"] = $"Demo user '{Register.Email}' has been registered successfully! You can now login with these credentials.";
+                TempData["Success"] =
+                    $"Demo user '{Register.Email}' has been registered successfully! You can now login with these credentials.";
                 return RedirectToPage("/Account/Login");
             }
             else
             {
-                ModelState.AddModelError(string.Empty, "Failed to register demo user. The email may already be in use or demo registration may be disabled.");
+                ModelState.AddModelError(string.Empty,
+                    "Failed to register demo user. The email may already be in use or demo registration may be disabled.");
                 return Page();
             }
         }
@@ -123,19 +118,15 @@ public class RegisterModel : PageModel
         {
             // Only load demo users if in demo mode
             if (IsDemoModeEnabled)
-            {
                 // ? Use Application layer interface method
                 ExistingDemoUsers = await _demoUserService.GetDemoUsersForDisplayAsync();
-            }
             else
-            {
-                ExistingDemoUsers = new List<RentalRepairs.Application.Common.Interfaces.DemoUserInfo>();
-            }
+                ExistingDemoUsers = new List<Application.Common.Interfaces.DemoUserInfo>();
         }
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Failed to load existing demo users for display");
-            ExistingDemoUsers = new List<RentalRepairs.Application.Common.Interfaces.DemoUserInfo>();
+            ExistingDemoUsers = new List<Application.Common.Interfaces.DemoUserInfo>();
         }
     }
 }

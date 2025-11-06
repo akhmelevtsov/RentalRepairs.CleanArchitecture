@@ -27,7 +27,8 @@ public class SuperintendentChangedEventHandler : INotificationHandler<Superinten
         var oldSuperintendent = notification.OldSuperintendent;
         var newSuperintendent = notification.NewSuperintendent;
 
-        _logger.LogInformation("Processing SuperintendentChangedEvent for property {PropertyCode}: {OldSuper} -> {NewSuper}",
+        _logger.LogInformation(
+            "Processing SuperintendentChangedEvent for property {PropertyCode}: {OldSuper} -> {NewSuper}",
             property.Code,
             oldSuperintendent.GetFullName(),
             newSuperintendent.GetFullName());

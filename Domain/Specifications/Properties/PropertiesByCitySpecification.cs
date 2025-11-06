@@ -7,7 +7,7 @@ namespace RentalRepairs.Domain.Specifications.Properties;
 /// </summary>
 public class PropertiesByCitySpecification : BaseSpecification<Property>
 {
-    public PropertiesByCitySpecification(string city) 
+    public PropertiesByCitySpecification(string city)
         : base(p => p.Address.City == city)
     {
         ApplyOrderBy(p => p.Name);

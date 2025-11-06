@@ -11,7 +11,7 @@ public class TenantConfiguration : IEntityTypeConfiguration<Tenant>
         builder.ToTable("Tenants");
 
         builder.HasKey(t => t.Id);
-        
+
         // Configure Guid ID
         builder.Property(t => t.Id)
             .IsRequired()
@@ -47,10 +47,10 @@ public class TenantConfiguration : IEntityTypeConfiguration<Tenant>
         // Configure foreign key relationship (Guid PropertyId)
         builder.Property(t => t.PropertyId)
             .IsRequired();
-            
+
         builder.HasIndex(t => t.PropertyId)
             .HasDatabaseName("IX_Tenants_PropertyId");
-        
+
         // Configure PropertyCode as additional identifier
         builder.Property(t => t.PropertyCode)
             .IsRequired()

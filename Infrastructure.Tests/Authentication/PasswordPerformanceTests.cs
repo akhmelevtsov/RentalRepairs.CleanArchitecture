@@ -18,18 +18,18 @@ public class PasswordPerformanceTests
         var devEnvironment = new PerformanceTestHostEnvironment { EnvironmentName = "Development" };
         var passwordService = new PasswordService(devEnvironment);
         const string password = "Demo123!";
-        
+
         // Hash a password first
         var hashedPassword = passwordService.HashPassword(password);
-        
+
         // Act - Measure verification time
         var stopwatch = Stopwatch.StartNew();
         var isValid = passwordService.VerifyPassword(password, hashedPassword);
         stopwatch.Stop();
-        
+
         // Assert
         Assert.True(isValid);
-        Assert.True(stopwatch.ElapsedMilliseconds < 200, 
+        Assert.True(stopwatch.ElapsedMilliseconds < 200,
             $"Development password verification took {stopwatch.ElapsedMilliseconds}ms, should be under 200ms");
     }
 
@@ -40,15 +40,15 @@ public class PasswordPerformanceTests
         var prodEnvironment = new PerformanceTestHostEnvironment { EnvironmentName = "Production" };
         var passwordService = new PasswordService(prodEnvironment);
         const string password = "Demo123!";
-        
+
         // Hash a password first
         var hashedPassword = passwordService.HashPassword(password);
-        
+
         // Act - Measure verification time
         var stopwatch = Stopwatch.StartNew();
         var isValid = passwordService.VerifyPassword(password, hashedPassword);
         stopwatch.Stop();
-        
+
         // Assert
         Assert.True(isValid);
         // Production should be slower (more secure) but we won't enforce a specific time in tests
@@ -65,20 +65,20 @@ public class PasswordPerformanceTests
         var devPasswordService = new PasswordService(devEnvironment);
         var prodPasswordService = new PasswordService(prodEnvironment);
         const string password = "Demo123!";
-        
+
         // Hash passwords
         var devHashedPassword = devPasswordService.HashPassword(password);
         var prodHashedPassword = prodPasswordService.HashPassword(password);
-        
+
         // Act - Measure verification times
         var devStopwatch = Stopwatch.StartNew();
         devPasswordService.VerifyPassword(password, devHashedPassword);
         devStopwatch.Stop();
-        
+
         var prodStopwatch = Stopwatch.StartNew();
         prodPasswordService.VerifyPassword(password, prodHashedPassword);
         prodStopwatch.Stop();
-        
+
         // Assert - Development should be significantly faster
         Assert.True(devStopwatch.ElapsedMilliseconds < prodStopwatch.ElapsedMilliseconds,
             $"Development ({devStopwatch.ElapsedMilliseconds}ms) should be faster than Production ({prodStopwatch.ElapsedMilliseconds}ms)");
@@ -95,8 +95,23 @@ public class PerformanceTestHostEnvironment : IHostEnvironment
     public string ContentRootPath { get; set; } = "";
     public IFileProvider ContentRootFileProvider { get; set; } = null!;
 
-    public bool IsDevelopment() => EnvironmentName == "Development";
-    public bool IsProduction() => EnvironmentName == "Production";
-    public bool IsStaging() => EnvironmentName == "Staging";
-    public bool IsEnvironment(string environmentName) => EnvironmentName == environmentName;
+    public bool IsDevelopment()
+    {
+        return EnvironmentName == "Development";
+    }
+
+    public bool IsProduction()
+    {
+        return EnvironmentName == "Production";
+    }
+
+    public bool IsStaging()
+    {
+        return EnvironmentName == "Staging";
+    }
+
+    public bool IsEnvironment(string environmentName)
+    {
+        return EnvironmentName == environmentName;
+    }
 }

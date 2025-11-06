@@ -2,69 +2,112 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using RentalRepairs.Application.Common.Interfaces;
 using RentalRepairs.Application.DTOs.Workers;
+using RentalRepairs.Domain.ValueObjects;
+using RentalRepairs.Domain.Enums;
 
 namespace RentalRepairs.Application.Queries.Workers.GetAvailableWorkers;
 
 /// <summary>
-/// Query handler using read model for complex scenarios
+/// Enhanced query handler with booking visibility and smart worker ordering.
+/// Phase 3: Now uses WorkerSpecialization enum for type-safe filtering.
 /// </summary>
 public class GetAvailableWorkersQueryHandler : IQueryHandler<GetAvailableWorkersQuery, List<WorkerAssignmentDto>>
 {
     private readonly IApplicationDbContext _context;
     private readonly ILogger<GetAvailableWorkersQueryHandler> _logger;
 
-    public GetAvailableWorkersQueryHandler(IApplicationDbContext context, ILogger<GetAvailableWorkersQueryHandler> logger)
+    public GetAvailableWorkersQueryHandler(
+        IApplicationDbContext context,
+        ILogger<GetAvailableWorkersQueryHandler> logger)
     {
         _context = context;
         _logger = logger;
     }
 
-    public async Task<List<WorkerAssignmentDto>> Handle(GetAvailableWorkersQuery request, CancellationToken cancellationToken)
+    public async Task<List<WorkerAssignmentDto>> Handle(
+        GetAvailableWorkersQuery request,
+        CancellationToken cancellationToken)
     {
         var targetDate = request.ServiceDate;
 
-        _logger.LogInformation("Getting available workers for date {ServiceDate} with specialization {RequiredSpecialization}", 
-            targetDate, request.RequiredSpecialization ?? "Any");
+        _logger.LogInformation(
+            "Getting available workers for date {ServiceDate}, specialization={Specialization}, emergency={IsEmergency}",
+            targetDate, request.RequiredSpecialization, request.IsEmergencyRequest);
 
-        // First check total workers count for debugging
-        var totalWorkers = await _context.Workers.CountAsync(cancellationToken);
-        var activeWorkers = await _context.Workers.CountAsync(w => w.IsActive, cancellationToken);
-        
-        _logger.LogInformation("Database has {TotalWorkers} total workers, {ActiveWorkers} active workers", 
-            totalWorkers, activeWorkers);
+        // Phase 3: Load workers with enum-based specialization filtering
+        var workersQuery = _context.Workers
+            .Include(w => w.Assignments)
+            .Where(w => w.IsActive);
 
-        // Execute the actual database query
-        var availableWorkers = await _context.Workers
-            .Where(w => w.IsActive)
-            .Where(w => string.IsNullOrEmpty(request.RequiredSpecialization) || 
-                       w.Specialization == request.RequiredSpecialization)
-            .Select(w => new WorkerAssignmentDto
-            {
-                WorkerId = w.Id,
-                WorkerName = w.ContactInfo.FirstName + " " + w.ContactInfo.LastName,
-                WorkerEmail = w.ContactInfo.EmailAddress,
-                Specialization = w.Specialization,
-                IsAvailable = true, // Already filtered for availability
-                CurrentWorkload = 0 // Simplified for now
-            })
-            .OrderBy(w => w.CurrentWorkload) // Order by workload for load balancing
-            .ThenBy(w => w.WorkerName)
-            .ToListAsync(cancellationToken);
-
-        _logger.LogInformation("Found {WorkerCount} available workers matching criteria", availableWorkers.Count);
-
-        if (availableWorkers.Count == 0 && !string.IsNullOrEmpty(request.RequiredSpecialization))
+        // ? Phase 3: Filter by enum specialization
+        if (request.RequiredSpecialization.HasValue)
         {
-            // Check if any workers have this specialization at all
-            var workersWithSpecialization = await _context.Workers
-                .Where(w => w.Specialization == request.RequiredSpecialization)
-                .CountAsync(cancellationToken);
-            
-            _logger.LogWarning("No available workers found for specialization '{RequiredSpecialization}'. " +
-                              "Workers with this specialization: {WorkersWithSpecialization} (active and inactive)", 
-                              request.RequiredSpecialization, workersWithSpecialization);
+            var requiredSpec = request.RequiredSpecialization.Value;
+
+            // General Maintenance workers can handle any work
+            workersQuery = workersQuery.Where(w =>
+                w.Specialization == requiredSpec ||
+                w.Specialization == WorkerSpecialization.GeneralMaintenance);
         }
 
-        return availableWorkers;
+        var workers = await workersQuery.ToListAsync(cancellationToken);
+
+        _logger.LogInformation("Loaded {WorkerCount} active workers", workers.Count);
+
+        if (workers.Count == 0)
+        {
+            _logger.LogWarning(
+                "No active workers found for specialization {RequiredSpecialization}",
+                request.RequiredSpecialization);
+            return new List<WorkerAssignmentDto>();
+        }
+
+        // Calculate booking data for each worker using Domain methods
+        var startDate = DateTime.Today;
+        var endDate = DateTime.Today.AddDays(request.LookAheadDays);
+
+        var workerSummaries = workers
+            .Select(w => WorkerAvailabilitySummary.CreateFromWorker(
+                w,
+                startDate,
+                endDate,
+                targetDate,
+                request.IsEmergencyRequest))
+            .ToList();
+
+        _logger.LogInformation("Created {SummaryCount} worker availability summaries", workerSummaries.Count);
+
+        // Order by availability score (lower = better) and take top N
+        var orderedWorkers = workerSummaries
+            .OrderBy(s => s.AvailabilityScore)
+            .ThenBy(s => s.CurrentWorkload)
+            .ThenBy(s => s.WorkerName)
+            .Take(request.MaxWorkers)
+            .ToList();
+
+        _logger.LogInformation(
+            "Selected top {SelectedCount} workers. Best score: {BestScore}, Worst score: {WorstScore}",
+            orderedWorkers.Count,
+            orderedWorkers.FirstOrDefault()?.AvailabilityScore ?? 0,
+            orderedWorkers.LastOrDefault()?.AvailabilityScore ?? 0);
+
+        // Map to DTO with booking data
+        var result = orderedWorkers.Select(s => new WorkerAssignmentDto
+        {
+            WorkerId = s.WorkerId,
+            WorkerName = s.WorkerName,
+            WorkerEmail = s.WorkerEmail,
+            Specialization = s.Specialization, // Enum
+            IsAvailable = s.IsActive,
+            CurrentWorkload = s.CurrentWorkload,
+            NextAvailableDate = s.NextFullyAvailableDate,
+            BookedDates = s.BookedDates.ToList(),
+            PartiallyBookedDates = s.PartiallyBookedDates.ToList(),
+            AvailabilityScore = s.AvailabilityScore
+        }).ToList();
+
+        _logger.LogInformation("Returning {ResultCount} worker assignments", result.Count);
+
+        return result;
     }
 }

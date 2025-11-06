@@ -20,14 +20,12 @@ public class SubmitTenantRequestViewModel
     public string TenantEmail { get; set; } = string.Empty;
 
     // ? UI-focused validation only - user experience and formatting
-    [Display(Name = "Phone Number")]
-    public string TenantPhone { get; set; } = string.Empty;
+    [Display(Name = "Phone Number")] public string TenantPhone { get; set; } = string.Empty;
 
     [Display(Name = "Problem Description")]
     public string ProblemDescription { get; set; } = string.Empty;
 
-    [Display(Name = "Urgency Level")]
-    public string UrgencyLevel { get; set; } = "Normal";
+    [Display(Name = "Urgency Level")] public string UrgencyLevel { get; set; } = "Normal";
 
     [Display(Name = "Is this an emergency?")]
     public bool IsEmergency { get; set; }
@@ -91,11 +89,12 @@ public class TenantRequestDetailsViewModel
     };
 
     public string UrgencyDisplayClass => IsEmergency ? "text-danger fw-bold" : "text-muted";
-    
+
     public bool CanSchedule => Status.Equals("Submitted", StringComparison.OrdinalIgnoreCase);
     public bool CanComplete => Status.Equals("Scheduled", StringComparison.OrdinalIgnoreCase);
-    public bool CanClose => Status.Equals("Done", StringComparison.OrdinalIgnoreCase) || 
-                           Status.Equals("Failed", StringComparison.OrdinalIgnoreCase);
+
+    public bool CanClose => Status.Equals("Done", StringComparison.OrdinalIgnoreCase) ||
+                            Status.Equals("Failed", StringComparison.OrdinalIgnoreCase);
 }
 
 /// <summary>
@@ -136,7 +135,7 @@ public class TenantRequestSummaryViewModel
     public DateTime SubmittedDate { get; set; }
     public DateTime? ScheduledDate { get; set; }
     public DateTime? CompletedDate { get; set; }
-    
+
     // Worker assignment information
     public string? AssignedWorkerName { get; set; }
     public string? AssignedWorkerEmail { get; set; }
@@ -153,15 +152,13 @@ public class ScheduleServiceWorkViewModel
     public string UnitNumber { get; set; } = string.Empty;
     public string ProblemDescription { get; set; } = string.Empty;
 
-    [Display(Name = "Assigned Worker")]
-    public Guid WorkerId { get; set; }
+    [Display(Name = "Assigned Worker")] public Guid WorkerId { get; set; }
 
     [Display(Name = "Scheduled Date")]
     [DataType(DataType.DateTime)]
     public DateTime ScheduledDate { get; set; } = DateTime.Today.AddDays(1);
 
-    [Display(Name = "Service Notes")]
-    public string? ServiceNotes { get; set; }
+    [Display(Name = "Service Notes")] public string? ServiceNotes { get; set; }
 
     public List<WorkerOptionViewModel> AvailableWorkers { get; set; } = new();
 
@@ -195,16 +192,16 @@ public static class TenantRequestClientValidation
     {
         return new Dictionary<string, object>
         {
-            ["ProblemDescription"] = new 
-            { 
-                required = true, 
+            ["ProblemDescription"] = new
+            {
+                required = true,
                 minlength = 10,
                 maxlength = 1000,
                 placeholder = "Please describe the maintenance issue in detail..."
             },
-            ["UrgencyLevel"] = new 
-            { 
-                required = true 
+            ["UrgencyLevel"] = new
+            {
+                required = true
             },
             ["TenantPhone"] = new
             {

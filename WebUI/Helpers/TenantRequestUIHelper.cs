@@ -1,4 +1,3 @@
-using RentalRepairs.Application.ReadModels;
 using RentalRepairs.Domain.Enums;
 
 namespace RentalRepairs.WebUI.Helpers;
@@ -150,23 +149,23 @@ public static class TenantRequestUIHelper
     /// <summary>
     /// ? NEW: Check if request should show emergency alert
     /// </summary>
-    public static bool ShouldShowEmergencyAlert(TenantRequestDetailsReadModel request)
+    public static bool ShouldShowEmergencyAlert(bool isEmergency, TenantRequestStatus status)
     {
-        return request?.IsEmergency == true && 
-               (request.Status == TenantRequestStatus.Draft || 
-                request.Status == TenantRequestStatus.Submitted);
+        return isEmergency &&
+               (status == TenantRequestStatus.Draft ||
+                status == TenantRequestStatus.Submitted);
     }
 
     /// <summary>
     /// ? NEW: Check if request should show overdue warning
     /// </summary>
-    public static bool ShouldShowOverdueWarning(TenantRequestDetailsReadModel request)
+    public static bool ShouldShowOverdueWarning(DateTime? scheduledDate, TenantRequestStatus status)
     {
-        if (request?.ScheduledDate == null) return false;
-        
-        return request.ScheduledDate < DateTime.Now && 
-               request.Status != TenantRequestStatus.Done && 
-               request.Status != TenantRequestStatus.Closed;
+        if (scheduledDate == null) return false;
+
+        return scheduledDate < DateTime.Now &&
+               status != TenantRequestStatus.Done &&
+               status != TenantRequestStatus.Closed;
     }
 
     /// <summary>
@@ -180,9 +179,9 @@ public static class TenantRequestUIHelper
     /// <summary>
     /// ? NEW: Check if work assignment section should be visible
     /// </summary>
-    public static bool ShouldShowWorkAssignment(TenantRequestDetailsReadModel request)
+    public static bool ShouldShowWorkAssignment(string? assignedWorkerEmail)
     {
-        return !string.IsNullOrEmpty(request?.AssignedWorkerEmail);
+        return !string.IsNullOrEmpty(assignedWorkerEmail);
     }
 
     #endregion
@@ -211,7 +210,7 @@ public static class TenantRequestUIHelper
     public static string FormatRelativeTime(DateTime date)
     {
         var timeSpan = DateTime.Now - date;
-        
+
         return timeSpan switch
         {
             { TotalMinutes: < 1 } => "Just now",
@@ -268,8 +267,10 @@ public static class TenantRequestUIHelper
         return status switch
         {
             TenantRequestStatus.Done => "Work has been completed successfully! Please review the completion notes.",
-            TenantRequestStatus.Failed => "Unfortunately, the work could not be completed. Please check the notes for details.",
-            TenantRequestStatus.Declined => "This request has been declined. Contact your property manager for more information.",
+            TenantRequestStatus.Failed =>
+                "Unfortunately, the work could not be completed. Please check the notes for details.",
+            TenantRequestStatus.Declined =>
+                "This request has been declined. Contact your property manager for more information.",
             _ => ""
         };
     }
@@ -290,15 +291,13 @@ public static class TenantRequestUIHelper
             TenantRequestStatus.Submitted => new List<string> { "Assign Worker", "Decline" },
             TenantRequestStatus.Scheduled => new List<string> { "Complete", "Reschedule", "Report Issue" },
             TenantRequestStatus.Done => new List<string> { "Close", "Reopen" },
-            TenantRequestStatus.Failed => new List<string> { "Reschedule", "Close" }, // Allow rescheduling of failed work
+            TenantRequestStatus.Failed => new List<string>
+                { "Reschedule", "Close" }, // Allow rescheduling of failed work
             _ => new List<string>()
         };
 
         // Filter actions based on user role if provided
-        if (!string.IsNullOrEmpty(userRole))
-        {
-            return FilterActionsByRole(baseActions, userRole);
-        }
+        if (!string.IsNullOrEmpty(userRole)) return FilterActionsByRole(baseActions, userRole);
 
         return baseActions;
     }
@@ -320,17 +319,15 @@ public static class TenantRequestUIHelper
                 "Assign Worker" => userRole == "PropertySuperintendent" || userRole == "SystemAdmin",
                 "Decline" => userRole == "PropertySuperintendent" || userRole == "SystemAdmin",
                 "Complete" => userRole == "Worker" || userRole == "PropertySuperintendent" || userRole == "SystemAdmin",
-                "Reschedule" => userRole == "PropertySuperintendent" || userRole == "SystemAdmin", // Only superintendents and admins can reschedule
+                "Reschedule" => userRole == "PropertySuperintendent" ||
+                                userRole == "SystemAdmin", // Only superintendents and admins can reschedule
                 "Report Issue" => true, // Anyone can report issues
                 "Close" => userRole == "PropertySuperintendent" || userRole == "SystemAdmin",
                 "Reopen" => userRole == "PropertySuperintendent" || userRole == "SystemAdmin",
                 _ => false
             };
 
-            if (canPerformAction)
-            {
-                filteredActions.Add(action);
-            }
+            if (canPerformAction) filteredActions.Add(action);
         }
 
         return filteredActions;

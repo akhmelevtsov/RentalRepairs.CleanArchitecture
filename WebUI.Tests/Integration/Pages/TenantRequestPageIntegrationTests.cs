@@ -31,8 +31,8 @@ public class TenantRequestPageIntegrationTests : IClassFixture<WebApplicationTes
 
         // Assert - May redirect to login if authentication is required
         response.StatusCode.Should().BeOneOf(
-            HttpStatusCode.OK, 
-            HttpStatusCode.Redirect, 
+            HttpStatusCode.OK,
+            HttpStatusCode.Redirect,
             HttpStatusCode.Found,
             HttpStatusCode.PermanentRedirect);
 
@@ -89,7 +89,8 @@ public class TenantRequestPageIntegrationTests : IClassFixture<WebApplicationTes
         }
         else
         {
-            _output.WriteLine($"Assign worker page properly handles unauthorized access (Status: {response.StatusCode})");
+            _output.WriteLine(
+                $"Assign worker page properly handles unauthorized access (Status: {response.StatusCode})");
         }
     }
 
@@ -108,11 +109,11 @@ public class TenantRequestPageIntegrationTests : IClassFixture<WebApplicationTes
         foreach (var page in protectedPages)
         {
             var response = await _client.GetAsync(page);
-            
+
             // All these pages should either work or redirect to authentication
-            response.StatusCode.Should().NotBe(HttpStatusCode.InternalServerError, 
+            response.StatusCode.Should().NotBe(HttpStatusCode.InternalServerError,
                 $"Page {page} should not return server error");
-            
+
             _output.WriteLine($"{page}: {response.StatusCode}");
         }
     }

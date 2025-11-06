@@ -50,7 +50,7 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
 
             // 2. Save changes within transaction
             var result = await base.SaveChangesAsync(cancellationToken);
-            
+
             _logger.LogDebug("Successfully saved {ChangeCount} changes to database", result);
 
             // 3. Publish domain events after successful save
@@ -72,7 +72,7 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
 
         // Configure audit fields globally
         ConfigureAuditFields(builder);
-        
+
         // Configure soft delete filters globally
         ConfigureSoftDeleteFilter(builder);
 
@@ -94,9 +94,9 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
         }
 
         var auditableEntries = ChangeTracker.Entries<BaseEntity>()
-            .Where(e => e.State == EntityState.Added || 
-                       e.State == EntityState.Modified || 
-                       e.State == EntityState.Deleted)
+            .Where(e => e.State == EntityState.Added ||
+                        e.State == EntityState.Modified ||
+                        e.State == EntityState.Deleted)
             .ToList();
 
         if (auditableEntries.Any())
@@ -114,7 +114,6 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
         const string systemUser = "system";
 
         foreach (var entry in ChangeTracker.Entries<BaseEntity>())
-        {
             switch (entry.State)
             {
                 case EntityState.Added:
@@ -123,6 +122,7 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
                         addedEntity.CreatedAt = auditTime;
                         addedEntity.CreatedBy = systemUser;
                     }
+
                     break;
 
                 case EntityState.Modified:
@@ -131,10 +131,11 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
                         // Prevent modification of creation audit fields
                         entry.Property(nameof(IAuditableEntity.CreatedAt)).IsModified = false;
                         entry.Property(nameof(IAuditableEntity.CreatedBy)).IsModified = false;
-                        
+
                         modifiedEntity.UpdatedAt = auditTime;
                         modifiedEntity.UpdatedBy = systemUser;
                     }
+
                     break;
 
                 case EntityState.Deleted:
@@ -146,9 +147,9 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
                         softDeletable.DeletedAt = auditTime;
                         softDeletable.DeletedBy = systemUser;
                     }
+
                     break;
             }
-        }
     }
 
     private async Task PublishDomainEventsAsync(CancellationToken cancellationToken)
@@ -240,7 +241,6 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     private static void ConfigureSoftDeleteFilter(ModelBuilder builder)
     {
         foreach (var entityType in builder.Model.GetEntityTypes())
-        {
             if (typeof(ISoftDeletableEntity).IsAssignableFrom(entityType.ClrType))
             {
                 // Configure global query filter for soft deleted entities
@@ -251,21 +251,16 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
                 var filter = method.Invoke(null, Array.Empty<object>());
                 entityType.SetQueryFilter((LambdaExpression)filter!);
             }
-        }
     }
 
     private static void ConfigureConcurrencyTokens(ModelBuilder builder)
     {
         foreach (var entityType in builder.Model.GetEntityTypes())
-        {
             if (typeof(IVersionedEntity).IsAssignableFrom(entityType.ClrType))
-            {
                 builder.Entity(entityType.ClrType)
                     .Property<byte[]>(nameof(IVersionedEntity.RowVersion))
                     .IsRowVersion()
                     .IsConcurrencyToken();
-            }
-        }
     }
 
     private static LambdaExpression GetSoftDeleteFilter<TEntity>()

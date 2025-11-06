@@ -8,7 +8,7 @@ namespace RentalRepairs.Application.EventHandlers.Properties;
 /// <summary>
 /// Handles UnitAddedEvent and UnitRemovedEvent to manage property unit changes
 /// </summary>
-public class PropertyUnitChangedEventHandler : 
+public class PropertyUnitChangedEventHandler :
     INotificationHandler<UnitAddedEvent>,
     INotificationHandler<UnitRemovedEvent>
 {

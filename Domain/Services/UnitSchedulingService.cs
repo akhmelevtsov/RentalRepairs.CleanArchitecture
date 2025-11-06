@@ -8,12 +8,12 @@ public class UnitSchedulingService
 {
     /// <summary>
     /// Validates if a worker can be assigned to a unit on a specific date
-    /// Implements simplified rules: specialization match, no double booking, unit exclusivity, max 2 per unit
+    /// Implements simplified rules: specialization match, unit exclusivity, max 2 per unit
     /// </summary>
     public UnitSchedulingValidationResult ValidateWorkerAssignment(
         Guid requestId,
         string propertyCode,
-        string unitNumber, 
+        string unitNumber,
         DateTime scheduledDate,
         string workerEmail,
         string workerSpecialization,
@@ -26,51 +26,26 @@ public class UnitSchedulingService
 
         // Filter active assignments for the date
         var activeAssignments = existingAssignments
-            .Where(a => a.ScheduledDate.Date == dateOnly && 
-                       (a.Status == "Scheduled" || a.Status == "InProgress"))
+            .Where(a => a.ScheduledDate.Date == dateOnly &&
+                        (a.Status == "Scheduled" || a.Status == "InProgress"))
             .ToList();
 
         // Rule 1: Check specialization match (already implemented elsewhere, but validate here too)
         if (!DoesSpecializationMatch(workerSpecialization, requiredSpecialization))
         {
             result.IsValid = false;
-            result.ErrorMessage = $"Worker specialized in {workerSpecialization} cannot handle {requiredSpecialization} work";
+            result.ErrorMessage =
+                $"Worker specialized in {workerSpecialization} cannot handle {requiredSpecialization} work";
             result.ConflictType = SchedulingConflictType.SpecializationMismatch;
             return result;
         }
 
-        // Rule 2: Check if worker is already booked elsewhere (different unit) on same date
-        var workerBookedElsewhere = activeAssignments
-            .Where(a => a.WorkerEmail == workerEmail && 
-                       !(a.PropertyCode == propertyCode && a.UnitNumber == unitNumber))
-            .ToList();
-
-        if (workerBookedElsewhere.Any())
-        {
-            if (!isEmergency)
-            {
-                result.IsValid = false;
-                result.ErrorMessage = $"Worker {workerEmail} is already assigned to {workerBookedElsewhere.First().PropertyCode} Unit {workerBookedElsewhere.First().UnitNumber} on {dateOnly:yyyy-MM-dd}";
-                result.ConflictType = SchedulingConflictType.WorkerDoubleBooked;
-                result.ConflictingAssignments = workerBookedElsewhere;
-                return result;
-            }
-            else
-            {
-                // Emergency: Worker still can't be in two places at once
-                result.IsValid = false;
-                result.ErrorMessage = $"Emergency request cannot override worker {workerEmail} being physically assigned elsewhere on {dateOnly:yyyy-MM-dd}";
-                result.ConflictType = SchedulingConflictType.WorkerDoubleBooked;
-                result.ConflictingAssignments = workerBookedElsewhere;
-                return result;
-            }
-        }
-
-        // Rule 3: Check if other workers are assigned to this unit on same date
+        // Rule 3: Check if OTHER DIFFERENT workers are assigned to this unit on same date
+        // Updated: Same worker can be assigned multiple times (Rule 4 handles the limit)
         var otherWorkersInUnit = activeAssignments
-            .Where(a => a.PropertyCode == propertyCode && 
-                       a.UnitNumber == unitNumber && 
-                       a.WorkerEmail != workerEmail)
+            .Where(a => a.PropertyCode == propertyCode &&
+                        a.UnitNumber == unitNumber &&
+                        a.WorkerEmail != workerEmail) // Only block DIFFERENT workers
             .ToList();
 
         if (otherWorkersInUnit.Any())
@@ -78,7 +53,8 @@ public class UnitSchedulingService
             if (!isEmergency)
             {
                 result.IsValid = false;
-                result.ErrorMessage = $"Unit {unitNumber} already has worker {otherWorkersInUnit.First().WorkerEmail} assigned on {dateOnly:yyyy-MM-dd}";
+                result.ErrorMessage =
+                    $"Unit {unitNumber} already has a different worker ({otherWorkersInUnit.First().WorkerEmail}) assigned on {dateOnly:yyyy-MM-dd}. Same worker can be assigned multiple times to the same unit.";
                 result.ConflictType = SchedulingConflictType.UnitConflict;
                 result.ConflictingAssignments = otherWorkersInUnit;
                 return result;
@@ -104,10 +80,10 @@ public class UnitSchedulingService
 
         // Rule 4: Check max 2 requests per worker per unit per day
         var sameWorkerSameUnit = activeAssignments
-            .Where(a => a.PropertyCode == propertyCode && 
-                       a.UnitNumber == unitNumber && 
-                       a.WorkerEmail == workerEmail &&
-                       a.TenantRequestId != requestId) // Don't count this request if it's a reassignment
+            .Where(a => a.PropertyCode == propertyCode &&
+                        a.UnitNumber == unitNumber &&
+                        a.WorkerEmail == workerEmail &&
+                        a.TenantRequestId != requestId) // Don't count this request if it's a reassignment
             .ToList();
 
         if (sameWorkerSameUnit.Count >= 2)
@@ -115,7 +91,8 @@ public class UnitSchedulingService
             if (!isEmergency)
             {
                 result.IsValid = false;
-                result.ErrorMessage = $"Worker {workerEmail} already has maximum 2 assignments in Unit {unitNumber} on {dateOnly:yyyy-MM-dd}";
+                result.ErrorMessage =
+                    $"Worker {workerEmail} already has maximum 2 assignments in Unit {unitNumber} on {dateOnly:yyyy-MM-dd}";
                 result.ConflictType = SchedulingConflictType.WorkerUnitLimit;
                 result.ConflictingAssignments = sameWorkerSameUnit;
                 return result;
@@ -157,7 +134,7 @@ public class UnitSchedulingService
         IEnumerable<ExistingAssignment> assignmentsToCancel)
     {
         var result = new EmergencyOverrideResult();
-        
+
         foreach (ExistingAssignment assignment in assignmentsToCancel)
         {
             result.CancelledRequestIds.Add(assignment.TenantRequestId);
@@ -227,7 +204,7 @@ public class UnitSchedulingService
         {
             "plumber" => "Plumbing",
             "plumbing" => "Plumbing",
-            "electrician" => "Electrical", 
+            "electrician" => "Electrical",
             "electrical" => "Electrical",
             "hvac" => "HVAC",
             "hvac technician" => "HVAC",
@@ -305,7 +282,6 @@ public enum SchedulingConflictType
 {
     None,
     SpecializationMismatch,
-    WorkerDoubleBooked,
     UnitConflict,
     WorkerUnitLimit
 }

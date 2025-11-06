@@ -36,16 +36,13 @@ public class InfrastructureOptions
 /// </summary>
 public class DatabaseOptions
 {
-    [Required]
-    public string? ConnectionString { get; set; }
+    [Required] public string? ConnectionString { get; set; }
 
     public bool EnableRetry { get; set; } = true;
 
-    [Range(5, 300)]
-    public int CommandTimeoutSeconds { get; set; } = 30;
+    [Range(5, 300)] public int CommandTimeoutSeconds { get; set; } = 30;
 
-    [Range(1, 10)]
-    public int MaxRetryCount { get; set; } = 3;
+    [Range(1, 10)] public int MaxRetryCount { get; set; } = 3;
 
     public bool EnableSensitiveDataLogging { get; set; } = false;
 
@@ -110,8 +107,7 @@ public class EmailOptions
 {
     public string Provider { get; set; } = "Mock"; // "Mock", "Smtp", "SendGrid"
 
-    [EmailAddress]
-    public string DefaultSender { get; set; } = "noreply@rentalrepairs.com";
+    [EmailAddress] public string DefaultSender { get; set; } = "noreply@rentalrepairs.com";
 
     public string DefaultSenderName { get; set; } = "Rental Repairs System";
 
@@ -129,8 +125,7 @@ public class SmtpOptions
 {
     public string Host { get; set; } = "localhost";
 
-    [Range(1, 65535)]
-    public int Port { get; set; } = 587;
+    [Range(1, 65535)] public int Port { get; set; } = 587;
 
     public bool EnableSsl { get; set; } = true;
 
@@ -156,16 +151,13 @@ public class AuthenticationOptions
 {
     public string DefaultAuditUser { get; set; } = "system";
 
-    [Range(1, 24)]
-    public int TokenExpirationHours { get; set; } = 8;
+    [Range(1, 24)] public int TokenExpirationHours { get; set; } = 8;
 
     public bool RequireComplexPasswords { get; set; } = false;
 
-    [Range(1, 10)]
-    public int MaxLoginAttempts { get; set; } = 5;
+    [Range(1, 10)] public int MaxLoginAttempts { get; set; } = 5;
 
-    [Range(5, 60)]
-    public int LockoutDurationMinutes { get; set; } = 15;
+    [Range(5, 60)] public int LockoutDurationMinutes { get; set; } = 15;
 }
 
 /// <summary>
@@ -177,8 +169,7 @@ public class PerformanceOptions
 
     public string CacheProvider { get; set; } = "Memory"; // "Memory", "Redis"
 
-    [Range(1, 3600)]
-    public int DefaultCacheExpirationMinutes { get; set; } = 30;
+    [Range(1, 3600)] public int DefaultCacheExpirationMinutes { get; set; } = 30;
 
     public bool EnablePerformanceMonitoring { get; set; } = true;
 

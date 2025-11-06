@@ -28,12 +28,21 @@ builder.Services.AddProductionServices(builder.Environment);
 // ✅ Configure Mapster mappings properly
 ApplicationToViewModelMappingConfig.RegisterMappings();
 
-// Add WebUI-specific services (presentation layer only)
-builder.Services.AddScoped<IViewRenderService, ViewRenderService>();
+// ✅ Add WebUI-specific services
+// Register GlobalExceptionFilter for centralized error handling
+builder.Services.AddScoped<RentalRepairs.WebUI.Filters.GlobalExceptionFilter>();
 
-// ✅ Override Infrastructure's CurrentUserService with WebUI's HttpContext-aware version
+// Configure Razor Pages to use GlobalExceptionFilter
+builder.Services.Configure<Microsoft.AspNetCore.Mvc.RazorPages.RazorPagesOptions>(options =>
+{
+    // Filter is registered separately and will be resolved from DI
+});
+
+builder.Services.AddMvc(options => { options.Filters.Add<RentalRepairs.WebUI.Filters.GlobalExceptionFilter>(); });
+
+// Override Infrastructure's CurrentUserService with WebUI's HttpContext-aware version
 // This is acceptable as it's presentation-layer specific implementation
-builder.Services.AddScoped<RentalRepairs.Application.Common.Interfaces.ICurrentUserService, RentalRepairs.WebUI.Services.CurrentUserService>();
+builder.Services.AddScoped<RentalRepairs.Application.Common.Interfaces.ICurrentUserService, CurrentUserService>();
 
 var app = builder.Build();
 
@@ -55,17 +64,15 @@ app.Use(async (context, next) =>
     context.Response.Headers["X-Frame-Options"] = "DENY";
     context.Response.Headers["X-XSS-Protection"] = "1; mode=block";
     context.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
-    
+
     if (!app.Environment.IsDevelopment())
-    {
-        context.Response.Headers["Content-Security-Policy"] = 
+        context.Response.Headers["Content-Security-Policy"] =
             "default-src 'self'; " +
             "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; " +
             "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; " +
             "font-src 'self' https://cdnjs.cloudflare.com; " +
             "img-src 'self' data: https:;";
-    }
-    
+
     await next.Invoke();
 });
 
@@ -92,7 +99,7 @@ using (var scope = app.Services.CreateScope())
     try
     {
         await ApplicationCompositionRoot.InitializeApplicationAsync(scope.ServiceProvider);
-        
+
         var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
         logger.LogInformation("Application initialization completed successfully");
     }
@@ -100,15 +107,14 @@ using (var scope = app.Services.CreateScope())
     {
         var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
         logger.LogError(ex, "An error occurred while initializing the application");
-        
-        if (!app.Environment.IsDevelopment())
-        {
-            throw;
-        }
+
+        if (!app.Environment.IsDevelopment()) throw;
     }
 }
 
 app.Run();
 
 // Make the implicit Program class public for testing
-public partial class Program { }
+public partial class Program
+{
+}

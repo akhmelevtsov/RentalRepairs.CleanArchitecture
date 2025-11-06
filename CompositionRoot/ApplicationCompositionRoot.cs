@@ -23,7 +23,7 @@ public static class ApplicationCompositionRoot
     public static async Task InitializeApplicationAsync(IServiceProvider serviceProvider)
     {
         using var scope = serviceProvider.CreateScope();
-        
+
         try
         {
             var logger = scope.ServiceProvider.GetRequiredService<ILogger<ApplicationInitializer>>();
@@ -32,19 +32,19 @@ public static class ApplicationCompositionRoot
             // Initialize database if needed
             var databaseInitializer = scope.ServiceProvider
                 .GetRequiredService<IDatabaseInitializer>();
-            
+
             await databaseInitializer.EnsureDatabaseCreatedAsync();
 
             // Use the proper seeding service instead of the empty method
             var seederService = scope.ServiceProvider
                 .GetRequiredService<IDatabaseSeederService>();
-            
+
             logger.LogInformation("Checking if database seeding is needed...");
             if (!await seederService.IsDevelopmentDataSeededAsync())
             {
                 logger.LogInformation("Database appears empty, starting seeding process...");
                 await seederService.SeedDevelopmentDataAsync();
-                
+
                 // Generate credentials file
                 try
                 {
@@ -64,7 +64,7 @@ public static class ApplicationCompositionRoot
             // Initialize demo users for authentication
             var demoUserService = scope.ServiceProvider
                 .GetRequiredService<IDemoUserService>();
-            
+
             if (demoUserService.IsDemoModeEnabled())
             {
                 logger.LogInformation("Demo mode is enabled, initializing demo users...");

@@ -26,7 +26,8 @@ public class TenantRequestScheduledEventHandler : INotificationHandler<TenantReq
         var request = notification.TenantRequest;
         var scheduleInfo = notification.ScheduleInfo;
 
-        _logger.LogInformation("Processing TenantRequestScheduledEvent for request {RequestCode} with worker {WorkerEmail} on {ServiceDate}", 
+        _logger.LogInformation(
+            "Processing TenantRequestScheduledEvent for request {RequestCode} with worker {WorkerEmail} on {ServiceDate}",
             request.Code,
             scheduleInfo.WorkerEmail,
             scheduleInfo.ServiceDate);
@@ -40,14 +41,15 @@ public class TenantRequestScheduledEventHandler : INotificationHandler<TenantReq
             await _notificationService.NotifyWorkerOfWorkAssignmentAsync(request, scheduleInfo, cancellationToken);
 
             // Confirm scheduling with superintendent
-            await _notificationService.NotifySuperintendentOfScheduledWorkAsync(request, scheduleInfo, cancellationToken);
+            await _notificationService.NotifySuperintendentOfScheduledWorkAsync(request, scheduleInfo,
+                cancellationToken);
 
-            _logger.LogInformation("Successfully processed TenantRequestScheduledEvent for request {RequestCode}", 
+            _logger.LogInformation("Successfully processed TenantRequestScheduledEvent for request {RequestCode}",
                 request.Code);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error processing TenantRequestScheduledEvent for request {RequestCode}", 
+            _logger.LogError(ex, "Error processing TenantRequestScheduledEvent for request {RequestCode}",
                 request.Code);
             throw;
         }

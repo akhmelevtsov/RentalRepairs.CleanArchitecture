@@ -7,6 +7,17 @@
 <div class="container py-4">
     <div class="row justify-content-center">
         <div class="col-lg-8">
+            <!-- Phase 3: Data Staleness Warning -->
+            @if (Model.IsDataStale && Model.AssignmentContext != null)
+            {
+                <div class="alert alert-warning alert-dismissible fade show mb-4" role="alert">
+                    <i class="fas fa-clock me-2"></i>
+                    <strong>Notice:</strong> Worker availability data may be outdated (loaded @((int)(DateTime.UtcNow - Model.DataLoadedAt).TotalMinutes) minutes ago).
+                    Consider <a href="@Request.Path@Request.QueryString" class="alert-link">refreshing the page</a> for the latest information.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            }
+
             <!-- Error/Success Messages -->
             @if (!string.IsNullOrEmpty(Model.ErrorMessage))
             {
@@ -60,24 +71,34 @@
                                 <div class="row">
                                     <div class="col-md-6">
                                         <p><strong>Request ID:</strong> #@Model.AssignmentContext.Request.Id</p>
-                                        <p><strong>Title:</strong> @Model.AssignmentContext.Request.Title</p>
-                                        <p><strong>Status:</strong> 
+                                        <p>
+                                            <strong>Title:</strong> @Model.AssignmentContext.Request.Title
+                                        </p>
+                                        <p>
+                                            <strong>Status:</strong>
                                             <span class="badge bg-primary">@Model.AssignmentContext.Request.Status</span>
                                         </p>
                                     </div>
                                     <div class="col-md-6">
-                                        <p><strong>Tenant:</strong> @Model.AssignmentContext.Request.TenantEmail</p>
-                                        <p><strong>Urgency:</strong> 
+                                        <p>
+                                            <strong>Tenant:</strong> @Model.AssignmentContext.Request.TenantEmail
+                                        </p>
+                                        <p>
+                                            <strong>Urgency:</strong>
                                             <span class="badge @(Model.AssignmentContext.IsEmergencyRequest ? "bg-danger" : "bg-info")">
                                                 @Model.AssignmentContext.Request.UrgencyLevel
                                             </span>
                                         </p>
-                                        <p><strong>Created:</strong> @Model.AssignmentContext.Request.CreatedDate.ToString("MMM dd, yyyy")</p>
+                                        <p>
+                                            <strong>Created:</strong> @Model.AssignmentContext.Request.CreatedDate.ToString("MMM dd, yyyy")
+                                        </p>
                                     </div>
                                 </div>
                                 <div class="row">
                                     <div class="col-12">
-                                        <p><strong>Description:</strong></p>
+                                        <p>
+                                            <strong>Description:</strong>
+                                        </p>
                                         <p class="border p-2 rounded bg-white">@Model.AssignmentContext.Request.Description</p>
                                     </div>
                                 </div>
@@ -87,38 +108,47 @@
                         <!-- Assignment Form -->
                         <form method="post" asp-antiforgery="true" id="assignmentForm">
                             <div asp-validation-summary="ModelOnly" class="text-danger mb-4"></div>
-                            
-                            <input type="hidden" asp-for="AssignmentRequest.RequestId" />
-                            
+
+                            <input type="hidden" asp-for="RequestId"/>
+
                             @* Preserve ReturnUrl in form *@
                             @if (!string.IsNullOrEmpty(ViewData["ReturnUrl"] as string))
                             {
-                                <input type="hidden" name="returnUrl" value="@ViewData["ReturnUrl"]" />
+                                <input type="hidden" name="returnUrl" value="@ViewData["ReturnUrl"]"/>
                             }
-                            
+
                             <div class="mb-3">
-                                <label asp-for="AssignmentRequest.WorkerEmail" class="form-label text-dark fw-bold">
+                                <label asp-for="WorkerEmail" class="form-label text-dark fw-bold">
                                     <i class="fas fa-user me-2"></i>Select Worker <span class="text-danger">*</span>
                                 </label>
                                 @if (Model.AssignmentContext.AvailableWorkers?.Any() == true)
                                 {
-                                    <select asp-for="AssignmentRequest.WorkerEmail" class="form-select" id="workerSelect">
+                                    <select asp-for="WorkerEmail" class="form-select" id="workerSelect">
                                         <option value="">-- Select a Worker --</option>
                                         @foreach (var worker in Model.AssignmentContext.AvailableWorkers)
                                         {
-                                            <option value="@worker.Email" data-specialization="@worker.Specialization">
+                                            <option value="@worker.Email"
+                                                    data-specialization="@worker.Specialization"
+                                                    data-booked-dates="@string.Join(",", worker.BookedDates.Select(d => d.ToString("yyyy-MM-dd")))"
+
+                                                    data-partial-dates="@string.Join(",", worker.PartiallyBookedDates.Select(d => d.ToString("yyyy-MM-dd")))"
+                                                    data-next-available="@(worker.NextAvailableDate?.ToString("yyyy-MM-dd") ?? "")">
                                                 @worker.FullName (@worker.Specialization) - @worker.ActiveAssignmentsCount assignments
+                                                @if (worker.NextAvailableDate.HasValue)
+                                                {
+                                                    <text> - Next: @worker.NextAvailableDate.Value.ToString("MMM dd")</text>
+                                                }
                                             </option>
                                         }
                                     </select>
-                                    <span asp-validation-for="AssignmentRequest.WorkerEmail" class="text-danger"></span>
+                                    <span asp-validation-for="WorkerEmail" class="text-danger"></span>
                                     <div class="form-text">
-                                        Select an available worker with appropriate specialization for this type of work.
+                                        Workers are ordered by availability. Select a worker to see their booking calendar.
                                     </div>
                                 }
                                 else
                                 {
-                                    <select asp-for="AssignmentRequest.WorkerEmail" class="form-select" id="workerSelect" disabled>
+                                    <select asp-for="WorkerEmail" class="form-select" id="workerSelect" disabled>
                                         <option value="">-- No suitable workers available --</option>
                                     </select>
                                     <div class="alert alert-warning mt-2">
@@ -126,105 +156,88 @@
                                         <strong>No suitable workers available</strong><br>
                                         No workers are currently available for assignment. Please try again later or contact system administrator.
                                     </div>
-                                    <span asp-validation-for="AssignmentRequest.WorkerEmail" class="text-danger"></span>
+                                    <span asp-validation-for="WorkerEmail" class="text-danger"></span>
                                 }
                             </div>
 
                             <div class="mb-3">
-                                <label asp-for="AssignmentRequest.ScheduledDate" class="form-label text-dark fw-bold">
+                                <label asp-for="ScheduledDate" class="form-label text-dark fw-bold">
                                     <i class="fas fa-calendar me-2"></i>Scheduled Date <span class="text-danger">*</span>
                                 </label>
-                                <input asp-for="AssignmentRequest.ScheduledDate" class="form-control" type="date" 
-                                       min="@DateTime.Today.AddDays(1).ToString("yyyy-MM-dd")" id="dateSelect" />
-                                <span asp-validation-for="AssignmentRequest.ScheduledDate" class="text-danger"></span>
+                                <input asp-for="ScheduledDate"
+                                       class="form-control"
+                                       type="text"
+                                       id="dateSelect"
+                                       placeholder="Select a date..."
+                                       readonly/>
+                                <span asp-validation-for="ScheduledDate" class="text-danger"></span>
                                 <div class="form-text">
-                                    Select the date for the maintenance work.
+                                    Select a worker first to see their availability calendar. Color coding: <span class="text-muted">Gray = Neutral</span>, <span class="text-warning">Yellow = Partially Booked (1/2)</span>, <span class="text-danger">Red = Fully Booked</span>
                                 </div>
-                                
+
                                 @if (Model.AssignmentContext.SuggestedDates?.Any() == true)
                                 {
                                     <div class="mt-2">
-                                        <small class="text-muted">Suggested dates:</small><br>
+                                        <small class="text-muted">Quick dates (select worker first to see availability):</small><br>
                                         @foreach (var suggestedDate in Model.AssignmentContext.SuggestedDates.Take(3))
                                         {
-                                            <button type="button" class="btn btn-outline-secondary btn-sm me-1 mt-1" 
-                                                    onclick="document.getElementById('dateSelect').value = '@suggestedDate.ToString("yyyy-MM-dd")'; checkWorkerAvailability();">
-                                                @suggestedDate.ToString("MMM dd")
+                                            <button type="button"
+                                                    class="btn btn-outline-secondary btn-sm me-1 mt-1 quick-date-btn"
+                                                    data-date="@suggestedDate.ToString("yyyy-MM-dd")"
+                                                    onclick="selectQuickDate(this);">
+                                                <span class="date-text">@suggestedDate.ToString("MMM dd")</span>
+                                                <span class="availability-badge" style="display:none;"></span>
                                             </button>
                                         }
                                     </div>
                                 }
                             </div>
 
-                            <!-- Worker Availability Status -->
-                            <div class="mb-3" id="availabilitySection" style="display: none;">
-                                <label class="form-label text-dark fw-bold">
-                                    <i class="fas fa-calendar-check me-2"></i>Worker Availability Status
-                                </label>
-                                <div id="availabilityContainer">
-                                    <div class="text-muted">
-                                        <i class="fas fa-spinner fa-spin me-2"></i>Checking availability...
-                                    </div>
-                                </div>
-                                <div class="form-text">
-                                    The system will check if the selected worker is available on the chosen date.
-                                </div>
-                            </div>
-
                             <div class="mb-3">
-                                <label asp-for="AssignmentRequest.WorkOrderNumber" class="form-label text-dark fw-bold">
+                                <label asp-for="WorkOrderNumber" class="form-label text-dark fw-bold">
                                     <i class="fas fa-file-alt me-2"></i>Work Order Number <span class="text-danger">*</span>
                                 </label>
-                                <input asp-for="AssignmentRequest.WorkOrderNumber" class="form-control" placeholder="e.g., WO-2025-001" />
-                                <span asp-validation-for="AssignmentRequest.WorkOrderNumber" class="text-danger"></span>
+                                <input asp-for="WorkOrderNumber" class="form-control" placeholder="e.g., WO-2025-001"/>
+                                <span asp-validation-for="WorkOrderNumber" class="text-danger"></span>
                                 <div class="form-text">
                                     Enter a unique work order number for tracking purposes.
                                 </div>
                             </div>
 
-                            <div class="mb-3">
-                                <label asp-for="AssignmentRequest.Notes" class="form-label text-dark fw-bold">
-                                    <i class="fas fa-sticky-note me-2"></i>Additional Notes
-                                </label>
-                                <textarea asp-for="AssignmentRequest.Notes" class="form-control" rows="3" 
-                                          placeholder="Any special instructions for the worker..."></textarea>
-                                <span asp-validation-for="AssignmentRequest.Notes" class="text-danger"></span>
-                            </div>
-
                             <div class="d-flex justify-content-between">
                                 @{
                                     var returnUrl = ViewData["ReturnUrl"] as string;
+
+                                    if (!string.IsNullOrEmpty(returnUrl))
+                                    {
+                                        <a href="@returnUrl" class="btn btn-outline-secondary">
+                                            <i class="fas fa-arrow-left me-2"></i>Cancel
+                                        </a>
+                                    }
+                                    else if (User.IsInRole("PropertySuperintendent"))
+                                    {
+                                        <a href="/TenantRequests/Manage" class="btn btn-outline-secondary">
+                                            <i class="fas fa-arrow-left me-2"></i>Cancel
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <a asp-page="/Index" class="btn btn-outline-secondary">
+                                            <i class="fas fa-arrow-left me-2"></i>Cancel
+                                        </a>
+                                    }
                                 }
-                                
-                                @if (!string.IsNullOrEmpty(returnUrl))
-                                {
-                                    <a href="@returnUrl" class="btn btn-outline-secondary">
-                                        <i class="fas fa-arrow-left me-2"></i>Cancel
-                                    </a>
-                                }
-                                else if (User.IsInRole("PropertySuperintendent"))
-                                {
-                                    <a href="/TenantRequests/Manage" class="btn btn-outline-secondary">
-                                        <i class="fas fa-arrow-left me-2"></i>Cancel
-                                    </a>
-                                }
-                                else
-                                {
-                                    <a asp-page="/Index" class="btn btn-outline-secondary">
-                                        <i class="fas fa-arrow-left me-2"></i>Cancel
-                                    </a>
-                                }
-                                
+
                                 @if (Model.AssignmentContext.IsEmergencyRequest)
                                 {
-                                    <button type="submit" class="btn btn-danger" id="assignButton" 
+                                    <button type="submit" class="btn btn-danger" id="assignButton"
                                             disabled="@(Model.AssignmentContext.AvailableWorkers?.Any() != true)">
                                         <i class="fas fa-exclamation-triangle me-2"></i>Emergency Assign Worker
                                     </button>
                                 }
                                 else
                                 {
-                                    <button type="submit" class="btn btn-primary" id="assignButton" 
+                                    <button type="submit" class="btn btn-primary" id="assignButton"
                                             disabled="@(Model.AssignmentContext.AvailableWorkers?.Any() != true)">
                                         <i class="fas fa-user-check me-2"></i>Assign Worker
                                     </button>
@@ -238,7 +251,7 @@
             {
                 <div class="alert alert-warning">
                     <i class="fas fa-exclamation-triangle me-2"></i>
-                    <strong>Unable to load request information.</strong> 
+                    <strong>Unable to load request information.</strong>
                     Please try again or contact support if the problem persists.
                 </div>
             }
@@ -247,123 +260,335 @@
 </div>
 
 @section Scripts {
-    <partial name="_ValidationScriptsPartial" />
-    <script>
-        let currentRequestId = '@Model.AssignmentRequest.RequestId';
+    <partial name="_ValidationScriptsPartial"/>
+
+    @* Phase 3.5: Flatpickr - Lightweight date picker with custom styling *@
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+    <style>
+        /* Phase 3.5: Flatpickr custom styling for worker availability */
+   
+        /* Quick date button styling - keep neutral for available */
+        .quick-date-btn.fully-booked {
+  background-color: #f8d7da;
+      border-color: #f5c6cb;
+       color: #721c24;
+     text-decoration: line-through;
+          cursor: not-allowed;
+        }
         
-        // Auto-generate work order number
-        document.getElementById('workerSelect')?.addEventListener('change', function() {
-            const workOrderField = document.querySelector('input[name="AssignmentRequest.WorkOrderNumber"]');
-            if (workOrderField && workOrderField.value === '') {
-                const today = new Date();
-                const dateStr = today.getFullYear() + '' + 
-                    (today.getMonth() + 1).toString().padStart(2, '0') + '' +
-                    today.getDate().toString().padStart(2, '0');
-                const randomNum = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-                workOrderField.value = `WO-${dateStr}-${randomNum}`;
-            }
-            
-            // Check availability when worker changes
-            checkWorkerAvailability();
+      .quick-date-btn.partially-booked {
+            background-color: #fff3cd;
+border-color: #ffeaa7;
+     color: #856404;
+     }
+        
+      .quick-date-btn.available {
+         /* Keep neutral gray/white */
+      background-color: #ffffff;
+            border-color: #6c757d;
+            color: #495057;
+        }
+        
+  /* Availability badge on quick date buttons */
+        .availability-badge {
+        display: inline-block;
+            width: 8px;
+  height: 8px;
+    border-radius: 50%;
+            margin-left: 4px;
+        }
+        
+        .availability-badge.fully-booked {
+    background-color: #dc3545;
+    }
+        
+        .availability-badge.partially-booked {
+background-color: #ffc107;
+     }
+      
+        .availability-badge.available {
+   background-color: #6c757d; /* Gray dot for available */
+        }
+     
+        /* Flatpickr calendar date styling */
+        .flatpickr-day.partially-booked {
+      background-color: #fff3cd !important;
+            border-color: #ffc107 !important;
+            color: #856404 !important;
+        }
+        
+        .flatpickr-day.fully-booked {
+            background-color: #f8d7da !important;
+     border-color: #dc3545 !important;
+            color: #721c24 !important;
+       text-decoration: line-through;
+   cursor: not-allowed !important;
+ }
+        
+        .flatpickr-day.fully-booked:hover {
+    background-color: #f8d7da !important;
+     border-color: #dc3545 !important;
+        }
+        
+        /* Selected date styling */
+     .flatpickr-day.selected {
+       background-color: #0d6efd !important;
+            border-color: #0d6efd !important;
+      color: white !important;
+     }
+   
+        /* Today's date styling */
+        .flatpickr-day.today {
+      border-color: #0d6efd !important;
+        }
+     
+        /* Flatpickr input styling */
+        #dateSelect {
+            cursor: pointer;
+  }
+    </style>
+
+    <script>
+        // Phase 3.5: Worker booking availability visualization with Flatpickr
+        let currentWorkerBookedDates = [];
+ let currentWorkerPartialDates = [];
+      let flatpickrInstance = null;
+        
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+  setupWorkerSelection();
+  setupFormValidation();
+ initializeFlatpickr();
         });
-
-        // Check availability when date changes
-        document.getElementById('dateSelect')?.addEventListener('change', function() {
-            checkWorkerAvailability();
+        
+        // Initialize Flatpickr date picker
+        function initializeFlatpickr() {
+      const dateInput = document.getElementById('dateSelect');
+        if (!dateInput) return;
+      
+flatpickrInstance = flatpickr(dateInput, {
+         minDate: 'today',
+        dateFormat: 'Y-m-d',
+           enable: [
+     function(date) {
+       // Enable all dates by default
+  return true;
+        }
+     ],
+                onDayCreate: function(dObj, dStr, fp, dayElem) {
+          // This runs for each day in the calendar
+                 const dateStr = dayElem.dateObj.toISOString().split('T')[0];
+        
+        // Remove previous classes
+         dayElem.classList.remove('fully-booked', 'partially-booked');
+    
+   // Apply styling based on availability
+       if (currentWorkerBookedDates.includes(dateStr)) {
+             dayElem.classList.add('fully-booked');
+dayElem.style.pointerEvents = 'none'; // Disable clicking
+              } else if (currentWorkerPartialDates.includes(dateStr)) {
+  dayElem.classList.add('partially-booked');
+        }
+        },
+        onChange: function(selectedDates, dateStr, instance) {
+           // Validate selection
+       if (currentWorkerBookedDates.includes(dateStr)) {
+       alert('This date is fully booked for the selected worker (2/2 slots filled). Please choose another date.');
+        instance.clear();
+    return;
+      }
+        
+         if (currentWorkerPartialDates.includes(dateStr)) {
+       // Show info message for partially booked dates
+       console.log('Selected partially booked date:', dateStr);
+             }
+  
+         // Update quick date buttons
+            highlightQuickDateButton(dateStr);
+                }
         });
-
-        // Check worker availability for the selected date
-        async function checkWorkerAvailability() {
-            const workerEmail = document.getElementById('workerSelect')?.value;
-            const selectedDate = document.getElementById('dateSelect')?.value;
-            const availabilitySection = document.getElementById('availabilitySection');
-            const availabilityContainer = document.getElementById('availabilityContainer');
-            const assignButton = document.getElementById('assignButton');
+        }
+        
+   // Setup worker selection and availability tracking
+   function setupWorkerSelection() {
+  const workerSelect = document.getElementById('workerSelect');
+ if (!workerSelect) return;
             
-            if (!workerEmail || !selectedDate) {
-                if (availabilitySection) availabilitySection.style.display = 'none';
-                if (assignButton) assignButton.disabled = !workerEmail || !selectedDate;
-                return;
-            }
-
-            // Show loading state
-            if (availabilitySection) availabilitySection.style.display = 'block';
-            if (availabilityContainer) availabilityContainer.innerHTML = '<div class="text-muted"><i class="fas fa-spinner fa-spin me-2"></i>Checking availability...</div>';
-            if (assignButton) assignButton.disabled = true;
-
-            try {
-                const url = `/TenantRequests/AssignWorker/${currentRequestId}?handler=WorkerAvailability&workerEmail=${encodeURIComponent(workerEmail)}&date=${selectedDate}`;
-                
-                const response = await fetch(url);
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                const data = await response.json();
-
-                // Display availability status
-                if (data.available) {
-                    if (availabilityContainer) {
-                        availabilityContainer.innerHTML = `
-                            <div class="alert alert-success">
-                                <i class="fas fa-check-circle me-2"></i>
-                                <strong>Worker Available</strong><br>
-                                ${data.message || 'Worker is available on the selected date.'}
-                            </div>
-                        `;
-                    }
-                    if (assignButton) assignButton.disabled = false;
-                } else {
-                    if (availabilityContainer) {
-                        availabilityContainer.innerHTML = `
-                            <div class="alert alert-warning">
-                                <i class="fas fa-exclamation-triangle me-2"></i>
-                                <strong>Worker Not Available</strong><br>
-                                ${data.message || 'Worker is not available on the selected date.'}
-                            </div>
-                        `;
-                    }
-                    if (assignButton) assignButton.disabled = true;
-                }
-                
-            } catch (error) {
-                console.error('Error checking availability:', error);
-                if (availabilityContainer) {
-                    availabilityContainer.innerHTML = `
-                        <div class="alert alert-danger">
-                            <i class="fas fa-exclamation-triangle me-2"></i>
-                            <strong>Error checking availability:</strong> ${error.message}
-                        </div>
-                    `;
-                }
-                if (assignButton) assignButton.disabled = true;
+   workerSelect.addEventListener('change', function() {
+      const selectedOption = this.options[this.selectedIndex];
+       
+    if (selectedOption.value) {
+          // Extract booking data from selected worker
+         const bookedDatesStr = selectedOption.getAttribute('data-booked-dates') || '';
+  const partialDatesStr = selectedOption.getAttribute('data-partial-dates') || '';
+           
+             currentWorkerBookedDates = bookedDatesStr ? bookedDatesStr.split(',').filter(d => d) : [];
+     currentWorkerPartialDates = partialDatesStr ? partialDatesStr.split(',').filter(d => d) : [];
+  
+         console.log('Worker selected:', selectedOption.text);
+console.log('Booked dates:', currentWorkerBookedDates);
+    console.log('Partial dates:', currentWorkerPartialDates);
+       
+       // Update UI with availability indicators
+             refreshFlatpickrCalendar();
+              updateQuickDateButtons();
+       
+        // Auto-generate work order number if empty
+            autoGenerateWorkOrderNumber();
+     } else {
+   // Clear availability data
+           currentWorkerBookedDates = [];
+       currentWorkerPartialDates = [];
+               clearAvailabilityIndicators();
+       }
+    });
+     }
+        
+        // Refresh Flatpickr calendar to show updated availability
+        function refreshFlatpickrCalendar() {
+  if (flatpickrInstance) {
+             flatpickrInstance.redraw(); // Force redraw with new availability data
             }
         }
-
-        // Form submission handling
-        document.addEventListener('DOMContentLoaded', function() {
-            const form = document.querySelector('form[method="post"]');
-            const submitBtn = document.getElementById('assignButton');
+        
+  // Update quick date buttons with availability indicators
+        function updateQuickDateButtons() {
+            const quickDateButtons = document.querySelectorAll('.quick-date-btn');
+  
+    quickDateButtons.forEach(button => {
+const dateStr = button.getAttribute('data-date');
+   const availabilityBadge = button.querySelector('.availability-badge');
+          
+          // Remove previous classes
+      button.classList.remove('fully-booked', 'partially-booked', 'available');
+         if (availabilityBadge) {
+           availabilityBadge.classList.remove('fully-booked', 'partially-booked', 'available');
+                }
+          
+          // Determine availability status
+                let availabilityClass = 'available';
+                if (currentWorkerBookedDates.includes(dateStr)) {
+  availabilityClass = 'fully-booked';
+              button.disabled = true;
+            } else if (currentWorkerPartialDates.includes(dateStr)) {
+          availabilityClass = 'partially-booked';
+        button.disabled = false;
+  } else {
+           availabilityClass = 'available';
+ button.disabled = false;
+   }
+      
+     // Apply styling
+                button.classList.add(availabilityClass);
+                if (availabilityBadge) {
+        availabilityBadge.classList.add(availabilityClass);
+     availabilityBadge.style.display = 'inline-block';
+    }
+  });
+        }
+ 
+        // Clear availability indicators when no worker is selected
+        function clearAvailabilityIndicators() {
+ const quickDateButtons = document.querySelectorAll('.quick-date-btn');
+          quickDateButtons.forEach(button => {
+     button.classList.remove('fully-booked', 'partially-booked', 'available');
+       button.disabled = false;
+       const badge = button.querySelector('.availability-badge');
+      if (badge) {
+                badge.style.display = 'none';
+     }
+            });
+         
+    // Clear Flatpickr selection
+  if (flatpickrInstance) {
+       flatpickrInstance.clear();
+    flatpickrInstance.redraw();
+        }
+     }
+      
+        // Select quick date button
+        function selectQuickDate(button) {
+            if (button.disabled) {
+    alert('This date is fully booked for the selected worker (2/2 slots filled). Please choose another date.');
+           return;
+   }
             
-            if (form && submitBtn) {
-                form.addEventListener('submit', function(e) {
-                    // Validate required fields
-                    const workerEmail = document.getElementById('workerSelect')?.value;
-                    const scheduledDate = document.getElementById('dateSelect')?.value;
-                    const workOrderNumber = document.querySelector('input[name="AssignmentRequest.WorkOrderNumber"]')?.value;
-                    
-                    if (!workerEmail || !scheduledDate || !workOrderNumber) {
-                        e.preventDefault();
-                        alert('Please fill in all required fields.');
-                        return false;
-                    }
-                    
-                    // Disable submit button to prevent double submission
-                    submitBtn.disabled = true;
-                    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Assigning Worker...';
-                });
+            const date = button.getAttribute('data-date');
+  if (flatpickrInstance) {
+           flatpickrInstance.setDate(date);
             }
-        });
+            
+  // Highlight selected button
+            highlightQuickDateButton(date);
+        }
+        
+        // Highlight the quick date button that matches the selected date
+    function highlightQuickDateButton(dateStr) {
+            document.querySelectorAll('.quick-date-btn').forEach(btn => {
+              if (btn.getAttribute('data-date') === dateStr) {
+          btn.classList.add('border-primary');
+    btn.style.fontWeight = 'bold';
+    } else {
+       btn.classList.remove('border-primary');
+         btn.style.fontWeight = 'normal';
+  }
+            });
+        }
+        
+        // Auto-generate work order number
+   function autoGenerateWorkOrderNumber() {
+ const workOrderField = document.querySelector('input[name="WorkOrderNumber"]');
+            if (workOrderField && workOrderField.value === '') {
+      const today = new Date();
+                const dateStr = today.getFullYear() + '' + 
+      (today.getMonth() + 1).toString().padStart(2, '0') + '' +
+       today.getDate().toString().padStart(2, '0');
+        const randomNum = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+       workOrderField.value = `WO-${dateStr}-${randomNum}`;
+            }
+        }
+        
+        // Form submission handling
+        function setupFormValidation() {
+         const form = document.querySelector('form[method="post"]');
+          const submitBtn = document.getElementById('assignButton');
+         
+            if (form && submitBtn) {
+     form.addEventListener('submit', function(e) {
+                // Validate required fields
+         const workerEmail = document.getElementById('workerSelect')?.value;
+                const scheduledDate = document.getElementById('dateSelect')?.value;
+         const workOrderNumber = document.querySelector('input[name="WorkOrderNumber"]')?.value;
+  
+              if (!workerEmail || !scheduledDate || !workOrderNumber) {
+          e.preventDefault();
+    alert('Please fill in all required fields.');
+       return false;
+        }
+      
+       // Check if selected date is fully booked
+     if (currentWorkerBookedDates.includes(scheduledDate)) {
+  e.preventDefault();
+            alert('The selected date is fully booked for this worker (2/2 slots filled). Please choose another date.');
+           return false;
+   }
+     
+        // Warn if date is partially booked
+        if (currentWorkerPartialDates.includes(scheduledDate)) {
+         const confirmed = confirm('This worker is partially booked on the selected date (1/2 slots filled). One slot remains available. Do you want to proceed with the assignment?');
+                if (!confirmed) {
+  e.preventDefault();
+             return false;
+    }
+        }
+  
+          // Disable submit button to prevent double submission
+  submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Assigning Worker...';
+      });
+ }
+  }
     </script>
 }

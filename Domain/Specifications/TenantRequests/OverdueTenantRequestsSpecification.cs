@@ -9,7 +9,7 @@ namespace RentalRepairs.Domain.Specifications.TenantRequests;
 public class OverdueTenantRequestsSpecification : BaseSpecification<TenantRequest>
 {
     public OverdueTenantRequestsSpecification(int daysThreshold)
-        : base(tr => tr.Status == TenantRequestStatus.Submitted && 
+        : base(tr => tr.Status == TenantRequestStatus.Submitted &&
                      tr.CreatedAt <= DateTime.UtcNow.AddDays(-daysThreshold))
     {
     }

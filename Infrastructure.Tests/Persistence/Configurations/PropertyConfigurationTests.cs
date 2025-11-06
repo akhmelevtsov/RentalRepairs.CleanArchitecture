@@ -19,14 +19,15 @@ public class PropertyConfigurationTests : IDisposable
     public PropertyConfigurationTests()
     {
         var options = new DbContextOptionsBuilder<ApplicationDbContext>()
-            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .Options;
 
         var mockLogger = new Mock<ILogger<ApplicationDbContext>>();
         var mockAuditService = new Mock<IAuditService>();
         var mockDomainEventPublisher = new Mock<IDomainEventPublisher>();
 
-        _context = new ApplicationDbContext(options, mockLogger.Object, mockAuditService.Object, mockDomainEventPublisher.Object);
+        _context = new ApplicationDbContext(options, mockLogger.Object, mockAuditService.Object,
+            mockDomainEventPublisher.Object);
     }
 
     [Fact]
@@ -36,23 +37,23 @@ public class PropertyConfigurationTests : IDisposable
         var address = new PropertyAddress("123", "Test Street", "Test City", "12345");
         var superintendent = new PersonContactInfo("John", "Superintendent", "super@test.com", "555-0456");
         var singleUnit = new List<string> { "101" };
-        
+
         var property = new Domain.Entities.Property(
-            "Single Unit Property", 
-            "SUP001", 
-            address, 
-            "555-0123", 
-            superintendent, 
-            singleUnit, 
+            "Single Unit Property",
+            "SUP001",
+            address,
+            "555-0123",
+            superintendent,
+            singleUnit,
             "noreply@test.com");
 
         // Act - Save and retrieve
         await _context.Properties.AddAsync(property);
         await _context.SaveChangesAsync();
-        
+
         // Clear context to ensure fresh load
         _context.Entry(property).State = EntityState.Detached;
-        
+
         var retrievedProperty = await _context.Properties.FirstOrDefaultAsync(p => p.Code == "SUP001");
 
         // Assert
@@ -69,23 +70,23 @@ public class PropertyConfigurationTests : IDisposable
         var address = new PropertyAddress("123", "Test Street", "Test City", "12345");
         var superintendent = new PersonContactInfo("John", "Superintendent", "super@test.com", "555-0456");
         var multipleUnits = new List<string> { "101", "102", "103", "104", "105" };
-        
+
         var property = new Domain.Entities.Property(
-            "Multi Unit Property", 
-            "MUP001", 
-            address, 
-            "555-0123", 
-            superintendent, 
-            multipleUnits, 
+            "Multi Unit Property",
+            "MUP001",
+            address,
+            "555-0123",
+            superintendent,
+            multipleUnits,
             "noreply@test.com");
 
         // Act - Save and retrieve
         await _context.Properties.AddAsync(property);
         await _context.SaveChangesAsync();
-        
+
         // Clear context to ensure fresh load
         _context.Entry(property).State = EntityState.Detached;
-        
+
         var retrievedProperty = await _context.Properties.FirstOrDefaultAsync(p => p.Code == "MUP001");
 
         // Assert
@@ -101,20 +102,20 @@ public class PropertyConfigurationTests : IDisposable
         // Arrange - Create multiple properties with different unit counts
         var address = new PropertyAddress("123", "Test Street", "Test City", "12345");
         var superintendent = new PersonContactInfo("John", "Superintendent", "super@test.com", "555-0456");
-        
+
         // Property 1: 3 units
         var property1 = new Domain.Entities.Property(
-            "Property 1", "P001", address, "555-0123", superintendent, 
+            "Property 1", "P001", address, "555-0123", superintendent,
             new List<string> { "A1", "A2", "A3" }, "noreply@test.com");
 
         // Property 2: 1 unit (minimum allowed)
         var property2 = new Domain.Entities.Property(
-            "Property 2", "P002", address, "555-0123", superintendent, 
+            "Property 2", "P002", address, "555-0123", superintendent,
             new List<string> { "B1" }, "noreply@test.com");
 
         // Property 3: 2 units
         var property3 = new Domain.Entities.Property(
-            "Property 3", "P003", address, "555-0123", superintendent, 
+            "Property 3", "P003", address, "555-0123", superintendent,
             new List<string> { "X1", "X2" }, "noreply@test.com");
 
         // Act - Save properties
@@ -135,13 +136,13 @@ public class PropertyConfigurationTests : IDisposable
 
         // Assert
         propertyStats.Should().HaveCount(3);
-        
+
         var prop1Stats = propertyStats.First(p => p.Code == "P001");
         prop1Stats.TotalUnits.Should().Be(3);
-        
+
         var prop2Stats = propertyStats.First(p => p.Code == "P002");
         prop2Stats.TotalUnits.Should().Be(1);
-        
+
         var prop3Stats = propertyStats.First(p => p.Code == "P003");
         prop3Stats.TotalUnits.Should().Be(2);
     }
@@ -153,14 +154,14 @@ public class PropertyConfigurationTests : IDisposable
         var address = new PropertyAddress("123", "Test Street", "Test City", "12345");
         var superintendent = new PersonContactInfo("John", "Superintendent", "super@test.com", "555-0456");
         var units = new List<string> { "101", "102", "103", "201", "202" };
-        
+
         var property = new Domain.Entities.Property(
-            "Test Property", 
-            "TP001", 
-            address, 
-            "555-0123", 
-            superintendent, 
-            units, 
+            "Test Property",
+            "TP001",
+            address,
+            "555-0123",
+            superintendent,
+            units,
             "noreply@test.com");
 
         // Act - Save to database
@@ -186,12 +187,16 @@ public class PropertyConfigurationTests : IDisposable
         // Arrange - Create properties with different unit configurations
         var address = new PropertyAddress("123", "Test Street", "Test City", "12345");
         var superintendent = new PersonContactInfo("John", "Superintendent", "super@test.com", "555-0456");
-        
+
         var properties = new[]
         {
-            new Domain.Entities.Property("Small Property", "SP001", address, "555-0123", superintendent, new List<string> { "1" }, "noreply@test.com"),
-            new Domain.Entities.Property("Medium Property", "MP001", address, "555-0123", superintendent, new List<string> { "A", "B", "C", "D", "E" }, "noreply@test.com"),
-            new Domain.Entities.Property("Large Property", "LP001", address, "555-0123", superintendent, new List<string> { "101", "102", "103", "201", "202", "203", "301", "302", "303", "401" }, "noreply@test.com")
+            new Domain.Entities.Property("Small Property", "SP001", address, "555-0123", superintendent,
+                new List<string> { "1" }, "noreply@test.com"),
+            new Domain.Entities.Property("Medium Property", "MP001", address, "555-0123", superintendent,
+                new List<string> { "A", "B", "C", "D", "E" }, "noreply@test.com"),
+            new Domain.Entities.Property("Large Property", "LP001", address, "555-0123", superintendent,
+                new List<string> { "101", "102", "103", "201", "202", "203", "301", "302", "303", "401" },
+                "noreply@test.com")
         };
 
         await _context.Properties.AddRangeAsync(properties);
@@ -212,19 +217,19 @@ public class PropertyConfigurationTests : IDisposable
 
         // Assert
         stats.Should().HaveCount(3);
-        
+
         // Large Property
         var largePropertyStats = stats.First(s => s.Code == "LP001");
         largePropertyStats.TotalUnits.Should().Be(10);
         largePropertyStats.VacantUnits.Should().Be(10); // No tenants
         largePropertyStats.OccupancyRate.Should().Be(0);
-        
+
         // Medium Property
         var mediumPropertyStats = stats.First(s => s.Code == "MP001");
         mediumPropertyStats.TotalUnits.Should().Be(5);
         mediumPropertyStats.VacantUnits.Should().Be(5);
         mediumPropertyStats.OccupancyRate.Should().Be(0);
-        
+
         // Small Property
         var smallPropertyStats = stats.First(s => s.Code == "SP001");
         smallPropertyStats.TotalUnits.Should().Be(1);
@@ -239,23 +244,23 @@ public class PropertyConfigurationTests : IDisposable
         var address = new PropertyAddress("123", "Test Street", "Test City", "12345");
         var superintendent = new PersonContactInfo("John", "Superintendent", "super@test.com", "555-0456");
         var specialUnits = new List<string> { "A-1", "B 2", "C3", "D-4 E" };
-        
+
         var property = new Domain.Entities.Property(
-            "Special Units Property", 
-            "SUP002", 
-            address, 
-            "555-0123", 
-            superintendent, 
-            specialUnits, 
+            "Special Units Property",
+            "SUP002",
+            address,
+            "555-0123",
+            superintendent,
+            specialUnits,
             "noreply@test.com");
 
         // Act - Save and retrieve
         await _context.Properties.AddAsync(property);
         await _context.SaveChangesAsync();
-        
+
         // Clear context to ensure fresh load
         _context.Entry(property).State = EntityState.Detached;
-        
+
         var retrievedProperty = await _context.Properties.FirstOrDefaultAsync(p => p.Code == "SUP002");
 
         // Assert
@@ -272,23 +277,23 @@ public class PropertyConfigurationTests : IDisposable
         var address = new PropertyAddress("123", "Test Street", "Test City", "12345");
         var superintendent = new PersonContactInfo("John", "Superintendent", "super@test.com", "555-0456");
         var orderedUnits = new List<string> { "Z99", "A01", "M50", "B02", "X88" }; // Intentionally not alphabetical
-        
+
         var property = new Domain.Entities.Property(
-            "Ordered Units Property", 
-            "OUP001", 
-            address, 
-            "555-0123", 
-            superintendent, 
-            orderedUnits, 
+            "Ordered Units Property",
+            "OUP001",
+            address,
+            "555-0123",
+            superintendent,
+            orderedUnits,
             "noreply@test.com");
 
         // Act - Save and retrieve
         await _context.Properties.AddAsync(property);
         await _context.SaveChangesAsync();
-        
+
         // Clear context to ensure fresh load
         _context.Entry(property).State = EntityState.Detached;
-        
+
         var retrievedProperty = await _context.Properties.FirstOrDefaultAsync(p => p.Code == "OUP001");
 
         // Assert - Order should be preserved

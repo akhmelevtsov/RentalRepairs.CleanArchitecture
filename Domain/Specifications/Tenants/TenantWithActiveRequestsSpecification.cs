@@ -8,9 +8,9 @@ namespace RentalRepairs.Domain.Specifications.Tenants;
 public class TenantWithActiveRequestsSpecification : BaseSpecification<Tenant>
 {
     public TenantWithActiveRequestsSpecification()
-        : base(t => t.Requests.Any(r => 
-            r.Status == Domain.Enums.TenantRequestStatus.Submitted ||
-            r.Status == Domain.Enums.TenantRequestStatus.Scheduled))
+        : base(t => t.Requests.Any(r =>
+            r.Status == Enums.TenantRequestStatus.Submitted ||
+            r.Status == Enums.TenantRequestStatus.Scheduled))
     {
     }
 }

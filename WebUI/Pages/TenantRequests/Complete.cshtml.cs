@@ -3,42 +3,38 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using MediatR;
 using RentalRepairs.Application.Commands.TenantRequests.ReportWorkCompleted;
-using RentalRepairs.Application.Interfaces;
+using RentalRepairs.Application.DTOs;
+using RentalRepairs.Application.Queries.TenantRequests.GetTenantRequestById;
 using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
 
 namespace RentalRepairs.WebUI.Pages.TenantRequests;
 
 /// <summary>
-/// Page for workers to complete work orders and report completion status
-/// CSRF PROTECTED: All POST operations validate antiforgery tokens
-/// Updated to use consolidated ITenantRequestService
+/// Page for workers to complete work orders and report completion status.
+/// Uses CQRS directly (no service wrapper).
+/// CSRF PROTECTED: All POST operations validate antiforgery tokens.
 /// </summary>
 [Authorize(Roles = "Worker")]
 [ValidateAntiForgeryToken]
 public class CompleteModel : PageModel
 {
     private readonly IMediator _mediator;
-    private readonly ITenantRequestService _tenantRequestService;
     private readonly ILogger<CompleteModel> _logger;
 
     public CompleteModel(
         IMediator mediator,
-        ITenantRequestService tenantRequestService,
         ILogger<CompleteModel> logger)
     {
         _mediator = mediator;
-        _tenantRequestService = tenantRequestService;
         _logger = logger;
     }
 
     // Route parameter
-    [BindProperty(SupportsGet = true)]
-    public Guid Id { get; set; }
+    [BindProperty(SupportsGet = true)] public Guid Id { get; set; }
 
     // Form properties
-    [BindProperty]
-    public Guid RequestId { get; set; }
+    [BindProperty] public Guid RequestId { get; set; }
 
     [BindProperty]
     [Required(ErrorMessage = "Please select whether the work was completed successfully")]
@@ -49,25 +45,24 @@ public class CompleteModel : PageModel
     [StringLength(1000, MinimumLength = 10, ErrorMessage = "Completion notes must be between 10 and 1000 characters")]
     public string CompletionNotes { get; set; } = string.Empty;
 
-    // Display properties using consolidated service DTOs
+    // Display properties
     public TenantRequestDetailsDto? RequestDetails { get; set; }
 
-    [TempData]
-    public string? SuccessMessage { get; set; }
+    [TempData] public string? SuccessMessage { get; set; }
 
-    [TempData]
-    public string? ErrorMessage { get; set; }
+    [TempData] public string? ErrorMessage { get; set; }
 
     public async Task<IActionResult> OnGetAsync()
     {
         try
         {
             RequestId = Id;
-            
-            // Load request details using consolidated service
-            var workerEmail = User.FindFirst(ClaimTypes.Email)?.Value ?? User.FindFirst("email")?.Value ?? "anonymous";
-            RequestDetails = await _tenantRequestService.GetRequestDetailsWithContextAsync(Id, workerEmail);
-            
+
+            // Load request details using CQRS query directly
+            var query = new GetTenantRequestByIdQuery(Id) { IncludeBusinessContext = true };
+            var result = await _mediator.Send(query);
+            RequestDetails = result as TenantRequestDetailsDto;
+
             if (RequestDetails == null)
             {
                 ErrorMessage = "Work order not found.";
@@ -82,7 +77,9 @@ public class CompleteModel : PageModel
             }
 
             // Verify worker is assigned to this request
-            if (string.IsNullOrEmpty(workerEmail) || !RequestDetails.AssignedWorkerEmail?.Equals(workerEmail, StringComparison.OrdinalIgnoreCase) == true)
+            var workerEmail = User.FindFirst(ClaimTypes.Email)?.Value ?? User.FindFirst("email")?.Value;
+            if (string.IsNullOrEmpty(workerEmail) ||
+                !RequestDetails.AssignedWorkerEmail?.Equals(workerEmail, StringComparison.OrdinalIgnoreCase) == true)
             {
                 ErrorMessage = "You are not authorized to complete this work order.";
                 return RedirectToPage("/Index");
@@ -103,23 +100,23 @@ public class CompleteModel : PageModel
     {
         try
         {
-            // Reload request details for display if validation fails
-            var workerEmail = User.FindFirst(ClaimTypes.Email)?.Value ?? User.FindFirst("email")?.Value ?? "anonymous";
-            RequestDetails = await _tenantRequestService.GetRequestDetailsWithContextAsync(RequestId, workerEmail);
-            
+// Reload request details for display if validation fails
+            var query = new GetTenantRequestByIdQuery(RequestId) { IncludeBusinessContext = true };
+            var result = await _mediator.Send(query);
+            RequestDetails = result as TenantRequestDetailsDto;
+
             if (RequestDetails == null)
             {
                 ErrorMessage = "Work order not found.";
                 return RedirectToPage("/Index");
             }
 
-            if (!ModelState.IsValid)
-            {
-                return Page();
-            }
+            if (!ModelState.IsValid) return Page();
 
             // Verify worker authorization again
-            if (string.IsNullOrEmpty(workerEmail) || !RequestDetails.AssignedWorkerEmail?.Equals(workerEmail, StringComparison.OrdinalIgnoreCase) == true)
+            var workerEmail = User.FindFirst(ClaimTypes.Email)?.Value ?? User.FindFirst("email")?.Value;
+            if (string.IsNullOrEmpty(workerEmail) ||
+                !RequestDetails.AssignedWorkerEmail?.Equals(workerEmail, StringComparison.OrdinalIgnoreCase) == true)
             {
                 ErrorMessage = "You are not authorized to complete this work order.";
                 return RedirectToPage("/Index");
@@ -129,24 +126,25 @@ public class CompleteModel : PageModel
             var command = new ReportWorkCompletedCommand
             {
                 TenantRequestId = RequestId,
-                CompletedSuccessfully = CompletedSuccessfully!.Value, // Safe because of validation
+                CompletedSuccessfully = CompletedSuccessfully!.Value,
                 CompletionNotes = CompletionNotes
             };
 
             await _mediator.Send(command);
 
-            // Create detailed success message for dashboard display
+            // Create detailed success message
             var statusText = CompletedSuccessfully.Value ? "completed successfully" : "reported as failed/incomplete";
-            var workOrderText = !string.IsNullOrEmpty(RequestDetails.WorkOrderNumber) 
-                ? $"Work Order {RequestDetails.WorkOrderNumber}" 
+            var workOrderText = !string.IsNullOrEmpty(RequestDetails.WorkOrderNumber)
+                ? $"Work Order {RequestDetails.WorkOrderNumber}"
                 : "Work order";
-            
-            SuccessMessage = $"{workOrderText} {statusText}! Property: {RequestDetails.PropertyName}, Unit: {RequestDetails.TenantUnit}";
 
-            _logger.LogInformation("Work order {RequestId} completed by worker {WorkerEmail} with status: {Status}", 
+            SuccessMessage =
+                $"{workOrderText} {statusText}! Property: {RequestDetails.PropertyName}, Unit: {RequestDetails.TenantUnit}";
+
+            _logger.LogInformation(
+                "Work order {RequestId} completed by worker {WorkerEmail} with status: {Status}",
                 RequestId, workerEmail, CompletedSuccessfully.Value ? "Success" : "Failed");
 
-            // Redirect to dashboard for optimal UX workflow
             return RedirectToPage("/Index");
         }
         catch (Exception ex)

@@ -12,7 +12,7 @@ public class TenantRequestUrgencyPolicy
 {
     // Domain business rules - valid urgency levels
     private static readonly string[] ValidUrgencyLevels = { "Low", "Normal", "High", "Critical", "Emergency" };
-    
+
     private static readonly Dictionary<string, int> UrgencyPriorities = new()
     {
         ["Emergency"] = 1,
@@ -56,7 +56,7 @@ public class TenantRequestUrgencyPolicy
 
         int emergencyCount = recentRequests.Count(r => r.UrgencyLevel == "Emergency");
         int criticalCount = recentRequests.Count(r => r.UrgencyLevel == "Critical");
-        
+
         // Business rule: If tenant frequently submits high priority requests, 
         // suggest Normal to encourage proper prioritization
         if (emergencyCount >= 2 || criticalCount >= 3)
@@ -126,8 +126,8 @@ public class TenantRequestUrgencyPolicy
     /// </summary>
     public int GetExpectedResolutionHours(string urgencyLevel)
     {
-        return ExpectedResolutionHours.ContainsKey(urgencyLevel) 
-            ? ExpectedResolutionHours[urgencyLevel] 
+        return ExpectedResolutionHours.ContainsKey(urgencyLevel)
+            ? ExpectedResolutionHours[urgencyLevel]
             : 72; // Default to Normal level
     }
 
@@ -137,8 +137,8 @@ public class TenantRequestUrgencyPolicy
     /// </summary>
     public int GetUrgencyPriority(string urgencyLevel)
     {
-        return UrgencyPriorities.ContainsKey(urgencyLevel) 
-            ? UrgencyPriorities[urgencyLevel] 
+        return UrgencyPriorities.ContainsKey(urgencyLevel)
+            ? UrgencyPriorities[urgencyLevel]
             : 5; // Default to Low priority
     }
 
@@ -148,7 +148,7 @@ public class TenantRequestUrgencyPolicy
     /// </summary>
     public bool IsValidUrgencyLevel(string urgencyLevel)
     {
-        return !string.IsNullOrWhiteSpace(urgencyLevel) && 
+        return !string.IsNullOrWhiteSpace(urgencyLevel) &&
                ValidUrgencyLevels.Contains(urgencyLevel, StringComparer.OrdinalIgnoreCase);
     }
 
@@ -211,8 +211,9 @@ public class TenantRequestUrgencyPolicy
         };
 
         // Business rule: Determine if usage pattern indicates abuse
-        analysis.HasSuspiciousPattern = analysis.EmergencyRequests >= 3 || 
-                                       (analysis.CriticalRequests + analysis.EmergencyRequests) > analysis.TotalRequests * 0.6;
+        analysis.HasSuspiciousPattern = analysis.EmergencyRequests >= 3 ||
+                                        analysis.CriticalRequests + analysis.EmergencyRequests >
+                                        analysis.TotalRequests * 0.6;
 
         // Business rule: Calculate recommended default urgency
         analysis.RecommendedDefaultUrgency = DetermineDefaultUrgencyLevel(tenant);
@@ -240,8 +241,8 @@ public class TenantRequestUrgencyPolicy
             return 0;
         }
 
-        return tenant.Requests.Count(r => 
-            r.UrgencyLevel == "Emergency" && 
+        return tenant.Requests.Count(r =>
+            r.UrgencyLevel == "Emergency" &&
             r.Status != TenantRequestStatus.Draft &&
             r.CreatedAt >= DateTime.UtcNow.AddDays(-30));
     }
@@ -279,7 +280,10 @@ public class UrgencyUsageAnalysis
     public int LowRequests { get; set; }
     public bool HasSuspiciousPattern { get; set; }
     public string RecommendedDefaultUrgency { get; set; } = "Normal";
-    
+
     public double EmergencyPercentage => TotalRequests > 0 ? (double)EmergencyRequests / TotalRequests * 100 : 0;
-    public double HighPriorityPercentage => TotalRequests > 0 ? (double)(EmergencyRequests + CriticalRequests + HighRequests) / TotalRequests * 100 : 0;
+
+    public double HighPriorityPercentage => TotalRequests > 0
+        ? (double)(EmergencyRequests + CriticalRequests + HighRequests) / TotalRequests * 100
+        : 0;
 }

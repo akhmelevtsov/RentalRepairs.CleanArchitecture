@@ -32,11 +32,12 @@ public class SystemAdministratorEndToEndTests : IClassFixture<WebApplicationTest
 
         // Step 1: Access login page
         var loginResponse = await _client.GetAsync("/Account/Login");
-        loginResponse.StatusCode.Should().BeOneOf(HttpStatusCode.OK, HttpStatusCode.Redirect, HttpStatusCode.Found, HttpStatusCode.PermanentRedirect);
-        
+        loginResponse.StatusCode.Should().BeOneOf(HttpStatusCode.OK, HttpStatusCode.Redirect, HttpStatusCode.Found,
+            HttpStatusCode.PermanentRedirect);
+
         var loginContent = await loginResponse.Content.ReadAsStringAsync();
         var token = ExtractAntiforgeryToken(loginContent);
-        
+
         _output.WriteLine("Login page accessible");
 
         // Step 2: Login as System Administrator
@@ -49,32 +50,35 @@ public class SystemAdministratorEndToEndTests : IClassFixture<WebApplicationTest
 
         var loginFormContent = new FormUrlEncodedContent(loginData);
         var loginPostResponse = await _client.PostAsync("/Account/Login", loginFormContent);
-        
+
         // Should redirect after successful login
-        loginPostResponse.StatusCode.Should().BeOneOf(HttpStatusCode.Redirect, HttpStatusCode.Found, HttpStatusCode.PermanentRedirect);
-        
+        loginPostResponse.StatusCode.Should().BeOneOf(HttpStatusCode.Redirect, HttpStatusCode.Found,
+            HttpStatusCode.PermanentRedirect);
+
         _output.WriteLine("Admin login successful");
 
         // Step 3: Access dashboard (follow redirect)
         var location = loginPostResponse.Headers.Location?.ToString() ?? "/";
         var dashboardResponse = await _client.GetAsync(location);
-        
-        if (dashboardResponse.StatusCode == HttpStatusCode.Redirect || dashboardResponse.StatusCode == HttpStatusCode.PermanentRedirect)
+
+        if (dashboardResponse.StatusCode == HttpStatusCode.Redirect ||
+            dashboardResponse.StatusCode == HttpStatusCode.PermanentRedirect)
         {
             // Follow another redirect if needed
             location = dashboardResponse.Headers.Location?.ToString() ?? "/";
             dashboardResponse = await _client.GetAsync(location);
         }
 
-        dashboardResponse.StatusCode.Should().BeOneOf(HttpStatusCode.OK, HttpStatusCode.Redirect, HttpStatusCode.Found, HttpStatusCode.PermanentRedirect);
-        
+        dashboardResponse.StatusCode.Should().BeOneOf(HttpStatusCode.OK, HttpStatusCode.Redirect, HttpStatusCode.Found,
+            HttpStatusCode.PermanentRedirect);
+
         if (dashboardResponse.StatusCode == HttpStatusCode.OK)
         {
             var dashboardContent = await dashboardResponse.Content.ReadAsStringAsync();
             // Verify admin dashboard content
             dashboardContent.Should().NotBeNullOrEmpty();
         }
-        
+
         _output.WriteLine("Admin dashboard accessible with system-wide data");
     }
 
@@ -97,22 +101,20 @@ public class SystemAdministratorEndToEndTests : IClassFixture<WebApplicationTest
         foreach (var functionUrl in adminFunctions)
         {
             _output.WriteLine($"Testing admin access to {functionUrl}");
-            
+
             var response = await _client.GetAsync(functionUrl);
-            
+
             // Handle redirects appropriately  
-            if (response.StatusCode == HttpStatusCode.Redirect || 
+            if (response.StatusCode == HttpStatusCode.Redirect ||
                 response.StatusCode == HttpStatusCode.PermanentRedirect)
             {
                 var location = response.Headers.Location?.ToString();
-                if (!string.IsNullOrEmpty(location))
-                {
-                    response = await _client.GetAsync(location);
-                }
+                if (!string.IsNullOrEmpty(location)) response = await _client.GetAsync(location);
             }
-            
-            response.StatusCode.Should().BeOneOf(HttpStatusCode.OK, HttpStatusCode.Redirect, HttpStatusCode.Found, HttpStatusCode.PermanentRedirect);
-            
+
+            response.StatusCode.Should().BeOneOf(HttpStatusCode.OK, HttpStatusCode.Redirect, HttpStatusCode.Found,
+                HttpStatusCode.PermanentRedirect);
+
             if (response.StatusCode == HttpStatusCode.OK)
             {
                 var content = await response.Content.ReadAsStringAsync();
@@ -124,7 +126,7 @@ public class SystemAdministratorEndToEndTests : IClassFixture<WebApplicationTest
                 _output.WriteLine($"{functionUrl} handled appropriately for admin");
             }
         }
-        
+
         _output.WriteLine("Admin property management access verified");
     }
 
@@ -147,27 +149,25 @@ public class SystemAdministratorEndToEndTests : IClassFixture<WebApplicationTest
         foreach (var page in pagesToTest)
         {
             _output.WriteLine($"Testing access to {page}");
-            
+
             var response = await _client.GetAsync(page);
-            
+
             // Handle redirects appropriately
-            if (response.StatusCode == HttpStatusCode.Redirect || 
+            if (response.StatusCode == HttpStatusCode.Redirect ||
                 response.StatusCode == HttpStatusCode.PermanentRedirect)
             {
                 var location = response.Headers.Location?.ToString();
-                if (!string.IsNullOrEmpty(location))
-                {
-                    response = await _client.GetAsync(location);
-                }
+                if (!string.IsNullOrEmpty(location)) response = await _client.GetAsync(location);
             }
-            
-            response.StatusCode.Should().BeOneOf(HttpStatusCode.OK, HttpStatusCode.Redirect, HttpStatusCode.Found, HttpStatusCode.PermanentRedirect);
-            
+
+            response.StatusCode.Should().BeOneOf(HttpStatusCode.OK, HttpStatusCode.Redirect, HttpStatusCode.Found,
+                HttpStatusCode.PermanentRedirect);
+
             if (response.StatusCode == HttpStatusCode.OK)
             {
                 var content = await response.Content.ReadAsStringAsync();
                 content.Should().NotBeNullOrEmpty();
-                
+
                 _output.WriteLine($"{page} accessible");
             }
             else

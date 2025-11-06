@@ -2,39 +2,37 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using MediatR;
-using RentalRepairs.Application.Interfaces;
+using RentalRepairs.Application.DTOs;
+using RentalRepairs.Application.Queries.TenantRequests.GetTenantRequestById;
 using RentalRepairs.Application.Commands.TenantRequests.DeclineTenantRequest;
 using System.ComponentModel.DataAnnotations;
 
 namespace RentalRepairs.WebUI.Pages.TenantRequests;
 
 /// <summary>
-/// Page model for declining tenant requests with reason
-/// CSRF PROTECTED: All POST operations validate antiforgery tokens
+/// Page model for declining tenant requests with reason.
+/// Uses CQRS directly (no service wrapper).
+/// CSRF PROTECTED: All POST operations validate antiforgery tokens.
 /// </summary>
 [Authorize(Roles = "SystemAdmin,PropertySuperintendent")]
 [ValidateAntiForgeryToken]
 public class DeclineModel : PageModel
 {
-    private readonly ITenantRequestService _tenantRequestService;
     private readonly IMediator _mediator;
     private readonly ILogger<DeclineModel> _logger;
 
     public DeclineModel(
-        ITenantRequestService tenantRequestService,
         IMediator mediator,
         ILogger<DeclineModel> logger)
     {
-        _tenantRequestService = tenantRequestService;
         _mediator = mediator;
         _logger = logger;
     }
 
-    // Page properties - use the interface version that extends TenantRequestDto
-    public RentalRepairs.Application.Interfaces.TenantRequestDetailsDto? Request { get; set; }
+    // Page properties
+    public TenantRequestDetailsDto? Request { get; set; }
 
-    [BindProperty]
-    public Guid RequestId { get; set; }
+    [BindProperty] public Guid RequestId { get; set; }
 
     [BindProperty]
     [Required(ErrorMessage = "Please provide a reason for declining this request")]
@@ -42,24 +40,23 @@ public class DeclineModel : PageModel
     [Display(Name = "Reason for Declining")]
     public string Reason { get; set; } = string.Empty;
 
-    [TempData]
-    public string? SuccessMessage { get; set; }
-    
-    [TempData] 
-    public string? ErrorMessage { get; set; }
+    [TempData] public string? SuccessMessage { get; set; }
+
+    [TempData] public string? ErrorMessage { get; set; }
 
     /// <summary>
-    /// Load request details for decline page
+    /// Load request details for decline page using CQRS query.
     /// </summary>
     public async Task<IActionResult> OnGetAsync(Guid id)
     {
         try
         {
             RequestId = id;
-            
-            // Load request details
-            var userEmail = User.Identity?.Name ?? "anonymous";
-            Request = await _tenantRequestService.GetRequestDetailsWithContextAsync(id, userEmail);
+
+            // Load request details using CQRS query directly
+            var query = new GetTenantRequestByIdQuery(id) { IncludeBusinessContext = true };
+            var result = await _mediator.Send(query);
+            Request = result as TenantRequestDetailsDto;
 
             if (Request == null)
             {
@@ -70,17 +67,8 @@ public class DeclineModel : PageModel
             // Check if request can be declined
             if (Request.Status != "Submitted")
             {
-                ErrorMessage = $"Request cannot be declined. Current status: {Request.Status}. Only submitted requests can be declined.";
-                return RedirectToPage("Details", new { id });
-            }
-
-            // Check authorization
-            var userRole = User.IsInRole("SystemAdmin") ? "SystemAdmin" : "PropertySuperintendent";
-            var isAuthorized = await _tenantRequestService.IsUserAuthorizedForRequestAsync(id, userEmail, "decline");
-            
-            if (!isAuthorized)
-            {
-                ErrorMessage = "You are not authorized to decline this request.";
+                ErrorMessage =
+                    $"Request cannot be declined. Current status: {Request.Status}. Only submitted requests can be declined.";
                 return RedirectToPage("Details", new { id });
             }
 
@@ -95,7 +83,7 @@ public class DeclineModel : PageModel
     }
 
     /// <summary>
-    /// CSRF PROTECTED: Handle request decline using MediatR
+    /// CSRF PROTECTED: Handle request decline using MediatR.
     /// </summary>
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> OnPostDeclineAsync()
@@ -103,8 +91,9 @@ public class DeclineModel : PageModel
         if (!ModelState.IsValid)
         {
             // Reload request details if validation fails
-            var userEmail = User.Identity?.Name ?? "anonymous";
-            Request = await _tenantRequestService.GetRequestDetailsWithContextAsync(RequestId, userEmail);
+            var query = new GetTenantRequestByIdQuery(RequestId) { IncludeBusinessContext = true };
+            var result = await _mediator.Send(query);
+            Request = result as TenantRequestDetailsDto;
             return Page();
         }
 
@@ -119,8 +108,9 @@ public class DeclineModel : PageModel
             await _mediator.Send(command);
 
             SuccessMessage = "Request has been declined successfully. The tenant will be notified.";
-            
-            _logger.LogInformation("Request {RequestId} declined by user {UserId} with reason: {Reason}", 
+
+            _logger.LogInformation(
+                "Request {RequestId} declined by user {UserId} with reason: {Reason}",
                 RequestId, User.Identity?.Name, Reason);
 
             return RedirectToPage("Details", new { id = RequestId });
@@ -137,8 +127,9 @@ public class DeclineModel : PageModel
         }
 
         // Reload request details on error
-        var reloadUserEmail = User.Identity?.Name ?? "anonymous";
-        Request = await _tenantRequestService.GetRequestDetailsWithContextAsync(RequestId, reloadUserEmail);
+        var reloadQuery = new GetTenantRequestByIdQuery(RequestId) { IncludeBusinessContext = true };
+        var reloadResult = await _mediator.Send(reloadQuery);
+        Request = reloadResult as TenantRequestDetailsDto;
         return Page();
     }
 }

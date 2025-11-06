@@ -22,14 +22,15 @@ public class GetPropertiesWithStatsIntegrationTest : IDisposable
     public GetPropertiesWithStatsIntegrationTest()
     {
         var options = new DbContextOptionsBuilder<ApplicationDbContext>()
-            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .Options;
 
         var mockLogger = new Mock<ILogger<ApplicationDbContext>>();
         var mockAuditService = new Mock<IAuditService>();
         var mockDomainEventPublisher = new Mock<IDomainEventPublisher>();
 
-        _context = new ApplicationDbContext(options, mockLogger.Object, mockAuditService.Object, mockDomainEventPublisher.Object);
+        _context = new ApplicationDbContext(options, mockLogger.Object, mockAuditService.Object,
+            mockDomainEventPublisher.Object);
         _handler = new GetPropertiesWithStatsQueryHandler(_context);
     }
 
@@ -39,21 +40,22 @@ public class GetPropertiesWithStatsIntegrationTest : IDisposable
         // Arrange - Create test properties with different unit configurations
         var address = new PropertyAddress("123", "Test Street", "Test City", "12345");
         var superintendent = new PersonContactInfo("John", "Superintendent", "super@test.com", "555-0456");
-        
+
         // Property 1: Single unit
         var property1 = new Domain.Entities.Property(
-            "Single Unit Property", "SUP001", address, "555-0123", superintendent, 
+            "Single Unit Property", "SUP001", address, "555-0123", superintendent,
             new List<string> { "101" }, "noreply@test.com");
 
         // Property 2: Multiple units
         var property2 = new Domain.Entities.Property(
-            "Multi Unit Property", "MUP001", address, "555-0123", superintendent, 
+            "Multi Unit Property", "MUP001", address, "555-0123", superintendent,
             new List<string> { "A1", "A2", "A3", "B1", "B2" }, "noreply@test.com");
 
         // Property 3: Many units
         var property3 = new Domain.Entities.Property(
-            "Large Property", "LP001", address, "555-0123", superintendent, 
-            new List<string> { "101", "102", "103", "201", "202", "203", "301", "302", "303", "401" }, "noreply@test.com");
+            "Large Property", "LP001", address, "555-0123", superintendent,
+            new List<string> { "101", "102", "103", "201", "202", "203", "301", "302", "303", "401" },
+            "noreply@test.com");
 
         await _context.Properties.AddRangeAsync(property1, property2, property3);
         await _context.SaveChangesAsync();
@@ -65,9 +67,9 @@ public class GetPropertiesWithStatsIntegrationTest : IDisposable
         // Assert - Verify that all properties return correct unit counts
         result.Should().NotBeNull();
         result.Should().HaveCount(3);
-        
+
         var resultsList = result.ToList();
-        
+
         // Find each property by code and verify unit counts
         var singleUnitProperty = resultsList.First(p => p.Code == "SUP001");
         singleUnitProperty.TotalUnits.Should().Be(1);
@@ -82,7 +84,8 @@ public class GetPropertiesWithStatsIntegrationTest : IDisposable
         var largeProperty = resultsList.First(p => p.Code == "LP001");
         largeProperty.TotalUnits.Should().Be(10);
         largeProperty.Units.Should().HaveCount(10);
-        largeProperty.Units.Should().Contain(new[] { "101", "102", "103", "201", "202", "203", "301", "302", "303", "401" });
+        largeProperty.Units.Should().Contain(new[]
+            { "101", "102", "103", "201", "202", "203", "301", "302", "303", "401" });
 
         // Verify the issue is fixed - no properties should have 0 units when they actually have units
         resultsList.Should().NotContain(p => p.TotalUnits == 0, "because all properties have at least one unit");
@@ -94,15 +97,15 @@ public class GetPropertiesWithStatsIntegrationTest : IDisposable
         // Arrange - Create property with tenants to test occupancy calculations
         var address = new PropertyAddress("123", "Test Street", "Test City", "12345");
         var superintendent = new PersonContactInfo("John", "Superintendent", "super@test.com", "555-0456");
-        
+
         var property = new Domain.Entities.Property(
-            "Test Property", "TP001", address, "555-0123", superintendent, 
+            "Test Property", "TP001", address, "555-0123", superintendent,
             new List<string> { "101", "102", "103", "104", "105" }, "noreply@test.com");
 
         // Add some tenants (2 out of 5 units occupied)
         var tenant1ContactInfo = new PersonContactInfo("Jane", "Doe", "jane@test.com", "555-0001");
         var tenant2ContactInfo = new PersonContactInfo("John", "Smith", "john@test.com", "555-0002");
-        
+
         var tenant1 = property.RegisterTenant(tenant1ContactInfo, "101");
         var tenant2 = property.RegisterTenant(tenant2ContactInfo, "103");
 
@@ -121,7 +124,7 @@ public class GetPropertiesWithStatsIntegrationTest : IDisposable
         propertyStats.OccupiedUnits.Should().Be(2);
         propertyStats.VacantUnits.Should().Be(3);
         propertyStats.OccupancyRate.Should().BeApproximately(40.0, 0.1); // 2/5 = 40%
-        
+
         // Verify Units collection is properly populated
         propertyStats.Units.Should().HaveCount(5);
         propertyStats.Units.Should().Contain(new[] { "101", "102", "103", "104", "105" });
@@ -133,17 +136,17 @@ public class GetPropertiesWithStatsIntegrationTest : IDisposable
         // Arrange - Create properties in non-alphabetical order
         var address = new PropertyAddress("123", "Test Street", "Test City", "12345");
         var superintendent = new PersonContactInfo("John", "Superintendent", "super@test.com", "555-0456");
-        
+
         var propertyZ = new Domain.Entities.Property(
-            "Zebra Property", "ZP001", address, "555-0123", superintendent, 
+            "Zebra Property", "ZP001", address, "555-0123", superintendent,
             new List<string> { "Z1", "Z2", "Z3" }, "noreply@test.com");
 
         var propertyA = new Domain.Entities.Property(
-            "Alpha Property", "AP001", address, "555-0123", superintendent, 
+            "Alpha Property", "AP001", address, "555-0123", superintendent,
             new List<string> { "A1" }, "noreply@test.com");
 
         var propertyM = new Domain.Entities.Property(
-            "Middle Property", "MP001", address, "555-0123", superintendent, 
+            "Middle Property", "MP001", address, "555-0123", superintendent,
             new List<string> { "M1", "M2" }, "noreply@test.com");
 
         await _context.Properties.AddRangeAsync(propertyZ, propertyA, propertyM);

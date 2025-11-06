@@ -29,9 +29,9 @@ public class CurrentUserService : ICurrentUserService
                 return null;
 
             // Primary: Use email as user identifier
-            var email = context.User.FindFirstValue(ClaimTypes.Email) ?? 
-                       context.User.FindFirstValue("email");
-            
+            var email = context.User.FindFirstValue(ClaimTypes.Email) ??
+                        context.User.FindFirstValue("email");
+
             if (!string.IsNullOrEmpty(email))
                 return email;
 
@@ -39,7 +39,7 @@ public class CurrentUserService : ICurrentUserService
             return context.User.FindFirstValue(ClaimTypes.NameIdentifier);
         }
     }
-    
+
     /// <summary>
     /// ? Display name for user - uses Name claim or extracts from email
     /// </summary>
@@ -52,16 +52,16 @@ public class CurrentUserService : ICurrentUserService
                 return null;
 
             // Primary: Use display name
-            var displayName = context.User.FindFirstValue(ClaimTypes.Name) ?? 
-                             context.User.FindFirstValue("name");
-            
+            var displayName = context.User.FindFirstValue(ClaimTypes.Name) ??
+                              context.User.FindFirstValue("name");
+
             if (!string.IsNullOrEmpty(displayName))
                 return displayName;
 
             // Fallback: Extract name from email
-            var email = context.User.FindFirstValue(ClaimTypes.Email) ?? 
-                       context.User.FindFirstValue("email");
-            
+            var email = context.User.FindFirstValue(ClaimTypes.Email) ??
+                        context.User.FindFirstValue("email");
+
             if (!string.IsNullOrEmpty(email))
             {
                 var localPart = email.Split('@')[0];
@@ -71,7 +71,7 @@ public class CurrentUserService : ICurrentUserService
             return "Unknown User";
         }
     }
-    
+
     /// <summary>
     /// ? Authentication status
     /// </summary>
@@ -88,7 +88,7 @@ public class CurrentUserService : ICurrentUserService
             if (context?.User?.Identity?.IsAuthenticated != true)
                 return null;
 
-            return context.User.FindFirstValue(ClaimTypes.Role) ?? 
+            return context.User.FindFirstValue(ClaimTypes.Role) ??
                    context.User.FindFirstValue("role");
         }
     }

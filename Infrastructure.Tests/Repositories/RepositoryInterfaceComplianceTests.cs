@@ -22,12 +22,12 @@ public class RepositoryInterfaceComplianceTests
     {
         // Arrange - Get all methods from interface
         var interfaceMethods = interfaceType.GetMethods();
-        
+
         // Act & Assert - Verify each interface method is implemented
         foreach (var interfaceMethod in interfaceMethods)
         {
             var implementationMethod = implementationType.GetMethod(
-                interfaceMethod.Name, 
+                interfaceMethod.Name,
                 interfaceMethod.GetParameters().Select(p => p.ParameterType).ToArray());
 
             // ? Method must exist in implementation
@@ -54,24 +54,24 @@ public class RepositoryInterfaceComplianceTests
         // Arrange - Get base IRepository<T> interface
         var baseRepositoryInterface = typeof(IRepository<>).MakeGenericType(entityType);
         var baseMethods = baseRepositoryInterface.GetMethods();
-        
+
         // Act & Assert - Verify all base methods are implemented
         foreach (var baseMethod in baseMethods)
         {
             // Use specific parameter types to avoid ambiguity
             var parameterTypes = baseMethod.GetParameters().Select(p => p.ParameterType).ToArray();
             var implementationMethod = implementationType.GetMethod(baseMethod.Name, parameterTypes);
-            
+
             // If exact match not found, try finding by name only (for generic methods)
             if (implementationMethod == null)
             {
                 var methodsByName = implementationType.GetMethods()
                     .Where(m => m.Name == baseMethod.Name)
                     .ToList();
-                
+
                 implementationMethod = methodsByName.FirstOrDefault();
             }
-            
+
             // ? Base repository method must be implemented
             implementationMethod.Should().NotBeNull(
                 $"Base repository method {baseMethod.Name} with parameters ({string.Join(", ", parameterTypes.Select(t => t.Name))}) should be implemented in {implementationType.Name}");
@@ -95,10 +95,10 @@ public class RepositoryInterfaceComplianceTests
         {
             // ? All repositories should inherit from BaseRepository<T>
             repoType.BaseType.Should().NotBeNull($"{repoType.Name} should have a base class");
-            
+
             var baseType = repoType.BaseType!;
             baseType.IsGenericType.Should().BeTrue($"{repoType.Name} should inherit from generic BaseRepository<T>");
-            
+
             baseType.GetGenericTypeDefinition().Should().Be(typeof(BaseRepository<>),
                 $"{repoType.Name} should inherit from BaseRepository<T>");
         }
@@ -121,7 +121,7 @@ public class RepositoryInterfaceComplianceTests
         {
             var methods = interfaceType.GetMethods();
             var methodNames = methods.Select(m => m.Name).ToList();
-            
+
             // ? No duplicate method names (overloads should be intentional and clear)
             var duplicateNames = methodNames.GroupBy(name => name)
                 .Where(g => g.Count() > 1)
@@ -131,32 +131,28 @@ public class RepositoryInterfaceComplianceTests
             // For now, we allow some overloads but they should be intentional
             // This test documents which overloads exist
             if (duplicateNames.Any())
-            {
                 foreach (var duplicateName in duplicateNames)
                 {
                     var overloads = methods.Where(m => m.Name == duplicateName).ToList();
-                    
+
                     // ? Overloads should have different parameter counts or types
-                    for (int i = 0; i < overloads.Count; i++)
+                    for (var i = 0; i < overloads.Count; i++)
+                    for (var j = i + 1; j < overloads.Count; j++)
                     {
-                        for (int j = i + 1; j < overloads.Count; j++)
-                        {
-                            var method1 = overloads[i];
-                            var method2 = overloads[j];
-                            
-                            var params1 = method1.GetParameters();
-                            var params2 = method2.GetParameters();
-                            
-                            // Methods should be distinguishable by parameters
-                            (params1.Length != params2.Length ||
-                             !params1.Select(p => p.ParameterType).SequenceEqual(
-                                 params2.Select(p => p.ParameterType)))
-                                .Should().BeTrue(
-                                    $"Overloaded methods {method1.Name} in {interfaceType.Name} should have different signatures");
-                        }
+                        var method1 = overloads[i];
+                        var method2 = overloads[j];
+
+                        var params1 = method1.GetParameters();
+                        var params2 = method2.GetParameters();
+
+                        // Methods should be distinguishable by parameters
+                        (params1.Length != params2.Length ||
+                         !params1.Select(p => p.ParameterType).SequenceEqual(
+                             params2.Select(p => p.ParameterType)))
+                            .Should().BeTrue(
+                                $"Overloaded methods {method1.Name} in {interfaceType.Name} should have different signatures");
                     }
                 }
-            }
         }
     }
 
@@ -171,11 +167,11 @@ public class RepositoryInterfaceComplianceTests
         foreach (var method in baseRepositoryMethods)
         {
             var implementationMethod = baseRepositoryType.GetMethod(method.Name);
-            
+
             // ? BaseRepository should implement all IRepository<T> methods
             implementationMethod.Should().NotBeNull(
                 $"BaseRepository should implement {method.Name}");
-                
+
             // ? Implementation should be virtual to allow overriding
             implementationMethod!.IsVirtual.Should().BeTrue(
                 $"BaseRepository method {method.Name} should be virtual to allow overriding");
@@ -193,15 +189,15 @@ public class RepositoryDependencyInjectionTests
     {
         // This test would verify that all repositories are properly registered
         // in the DI container and can be resolved without issues
-        
+
         // Arrange
         var services = new ServiceCollection();
-        
+
         // Add minimal required services for repository instantiation
         // services.AddDbContext<ApplicationDbContext>(...);
         // services.AddScoped<ITenantRepository, TenantRepository>();
         // ... etc
-        
+
         // This test structure is ready for when DI configuration is available
         true.Should().BeTrue("Repository DI registration test structure ready");
     }

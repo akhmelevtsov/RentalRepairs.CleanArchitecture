@@ -26,8 +26,8 @@ public class TenantRequestCompletedEventHandler : INotificationHandler<TenantReq
         var request = notification.TenantRequest;
         var notes = notification.CompletionNotes; // ? Fix: Use correct property name
 
-        _logger.LogInformation("Processing TenantRequestCompletedEvent for request {RequestCode} with notes: {Notes}", 
-            request.Code, 
+        _logger.LogInformation("Processing TenantRequestCompletedEvent for request {RequestCode} with notes: {Notes}",
+            request.Code,
             notes);
 
         try
@@ -39,14 +39,15 @@ public class TenantRequestCompletedEventHandler : INotificationHandler<TenantReq
             await _notificationService.NotifyTenantOfWorkCompletionAsync(request, successful, notes, cancellationToken);
 
             // Notify superintendent of completion for review
-            await _notificationService.NotifySuperintendentOfWorkCompletionAsync(request, successful, notes, cancellationToken);
+            await _notificationService.NotifySuperintendentOfWorkCompletionAsync(request, successful, notes,
+                cancellationToken);
 
-            _logger.LogInformation("Successfully processed TenantRequestCompletedEvent for request {RequestCode}", 
+            _logger.LogInformation("Successfully processed TenantRequestCompletedEvent for request {RequestCode}",
                 request.Code);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error processing TenantRequestCompletedEvent for request {RequestCode}", 
+            _logger.LogError(ex, "Error processing TenantRequestCompletedEvent for request {RequestCode}",
                 request.Code);
             throw;
         }

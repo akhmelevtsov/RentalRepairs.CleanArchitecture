@@ -87,17 +87,19 @@ public class DependencyInjectionConfigurationTests
         // Assert - Check service lifetimes for core services
         var auditServiceDescriptor = services.FirstOrDefault(s => s.ServiceType == typeof(IAuditService));
         var currentUserServiceDescriptor = services.FirstOrDefault(s => s.ServiceType == typeof(ICurrentUserService));
-        
+
         // Check authentication services with explicit namespace
         var passwordServiceDescriptor = services.FirstOrDefault(s => s.ServiceType == typeof(IPasswordService));
-        var demoUserServiceDescriptor = services.FirstOrDefault(s => s.ServiceType == typeof(RentalRepairs.Application.Common.Interfaces.IDemoUserService));
+        var demoUserServiceDescriptor = services.FirstOrDefault(s => s.ServiceType == typeof(IDemoUserService));
 
         // Verify correct service lifetimes
         auditServiceDescriptor.Should().NotBeNull();
-        auditServiceDescriptor!.Lifetime.Should().Be(ServiceLifetime.Scoped, "Audit service should be scoped for per-request auditing");
+        auditServiceDescriptor!.Lifetime.Should().Be(ServiceLifetime.Scoped,
+            "Audit service should be scoped for per-request auditing");
 
         currentUserServiceDescriptor.Should().NotBeNull();
-        currentUserServiceDescriptor!.Lifetime.Should().Be(ServiceLifetime.Scoped, "Current user service should be scoped");
+        currentUserServiceDescriptor!.Lifetime.Should()
+            .Be(ServiceLifetime.Scoped, "Current user service should be scoped");
 
         // Verify authentication services are registered
         passwordServiceDescriptor.Should().NotBeNull();

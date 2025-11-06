@@ -43,7 +43,7 @@ public class EnhancedPersonContactInfoTests
     public void Constructor_WithInvalidFirstName_ShouldThrowException(string invalidFirstName)
     {
         // Act & Assert
-        Assert.Throws<ArgumentException>(() => 
+        Assert.Throws<ArgumentException>(() =>
             new PersonContactInfo(invalidFirstName, "Doe", "john@example.com"));
     }
 
@@ -57,7 +57,7 @@ public class EnhancedPersonContactInfoTests
     public void Constructor_WithInvalidEmail_ShouldThrowException(string invalidEmail)
     {
         // Act & Assert
-        Assert.Throws<ArgumentException>(() => 
+        Assert.Throws<ArgumentException>(() =>
             new PersonContactInfo("John", "Doe", invalidEmail));
     }
 
@@ -185,7 +185,7 @@ public class EnhancedPropertyAddressTests
     public void Constructor_WithInvalidStreetNumber_ShouldThrowException(string invalidStreetNumber)
     {
         // Act & Assert
-        Assert.Throws<ArgumentException>(() => 
+        Assert.Throws<ArgumentException>(() =>
             new PropertyAddress(invalidStreetNumber, "Main Street", "New York", "10001"));
     }
 
@@ -251,9 +251,9 @@ public class EnhancedServiceWorkScheduleInfoTests
 
         // Act
         var scheduleInfo = new ServiceWorkScheduleInfo(
-            futureDate, 
-            "worker@example.com", 
-            "WO-123", 
+            futureDate,
+            "worker@example.com",
+            "WO-123",
             1);
 
         // Assert
@@ -270,7 +270,7 @@ public class EnhancedServiceWorkScheduleInfoTests
         var pastDate = DateTime.Today.AddDays(-1);
 
         // Act & Assert
-        Assert.Throws<ArgumentException>(() => 
+        Assert.Throws<ArgumentException>(() =>
             new ServiceWorkScheduleInfo(pastDate, "worker@example.com", "WO-123", 1));
     }
 

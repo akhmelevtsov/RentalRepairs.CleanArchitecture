@@ -26,26 +26,17 @@ public class GetPropertiesQueryHandler : IRequestHandler<GetPropertiesQuery, Pag
             .AsQueryable();
 
         // Apply filters
-        if (!string.IsNullOrEmpty(request.City))
-        {
-            query = query.Where(p => p.Address.City.Contains(request.City));
-        }
+        if (!string.IsNullOrEmpty(request.City)) query = query.Where(p => p.Address.City.Contains(request.City));
 
         if (!string.IsNullOrEmpty(request.SuperintendentEmail))
-        {
             query = query.Where(p => p.Superintendent.EmailAddress == request.SuperintendentEmail);
-        }
 
         if (request.WithTenants.HasValue)
         {
             if (request.WithTenants.Value)
-            {
                 query = query.Where(p => p.Tenants.Any());
-            }
             else
-            {
                 query = query.Where(p => !p.Tenants.Any());
-            }
         }
 
         // Get total count

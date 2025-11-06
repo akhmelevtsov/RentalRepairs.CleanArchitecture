@@ -124,8 +124,8 @@ public class TenantRequestSubmissionPolicy : ITenantRequestSubmissionPolicy
         }
 
         int emergencyRequestsInPeriod = tenant.Requests
-            .Count(r => r.UrgencyLevel == "Emergency" && 
-                       r.CreatedAt > DateTime.UtcNow.Subtract(_configuration.EmergencyLookbackTimeSpan));
+            .Count(r => r.UrgencyLevel == "Emergency" &&
+                        r.CreatedAt > DateTime.UtcNow.Subtract(_configuration.EmergencyLookbackTimeSpan));
 
         return Math.Max(0, _configuration.MaxEmergencyRequestsPerMonth - emergencyRequestsInPeriod);
     }
@@ -137,7 +137,7 @@ public class TenantRequestSubmissionPolicy : ITenantRequestSubmissionPolicy
     /// </summary>
     private void ValidateMaxPendingRequests(Tenant tenant)
     {
-        int activeRequestsCount = tenant.Requests.Count(r => 
+        int activeRequestsCount = tenant.Requests.Count(r =>
             r.Status is TenantRequestStatus.Submitted or TenantRequestStatus.Scheduled);
 
         if (activeRequestsCount >= _configuration.MaxPendingRequests)
@@ -175,12 +175,13 @@ public class TenantRequestSubmissionPolicy : ITenantRequestSubmissionPolicy
     private void ValidateEmergencyRequestLimit(Tenant tenant)
     {
         int emergencyRequestsInPeriod = tenant.Requests
-            .Count(r => r.UrgencyLevel == "Emergency" && 
-                       r.CreatedAt > DateTime.UtcNow.Subtract(_configuration.EmergencyLookbackTimeSpan));
+            .Count(r => r.UrgencyLevel == "Emergency" &&
+                        r.CreatedAt > DateTime.UtcNow.Subtract(_configuration.EmergencyLookbackTimeSpan));
 
         if (emergencyRequestsInPeriod >= _configuration.MaxEmergencyRequestsPerMonth)
         {
-            throw new EmergencyRequestLimitExceededException(_configuration.MaxEmergencyRequestsPerMonth, emergencyRequestsInPeriod);
+            throw new EmergencyRequestLimitExceededException(_configuration.MaxEmergencyRequestsPerMonth,
+                emergencyRequestsInPeriod);
         }
     }
 

@@ -7,7 +7,7 @@ namespace RentalRepairs.Domain.Specifications.Properties;
 /// </summary>
 public class PropertiesBySuperintendentEmailSpecification : BaseSpecification<Property>
 {
-    public PropertiesBySuperintendentEmailSpecification(string email) 
+    public PropertiesBySuperintendentEmailSpecification(string email)
         : base(p => p.Superintendent.EmailAddress == email)
     {
         AddInclude(p => p.Tenants);

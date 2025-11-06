@@ -8,21 +8,19 @@ namespace RentalRepairs.CompositionRoot;
 public class ApplicationHealthCheck : IHealthCheck
 {
     public Task<HealthCheckResult> CheckHealthAsync(
-        HealthCheckContext context, 
+        HealthCheckContext context,
         CancellationToken cancellationToken = default)
     {
         // Perform application-level health checks
         var isHealthy = true; // Add actual health check logic here
-        
+
         if (isHealthy)
-        {
             return Task.FromResult(
                 HealthCheckResult.Healthy("Application is running properly."));
-        }
 
         return Task.FromResult(
             new HealthCheckResult(
-                context.Registration.FailureStatus, 
+                context.Registration.FailureStatus,
                 "Application health check failed."));
     }
 }

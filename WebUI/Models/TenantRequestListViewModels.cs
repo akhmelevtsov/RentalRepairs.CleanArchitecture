@@ -11,11 +11,11 @@ public class TenantRequestListPageViewModel
 {
     // Filtering options
     public TenantRequestFilterOptions Filters { get; set; } = new();
-    
+
     // Results
     public List<TenantRequestListItemViewModel> Requests { get; set; } = new();
     public PaginationViewModel Pagination { get; set; } = new();
-    
+
     // UI state
     public bool HasResults => Requests.Any();
     public string NoResultsMessage => GetNoResultsMessage();
@@ -23,9 +23,7 @@ public class TenantRequestListPageViewModel
     private string GetNoResultsMessage()
     {
         if (Filters.HasActiveFilters)
-        {
             return "No requests found matching your filters. Try adjusting your search criteria.";
-        }
         return "No maintenance requests found. Submit a new request to get started.";
     }
 }
@@ -44,22 +42,24 @@ public class TenantRequestListItemViewModel
     public string UrgencyLevel { get; set; } = string.Empty;
     public DateTime CreatedDate { get; set; }
     public DateTime? ScheduledDate { get; set; }
-    
+
     // UI-optimized properties
     public string StatusBadgeClass => GetStatusBadgeClass(Status);
     public string UrgencyBadgeClass => GetUrgencyBadgeClass(UrgencyLevel);
     public string FormattedCreatedDate => CreatedDate.ToString("MMM dd, yyyy");
     public string FormattedScheduledDate => ScheduledDate?.ToString("MMM dd, yyyy") ?? "Not scheduled";
+
     public bool IsEmergency => UrgencyLevel.Equals("Critical", StringComparison.OrdinalIgnoreCase) ||
-                              UrgencyLevel.Equals("Emergency", StringComparison.OrdinalIgnoreCase);
+                               UrgencyLevel.Equals("Emergency", StringComparison.OrdinalIgnoreCase);
+
     public bool IsOverdue => ScheduledDate.HasValue && ScheduledDate < DateTime.UtcNow && Status == "Scheduled";
-    
+
     private static string GetStatusBadgeClass(string status)
     {
         return status.ToLowerInvariant() switch
         {
             "draft" => "badge bg-secondary",
-            "submitted" => "badge bg-primary", 
+            "submitted" => "badge bg-primary",
             "scheduled" => "badge bg-info",
             "done" => "badge bg-success",
             "failed" => "badge bg-warning",
@@ -87,14 +87,11 @@ public class TenantRequestListItemViewModel
 /// </summary>
 public class TenantRequestFilterOptions
 {
-    [Display(Name = "Status")]
-    public string? StatusFilter { get; set; }
+    [Display(Name = "Status")] public string? StatusFilter { get; set; }
 
-    [Display(Name = "Property")]
-    public string? PropertyFilter { get; set; }
+    [Display(Name = "Property")] public string? PropertyFilter { get; set; }
 
-    [Display(Name = "Emergency Only")]
-    public bool EmergencyOnly { get; set; }
+    [Display(Name = "Emergency Only")] public bool EmergencyOnly { get; set; }
 
     [Display(Name = "Date From")]
     [DataType(DataType.Date)]
@@ -104,31 +101,30 @@ public class TenantRequestFilterOptions
     [DataType(DataType.Date)]
     public DateTime? DateTo { get; set; }
 
-    [Display(Name = "Search")]
-    public string? SearchTerm { get; set; }
+    [Display(Name = "Search")] public string? SearchTerm { get; set; }
 
     // Available filter options
     public List<SelectOption> StatusOptions { get; set; } = new()
     {
-        new("", "All Statuses"),
-        new("Draft", "Draft"),
-        new("Submitted", "Submitted"),
-        new("Scheduled", "Scheduled"),
-        new("Done", "Completed"),
-        new("Closed", "Closed")
+        new SelectOption("", "All Statuses"),
+        new SelectOption("Draft", "Draft"),
+        new SelectOption("Submitted", "Submitted"),
+        new SelectOption("Scheduled", "Scheduled"),
+        new SelectOption("Done", "Completed"),
+        new SelectOption("Closed", "Closed")
     };
 
     public List<SelectOption> PropertyOptions { get; set; } = new();
 
     // UI helpers
     public bool HasActiveFilters => !string.IsNullOrWhiteSpace(StatusFilter) ||
-                                   !string.IsNullOrWhiteSpace(PropertyFilter) ||
-                                   EmergencyOnly ||
-                                   DateFrom.HasValue ||
-                                   DateTo.HasValue ||
-                                   !string.IsNullOrWhiteSpace(SearchTerm);
+                                    !string.IsNullOrWhiteSpace(PropertyFilter) ||
+                                    EmergencyOnly ||
+                                    DateFrom.HasValue ||
+                                    DateTo.HasValue ||
+                                    !string.IsNullOrWhiteSpace(SearchTerm);
 
-    public int ActiveFilterCount => 
+    public int ActiveFilterCount =>
         (string.IsNullOrWhiteSpace(StatusFilter) ? 0 : 1) +
         (string.IsNullOrWhiteSpace(PropertyFilter) ? 0 : 1) +
         (EmergencyOnly ? 1 : 0) +
@@ -164,10 +160,7 @@ public class PaginationViewModel
             var start = Math.Max(1, CurrentPage - 2);
             var end = Math.Min(TotalPages, CurrentPage + 2);
 
-            for (int i = start; i <= end; i++)
-            {
-                pages.Add(i);
-            }
+            for (var i = start; i <= end; i++) pages.Add(i);
 
             return pages;
         }

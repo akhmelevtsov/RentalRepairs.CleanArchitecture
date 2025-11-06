@@ -18,8 +18,7 @@ public class LoginViewModel
     [Display(Name = "Password")]
     public string Password { get; set; } = string.Empty;
 
-    [Display(Name = "Remember me")]
-    public bool RememberMe { get; set; }
+    [Display(Name = "Remember me")] public bool RememberMe { get; set; }
 
     public string? ReturnUrl { get; set; }
 }
@@ -55,7 +54,7 @@ public class DashboardViewModel
     public int TotalSystemRequests { get; set; }
     public int ActiveWorkers { get; set; }
     public List<PropertySummaryViewModel> RecentProperties { get; set; } = new();
-    
+
     // Enhanced System admin dashboard with unit statistics
     public int TotalSystemUnits { get; set; }
     public int TotalOccupiedUnits { get; set; }
@@ -103,7 +102,7 @@ public class TenantLoginViewModel
     public string UnitNumber { get; set; } = string.Empty;
     public bool RememberMe { get; set; }
     public string? ReturnUrl { get; set; }
-    
+
     // Property for simplified login mode (no longer used)
     public bool UseSimplifiedLogin { get; set; } = true;
 }
@@ -123,7 +122,7 @@ public class WorkerLoginViewModel
     public List<string> AvailableSpecializations { get; set; } = new()
     {
         "Plumbing",
-        "Electrical", 
+        "Electrical",
         "HVAC",
         "General Maintenance",
         "Carpentry",

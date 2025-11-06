@@ -31,7 +31,7 @@ public class AuthenticationPageIntegrationTests : IClassFixture<WebApplicationTe
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        
+
         var content = await response.Content.ReadAsStringAsync();
         content.Should().Contain("Login", "Page should contain login functionality");
 
@@ -93,19 +93,15 @@ public class AuthenticationPageIntegrationTests : IClassFixture<WebApplicationTe
         if (response.StatusCode == HttpStatusCode.OK)
         {
             var content = await response.Content.ReadAsStringAsync();
-            var hasAccessDeniedContent = content.Contains("Access Denied") || 
-                                       content.Contains("access denied") || 
-                                       content.Contains("Forbidden") ||
-                                       content.Contains("Not Authorized");
-            
+            var hasAccessDeniedContent = content.Contains("Access Denied") ||
+                                         content.Contains("access denied") ||
+                                         content.Contains("Forbidden") ||
+                                         content.Contains("Not Authorized");
+
             if (hasAccessDeniedContent)
-            {
                 _output.WriteLine("Access denied page shows appropriate content");
-            }
             else
-            {
                 _output.WriteLine(" Access denied page loads but content unclear");
-            }
         }
         else if (response.StatusCode == HttpStatusCode.NotFound)
         {
@@ -127,7 +123,7 @@ public class AuthenticationPageIntegrationTests : IClassFixture<WebApplicationTe
         foreach (var page in pages)
         {
             var response = await _client.GetAsync(page);
-            
+
             if (response.StatusCode == HttpStatusCode.OK)
             {
                 var contentType = response.Content.Headers.ContentType?.MediaType;

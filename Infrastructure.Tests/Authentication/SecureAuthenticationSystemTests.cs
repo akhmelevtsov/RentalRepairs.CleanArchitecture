@@ -51,7 +51,7 @@ public class SecureAuthenticationSystemTests
                 new KeyValuePair<string, string>("DemoAuthentication:EnableDemoMode", "true"),
                 new KeyValuePair<string, string>("DemoAuthentication:DefaultPassword", "Demo123!"),
                 new KeyValuePair<string, string>("DemoAuthentication:Security:MaxLoginAttempts", "5"),
-                new KeyValuePair<string, string>("DemoAuthentication:Security:LockoutDurationMinutes", "15"),
+                new KeyValuePair<string, string>("DemoAuthentication:Security:LockoutDurationMinutes", "15")
             })
             .Build();
 
@@ -71,11 +71,11 @@ public class SecureAuthenticationSystemTests
         // Assert
         Assert.True(demoUserService.IsDemoModeEnabled());
         Assert.True(users.Count > 0);
-        
+
         var adminUser = users.FirstOrDefault(u => u.Email == "admin@demo.com");
         Assert.NotNull(adminUser);
         Assert.Contains("SystemAdmin", adminUser.Roles);
-        
+
         // Fix: Use correct email pattern that matches DemoUserService
         var tenantUser = users.FirstOrDefault(u => u.Email == "tenant1.unit101@sunset.com");
         Assert.NotNull(tenantUser);
@@ -90,7 +90,7 @@ public class SecureAuthenticationSystemTests
             .AddInMemoryCollection(new[]
             {
                 new KeyValuePair<string, string>("DemoAuthentication:EnableDemoMode", "true"),
-                new KeyValuePair<string, string>("DemoAuthentication:DefaultPassword", "Demo123!"),
+                new KeyValuePair<string, string>("DemoAuthentication:DefaultPassword", "Demo123!")
             })
             .Build();
 
@@ -126,7 +126,7 @@ public class SecureAuthenticationSystemTests
             .AddInMemoryCollection(new[]
             {
                 new KeyValuePair<string, string>("DemoAuthentication:EnableDemoMode", "true"),
-                new KeyValuePair<string, string>("DemoAuthentication:DefaultPassword", "Demo123!"),
+                new KeyValuePair<string, string>("DemoAuthentication:DefaultPassword", "Demo123!")
             })
             .Build();
 
@@ -144,9 +144,8 @@ public class SecureAuthenticationSystemTests
         var authService = new RentalRepairs.Infrastructure.Authentication.AuthenticationService(
             authLogger,
             demoUserService,
-            null, // propertyService - not needed for demo
-            null, // workerService - not needed for demo  
-            null  // httpContextAccessor - not needed for test
+            null, // workerService
+            null // httpContextAccessor - not needed for test
         );
 
         // Act - Test unified authentication
@@ -158,10 +157,10 @@ public class SecureAuthenticationSystemTests
         Assert.Contains("SystemAdmin", result.Roles);
         Assert.Equal("SystemAdmin", result.PrimaryRole);
         Assert.Equal("/", result.DashboardUrl); // SystemAdmin uses the unified Index dashboard
-        
+
         // Verify that the result has the expected structure for unified authentication
         Assert.NotNull(result.Token);
-        Assert.NotEqual(default(DateTime), result.ExpiresAt);
+        Assert.NotEqual(default, result.ExpiresAt);
         Assert.NotNull(result.DisplayName);
     }
 
@@ -173,7 +172,7 @@ public class SecureAuthenticationSystemTests
             .AddInMemoryCollection(new[]
             {
                 new KeyValuePair<string, string>("DemoAuthentication:EnableDemoMode", "true"),
-                new KeyValuePair<string, string>("DemoAuthentication:DefaultPassword", "Demo123!"),
+                new KeyValuePair<string, string>("DemoAuthentication:DefaultPassword", "Demo123!")
             })
             .Build();
 
@@ -191,7 +190,8 @@ public class SecureAuthenticationSystemTests
         var authService = new RentalRepairs.Infrastructure.Authentication.AuthenticationService(
             authLogger,
             demoUserService,
-            null, null, null
+            null, // workerService
+            null // httpContextAccessor - not needed for test
         );
 
         // Act - Test tenant authentication with unified system - Fix: Use correct email pattern
@@ -203,7 +203,7 @@ public class SecureAuthenticationSystemTests
         Assert.Contains("Tenant", result.Roles);
         Assert.Equal("Tenant", result.PrimaryRole);
         Assert.Equal("/", result.DashboardUrl); // Updated: Tenant uses unified dashboard now
-        
+
         // Verify tenant-specific parameters are extracted
         Assert.Equal("SUN001", result.PropertyCode);
         Assert.Equal("101", result.UnitNumber);
@@ -218,7 +218,7 @@ public class SecureAuthenticationSystemTests
             .AddInMemoryCollection(new[]
             {
                 new KeyValuePair<string, string>("DemoAuthentication:EnableDemoMode", "true"),
-                new KeyValuePair<string, string>("DemoAuthentication:DefaultPassword", "Demo123!"),
+                new KeyValuePair<string, string>("DemoAuthentication:DefaultPassword", "Demo123!")
             })
             .Build();
 
@@ -236,7 +236,8 @@ public class SecureAuthenticationSystemTests
         var authService = new RentalRepairs.Infrastructure.Authentication.AuthenticationService(
             authLogger,
             demoUserService,
-            null, null, null
+            null, // workerService
+            null // httpContextAccessor - not needed for test
         );
 
         // Act - Fix: Use correct email address that exists in DemoUserService
@@ -248,7 +249,7 @@ public class SecureAuthenticationSystemTests
         Assert.Contains("Worker", result.Roles);
         Assert.Equal("Worker", result.PrimaryRole);
         Assert.Equal("/", result.DashboardUrl); // Updated: Worker uses unified dashboard now
-        
+
         // Verify worker-specific parameters are extracted - Fix: Use correct specialization
         Assert.Equal("Plumber", result.WorkerSpecialization);
     }
@@ -261,7 +262,7 @@ public class SecureAuthenticationSystemTests
             .AddInMemoryCollection(new[]
             {
                 new KeyValuePair<string, string>("DemoAuthentication:EnableDemoMode", "true"),
-                new KeyValuePair<string, string>("DemoAuthentication:DefaultPassword", "Demo123!"),
+                new KeyValuePair<string, string>("DemoAuthentication:DefaultPassword", "Demo123!")
             })
             .Build();
 
@@ -279,7 +280,8 @@ public class SecureAuthenticationSystemTests
         var authService = new RentalRepairs.Infrastructure.Authentication.AuthenticationService(
             authLogger,
             demoUserService,
-            null, null, null
+            null, // workerService
+            null // httpContextAccessor
         );
 
         // Act
@@ -302,10 +304,25 @@ public class TestHostEnvironment : IHostEnvironment
     public string ContentRootPath { get; set; } = "";
     public IFileProvider ContentRootFileProvider { get; set; } = null!;
 
-    public bool IsDevelopment() => EnvironmentName == "Development";
-    public bool IsProduction() => EnvironmentName == "Production";
-    public bool IsStaging() => EnvironmentName == "Staging";
-    public bool IsEnvironment(string environmentName) => EnvironmentName == environmentName;
+    public bool IsDevelopment()
+    {
+        return EnvironmentName == "Development";
+    }
+
+    public bool IsProduction()
+    {
+        return EnvironmentName == "Production";
+    }
+
+    public bool IsStaging()
+    {
+        return EnvironmentName == "Staging";
+    }
+
+    public bool IsEnvironment(string environmentName)
+    {
+        return EnvironmentName == environmentName;
+    }
 }
 
 /// <summary>
@@ -313,9 +330,18 @@ public class TestHostEnvironment : IHostEnvironment
 /// </summary>
 public class TestLogger<T> : ILogger<T>
 {
-    public IDisposable BeginScope<TState>(TState state) => null!;
-    public bool IsEnabled(LogLevel logLevel) => true;
-    public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
+    public IDisposable BeginScope<TState>(TState state)
+    {
+        return null!;
+    }
+
+    public bool IsEnabled(LogLevel logLevel)
+    {
+        return true;
+    }
+
+    public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception,
+        Func<TState, Exception?, string> formatter)
     {
         // Log to console for debugging if needed
         // Console.WriteLine($"[{logLevel}] {formatter(state, exception)}");

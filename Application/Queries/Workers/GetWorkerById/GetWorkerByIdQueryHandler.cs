@@ -4,7 +4,8 @@ using RentalRepairs.Application.DTOs;
 namespace RentalRepairs.Application.Queries.Workers.GetWorkerById;
 
 /// <summary>
-/// Query handler to get worker by ID using direct projection
+/// Query handler to get worker by ID using direct projection.
+/// Phase 2: Convert enum to string for DTO.
 /// </summary>
 public class GetWorkerByIdQueryHandler : IQueryHandler<GetWorkerByIdQuery, WorkerDto?>
 {
@@ -17,7 +18,7 @@ public class GetWorkerByIdQueryHandler : IQueryHandler<GetWorkerByIdQuery, Worke
 
     public async Task<WorkerDto?> Handle(GetWorkerByIdQuery request, CancellationToken cancellationToken)
     {
-        // ? Direct EF projection - no mapping overhead
+        // Direct EF projection - no mapping overhead
         var workerDto = await Task.FromResult(_context.Workers
             .Where(w => w.Id == request.WorkerId)
             .Select(w => new WorkerDto
@@ -31,11 +32,11 @@ public class GetWorkerByIdQueryHandler : IQueryHandler<GetWorkerByIdQuery, Worke
                     MobilePhone = w.ContactInfo.MobilePhone,
                     FullName = w.ContactInfo.GetFullName()
                 },
-                Specialization = w.Specialization,
+                // Convert enum to string for DTO
+                Specialization = w.Specialization.ToString(),
                 IsActive = w.IsActive,
                 Notes = w.Notes,
                 RegistrationDate = w.CreatedAt
-                // ? DisplayName is computed property, don't assign to it
             })
             .FirstOrDefault());
 

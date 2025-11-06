@@ -51,8 +51,9 @@ public class PropertyPolicyServiceTests
         var noReplyEmail = "noreply@test.com";
 
         // Act & Assert
-        Assert.Throws<ArgumentException>(() => 
-            _policyService.ValidatePropertyCreation(invalidName, code, address, phoneNumber, superintendent, units, noReplyEmail));
+        Assert.Throws<ArgumentException>(() =>
+            _policyService.ValidatePropertyCreation(invalidName, code, address, phoneNumber, superintendent, units,
+                noReplyEmail));
     }
 
     [Theory]
@@ -70,8 +71,9 @@ public class PropertyPolicyServiceTests
         var noReplyEmail = "noreply@test.com";
 
         // Act & Assert
-        Assert.Throws<ArgumentException>(() => 
-            _policyService.ValidatePropertyCreation(name, invalidCode, address, phoneNumber, superintendent, units, noReplyEmail));
+        Assert.Throws<ArgumentException>(() =>
+            _policyService.ValidatePropertyCreation(name, invalidCode, address, phoneNumber, superintendent, units,
+                noReplyEmail));
     }
 
     [Fact]
@@ -87,8 +89,9 @@ public class PropertyPolicyServiceTests
         var noReplyEmail = "noreply@test.com";
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => 
-            _policyService.ValidatePropertyCreation(name, code, address, phoneNumber, superintendent, units, noReplyEmail));
+        Assert.Throws<ArgumentNullException>(() =>
+            _policyService.ValidatePropertyCreation(name, code, address, phoneNumber, superintendent, units,
+                noReplyEmail));
     }
 
     [Fact]
@@ -104,8 +107,9 @@ public class PropertyPolicyServiceTests
         var noReplyEmail = "noreply@test.com";
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => 
-            _policyService.ValidatePropertyCreation(name, code, address, phoneNumber, superintendent, units, noReplyEmail));
+        Assert.Throws<ArgumentNullException>(() =>
+            _policyService.ValidatePropertyCreation(name, code, address, phoneNumber, superintendent, units,
+                noReplyEmail));
     }
 
     [Fact]
@@ -121,8 +125,9 @@ public class PropertyPolicyServiceTests
         var noReplyEmail = "noreply@test.com";
 
         // Act & Assert
-        Assert.Throws<PropertyDomainException>(() => 
-            _policyService.ValidatePropertyCreation(name, code, address, phoneNumber, superintendent, units, noReplyEmail));
+        Assert.Throws<PropertyDomainException>(() =>
+            _policyService.ValidatePropertyCreation(name, code, address, phoneNumber, superintendent, units,
+                noReplyEmail));
     }
 
     [Fact]
@@ -138,8 +143,9 @@ public class PropertyPolicyServiceTests
         var noReplyEmail = "noreply@test.com";
 
         // Act & Assert
-        Assert.Throws<PropertyDomainException>(() => 
-            _policyService.ValidatePropertyCreation(name, code, address, phoneNumber, superintendent, units, noReplyEmail));
+        Assert.Throws<PropertyDomainException>(() =>
+            _policyService.ValidatePropertyCreation(name, code, address, phoneNumber, superintendent, units,
+                noReplyEmail));
     }
 
     [Fact]
@@ -163,7 +169,7 @@ public class PropertyPolicyServiceTests
         var unitNumber = "101";
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => 
+        Assert.Throws<ArgumentNullException>(() =>
             _policyService.ValidateTenantRegistration(property, contactInfo, unitNumber));
     }
 
@@ -176,7 +182,7 @@ public class PropertyPolicyServiceTests
         var unitNumber = "101";
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => 
+        Assert.Throws<ArgumentNullException>(() =>
             _policyService.ValidateTenantRegistration(property, contactInfo, unitNumber));
     }
 
@@ -191,7 +197,7 @@ public class PropertyPolicyServiceTests
         var contactInfo = new PersonContactInfo("Jane", "Smith", "jane@test.com", "555-9876");
 
         // Act & Assert
-        Assert.Throws<ArgumentException>(() => 
+        Assert.Throws<ArgumentException>(() =>
             _policyService.ValidateTenantRegistration(property, contactInfo, invalidUnitNumber));
     }
 
@@ -204,7 +210,7 @@ public class PropertyPolicyServiceTests
         var nonexistentUnit = "999"; // This unit doesn't exist in the test property
 
         // Act & Assert
-        Assert.Throws<PropertyDomainException>(() => 
+        Assert.Throws<PropertyDomainException>(() =>
             _policyService.ValidateTenantRegistration(property, contactInfo, nonexistentUnit));
     }
 
@@ -231,11 +237,11 @@ public class PropertyPolicyServiceTests
     {
         // Arrange
         var property = CreateTestProperty();
-        
+
         // Register a tenant to make unit 101 unavailable
         var existingTenantContact = new PersonContactInfo("John", "Existing", "john@test.com", "555-1111");
         property.RegisterTenant(existingTenantContact, "101");
-        
+
         var tenantContactInfo = new PersonContactInfo("Jane", "Smith", "jane@test.com", "555-9876");
         var preferredUnit = "101"; // This unit is now occupied
 

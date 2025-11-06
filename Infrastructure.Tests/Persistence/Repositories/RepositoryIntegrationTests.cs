@@ -67,14 +67,14 @@ public class RepositoryIntegrationTests
     public void ApplicationDbContext_Type_Should_Be_Correct()
     {
         var contextType = typeof(ApplicationDbContext);
-        
+
         contextType.Should().NotBeNull();
         contextType.Namespace.Should().Be("RentalRepairs.Infrastructure.Persistence");
-        
+
         // Check that it has the required DbSets
         var properties = contextType.GetProperties();
         var propertyNames = properties.Select(p => p.Name).ToList();
-        
+
         propertyNames.Should().Contain("Properties");
         propertyNames.Should().Contain("Tenants");
         propertyNames.Should().Contain("TenantRequests");

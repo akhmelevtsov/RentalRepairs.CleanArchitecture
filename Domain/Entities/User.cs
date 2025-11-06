@@ -12,7 +12,7 @@ public class User
     public List<string> Roles { get; private set; }
     public string PrimaryRole { get; private set; }
     public Dictionary<string, string> Claims { get; private set; }
-    
+
     // Role-specific properties extracted from claims
     public string? PropertyCode { get; private set; }
     public string? PropertyName { get; private set; }
@@ -20,9 +20,9 @@ public class User
     public string? WorkerSpecialization { get; private set; }
     public string? WorkerId { get; private set; }
 
-   
 
-    public User(string userId, string email, string displayName, List<string> roles, Dictionary<string, string>? claims = null)
+    public User(string userId, string email, string displayName, List<string> roles,
+        Dictionary<string, string>? claims = null)
     {
         if (string.IsNullOrWhiteSpace(userId))
         {
@@ -55,32 +55,50 @@ public class User
     /// <summary>
     /// Checks if user has system administrator role.
     /// </summary>
-    public bool IsSystemAdmin() => Roles.Contains("SystemAdmin");
+    public bool IsSystemAdmin()
+    {
+        return Roles.Contains("SystemAdmin");
+    }
 
     /// <summary>
     /// Checks if user has property superintendent role.
     /// </summary>
-    public bool IsPropertySuperintendent() => Roles.Contains("PropertySuperintendent");
+    public bool IsPropertySuperintendent()
+    {
+        return Roles.Contains("PropertySuperintendent");
+    }
 
     /// <summary>
     /// Checks if user is a tenant.
     /// </summary>
-    public bool IsTenant() => Roles.Contains("Tenant");
+    public bool IsTenant()
+    {
+        return Roles.Contains("Tenant");
+    }
 
     /// <summary>
     /// Checks if user is a maintenance worker.
     /// </summary>
-    public bool IsWorker() => Roles.Contains("Worker");
+    public bool IsWorker()
+    {
+        return Roles.Contains("Worker");
+    }
 
     /// <summary>
     /// Checks if user has the specified role.
     /// </summary>
-    public bool HasRole(string role) => Roles.Contains(role, StringComparer.OrdinalIgnoreCase);
+    public bool HasRole(string role)
+    {
+        return Roles.Contains(role, StringComparer.OrdinalIgnoreCase);
+    }
 
     /// <summary>
     /// Checks if user has any of the specified roles.
     /// </summary>
-    public bool HasAnyRole(params string[] roles) => roles.Any(role => HasRole(role));
+    public bool HasAnyRole(params string[] roles)
+    {
+        return roles.Any(role => HasRole(role));
+    }
 
     #endregion
 
@@ -89,19 +107,27 @@ public class User
     /// <summary>
     /// Gets a claim value by key.
     /// </summary>
-    public string? GetClaim(string key) => Claims.TryGetValue(key, out string? value) ? value : null;
+    public string? GetClaim(string key)
+    {
+        return Claims.TryGetValue(key, out string? value) ? value : null;
+    }
 
     /// <summary>
     /// Checks if user has a specific claim.
     /// </summary>
-    public bool HasClaim(string key) => Claims.ContainsKey(key);
+    public bool HasClaim(string key)
+    {
+        return Claims.ContainsKey(key);
+    }
 
     /// <summary>
     /// Checks if user has a claim with a specific value.
     /// </summary>
-    public bool HasClaim(string key, string value) => 
-        Claims.TryGetValue(key, out string? claimValue) && 
-        string.Equals(claimValue, value, StringComparison.OrdinalIgnoreCase);
+    public bool HasClaim(string key, string value)
+    {
+        return Claims.TryGetValue(key, out string? claimValue) &&
+               string.Equals(claimValue, value, StringComparison.OrdinalIgnoreCase);
+    }
 
     #endregion
 
@@ -118,14 +144,11 @@ public class User
     /// <summary>
     /// Creates a tenant user with property information.
     /// </summary>
-    public static User CreateTenant(string email, string displayName, string propertyCode, string unitNumber, string? propertyName = null)
+    public static User CreateTenant(string email, string displayName, string propertyCode, string unitNumber,
+        string? propertyName = null)
     {
-        var claims = new Dictionary<string, string>
-        {
-            ["property_code"] = propertyCode,
-            ["unit_number"] = unitNumber
-        };
-        
+        var claims = new Dictionary<string, string> { ["property_code"] = propertyCode, ["unit_number"] = unitNumber };
+
         if (!string.IsNullOrEmpty(propertyName))
         {
             claims["property_name"] = propertyName;
@@ -137,13 +160,11 @@ public class User
     /// <summary>
     /// Creates a property superintendent user.
     /// </summary>
-    public static User CreatePropertySuperintendent(string email, string displayName, string propertyCode, string? propertyName = null)
+    public static User CreatePropertySuperintendent(string email, string displayName, string propertyCode,
+        string? propertyName = null)
     {
-        var claims = new Dictionary<string, string>
-        {
-            ["property_code"] = propertyCode
-        };
-        
+        var claims = new Dictionary<string, string> { ["property_code"] = propertyCode };
+
         if (!string.IsNullOrEmpty(propertyName))
         {
             claims["property_name"] = propertyName;
@@ -157,11 +178,8 @@ public class User
     /// </summary>
     public static User CreateWorker(string email, string displayName, string specialization, string? workerId = null)
     {
-        var claims = new Dictionary<string, string>
-        {
-            ["worker_specialization"] = specialization
-        };
-        
+        var claims = new Dictionary<string, string> { ["worker_specialization"] = specialization };
+
         if (!string.IsNullOrEmpty(workerId))
         {
             claims["worker_id"] = workerId;

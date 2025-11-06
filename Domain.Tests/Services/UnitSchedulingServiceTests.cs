@@ -6,12 +6,12 @@ namespace RentalRepairs.Domain.Tests.Services;
 
 /// <summary>
 /// Comprehensive tests for simplified UnitSchedulingService business rules
-/// Tests: specialization match, no double booking, unit exclusivity, max 2 per unit, emergency overrides
+/// Tests: specialization match, unit exclusivity, max 2 per unit, emergency overrides
 /// </summary>
 public class UnitSchedulingServiceTests
 {
     private readonly UnitSchedulingService _service;
-    private readonly DateTime _testDate = new DateTime(2025, 1, 15);
+    private readonly DateTime _testDate = new(2025, 1, 15);
     private readonly Guid _testRequestId = Guid.NewGuid();
 
     public UnitSchedulingServiceTests()
@@ -29,7 +29,8 @@ public class UnitSchedulingServiceTests
 
         // Act
         var result = _service.ValidateWorkerAssignment(
-            _testRequestId, "PROP001", "101", _testDate, "plumber@test.com", "Plumbing", "Plumbing", false, existingAssignments);
+            _testRequestId, "PROP001", "101", _testDate, "plumber@test.com", "Plumbing", "Plumbing", false,
+            existingAssignments);
 
         // Assert
         result.IsValid.Should().BeTrue();
@@ -44,7 +45,8 @@ public class UnitSchedulingServiceTests
 
         // Act
         var result = _service.ValidateWorkerAssignment(
-            _testRequestId, "PROP001", "101", _testDate, "general@test.com", "General Maintenance", "Plumbing", false, existingAssignments);
+            _testRequestId, "PROP001", "101", _testDate, "general@test.com", "General Maintenance", "Plumbing", false,
+            existingAssignments);
 
         // Assert
         result.IsValid.Should().BeTrue();
@@ -58,7 +60,8 @@ public class UnitSchedulingServiceTests
 
         // Act
         var result = _service.ValidateWorkerAssignment(
-            _testRequestId, "PROP001", "101", _testDate, "hvac@test.com", "HVAC", "Plumbing", false, existingAssignments);
+            _testRequestId, "PROP001", "101", _testDate, "hvac@test.com", "HVAC", "Plumbing", false,
+            existingAssignments);
 
         // Assert
         result.IsValid.Should().BeFalse();
@@ -92,17 +95,21 @@ public class UnitSchedulingServiceTests
     [InlineData("Carpenter", "Carpentry")]
     [InlineData("Appliance Technician", "Appliance Repair")]
     [InlineData("Maintenance", "General Maintenance")]
-    public void ValidateWorkerAssignment_SpecializationNormalization_ShouldMatch(string workerSpecialization, string requiredSpecialization)
+    public void ValidateWorkerAssignment_SpecializationNormalization_ShouldMatch(string workerSpecialization,
+        string requiredSpecialization)
     {
         // Arrange
         var existingAssignments = new List<ExistingAssignment>();
 
         // Act
         var result = _service.ValidateWorkerAssignment(
-            _testRequestId, "PROP001", "101", _testDate, "worker@test.com", workerSpecialization, requiredSpecialization, false, existingAssignments);
+            _testRequestId, "PROP001", "101", _testDate, "worker@test.com", workerSpecialization,
+            requiredSpecialization, false, existingAssignments);
 
         // Assert
-        result.IsValid.Should().BeTrue($"Worker specialized in '{workerSpecialization}' should be able to handle '{requiredSpecialization}' work");
+        result.IsValid.Should()
+            .BeTrue(
+                $"Worker specialized in '{workerSpecialization}' should be able to handle '{requiredSpecialization}' work");
         result.ConflictType.Should().Be(SchedulingConflictType.None);
     }
 
@@ -114,95 +121,13 @@ public class UnitSchedulingServiceTests
 
         // Act
         var result = _service.ValidateWorkerAssignment(
-            _testRequestId, "PROP001", "101", _testDate, "electrician.doe@demo.com", "Electrician", "Electrical", false, existingAssignments);
+            _testRequestId, "PROP001", "101", _testDate, "electrician.doe@demo.com", "Electrician", "Electrical", false,
+            existingAssignments);
 
         // Assert
         result.IsValid.Should().BeTrue("An Electrician should be able to handle Electrical work");
         result.ConflictType.Should().Be(SchedulingConflictType.None);
         result.ErrorMessage.Should().BeEmpty();
-    }
-
-    #endregion
-
-    #region Rule 2: No Double Booking Tests
-
-    [Fact]
-    public void ValidateWorkerAssignment_WorkerBookedElsewhere_ShouldBeInvalid()
-    {
-        // Arrange
-        var existingAssignments = new List<ExistingAssignment>
-        {
-            new ExistingAssignment
-            {
-                TenantRequestId = Guid.NewGuid(),
-                PropertyCode = "PROP001",
-                UnitNumber = "102", // Different unit
-                WorkerEmail = "plumber@test.com",
-                ScheduledDate = _testDate,
-                Status = "Scheduled"
-            }
-        };
-
-        // Act
-        var result = _service.ValidateWorkerAssignment(
-            _testRequestId, "PROP001", "101", _testDate, "plumber@test.com", "Plumbing", "Plumbing", false, existingAssignments);
-
-        // Assert
-        result.IsValid.Should().BeFalse();
-        result.ErrorMessage.Should().Contain("already assigned to PROP001 Unit 102");
-        result.ConflictType.Should().Be(SchedulingConflictType.WorkerDoubleBooked);
-    }
-
-    [Fact]
-    public void ValidateWorkerAssignment_WorkerBookedDifferentProperty_ShouldBeInvalid()
-    {
-        // Arrange
-        var existingAssignments = new List<ExistingAssignment>
-        {
-            new ExistingAssignment
-            {
-                PropertyCode = "PROP002", // Different property
-                UnitNumber = "101",
-                WorkerEmail = "plumber@test.com",
-                ScheduledDate = _testDate,
-                Status = "Scheduled"
-            }
-        };
-
-        // Act
-        var result = _service.ValidateWorkerAssignment(
-            _testRequestId, "PROP001", "101", _testDate, "plumber@test.com", "Plumbing", "Plumbing", false, existingAssignments);
-
-        // Assert
-        result.IsValid.Should().BeFalse();
-        result.ConflictType.Should().Be(SchedulingConflictType.WorkerDoubleBooked);
-    }
-
-    [Fact]
-    public void ValidateWorkerAssignment_EmergencyWorkerBookedElsewhere_ShouldStillBeInvalid()
-    {
-        // Arrange
-        var existingAssignments = new List<ExistingAssignment>
-        {
-            new ExistingAssignment
-            {
-                PropertyCode = "PROP001",
-                UnitNumber = "102",
-                WorkerEmail = "plumber@test.com",
-                ScheduledDate = _testDate,
-                Status = "Scheduled"
-            }
-        };
-
-        // Act
-        var result = _service.ValidateWorkerAssignment(
-            _testRequestId, "PROP001", "101", _testDate, "plumber@test.com", "Plumbing", "Plumbing", true, existingAssignments);
-
-        // Assert
-        result.IsValid.Should().BeFalse();
-        result.ErrorMessage.Should().Contain("cannot override worker");
-        result.ErrorMessage.Should().Contain("being physically assigned elsewhere");
-        result.ConflictType.Should().Be(SchedulingConflictType.WorkerDoubleBooked);
     }
 
     #endregion
@@ -215,7 +140,7 @@ public class UnitSchedulingServiceTests
         // Arrange
         var existingAssignments = new List<ExistingAssignment>
         {
-            new ExistingAssignment
+            new()
             {
                 PropertyCode = "PROP001",
                 UnitNumber = "101", // Same unit
@@ -227,11 +152,13 @@ public class UnitSchedulingServiceTests
 
         // Act
         var result = _service.ValidateWorkerAssignment(
-            _testRequestId, "PROP001", "101", _testDate, "plumber@test.com", "Plumbing", "Plumbing", false, existingAssignments);
+            _testRequestId, "PROP001", "101", _testDate, "plumber@test.com", "Plumbing", "Plumbing", false,
+            existingAssignments);
 
         // Assert
         result.IsValid.Should().BeFalse();
-        result.ErrorMessage.Should().Contain("Unit 101 already has worker hvac@test.com assigned");
+        result.ErrorMessage.Should().Contain("Unit 101 already has a different worker");
+        result.ErrorMessage.Should().Contain("hvac@test.com");
         result.ConflictType.Should().Be(SchedulingConflictType.UnitConflict);
     }
 
@@ -241,7 +168,7 @@ public class UnitSchedulingServiceTests
         // Arrange
         var existingAssignments = new List<ExistingAssignment>
         {
-            new ExistingAssignment
+            new()
             {
                 TenantRequestId = Guid.NewGuid(),
                 PropertyCode = "PROP001",
@@ -255,7 +182,8 @@ public class UnitSchedulingServiceTests
 
         // Act
         var result = _service.ValidateWorkerAssignment(
-            _testRequestId, "PROP001", "101", _testDate, "plumber@test.com", "Plumbing", "Plumbing", true, existingAssignments);
+            _testRequestId, "PROP001", "101", _testDate, "plumber@test.com", "Plumbing", "Plumbing", true,
+            existingAssignments);
 
         // Assert
         result.IsValid.Should().BeTrue();
@@ -269,7 +197,7 @@ public class UnitSchedulingServiceTests
         // Arrange
         var existingAssignments = new List<ExistingAssignment>
         {
-            new ExistingAssignment
+            new()
             {
                 TenantRequestId = Guid.NewGuid(),
                 PropertyCode = "PROP001",
@@ -283,7 +211,8 @@ public class UnitSchedulingServiceTests
 
         // Act
         var result = _service.ValidateWorkerAssignment(
-            _testRequestId, "PROP001", "101", _testDate, "plumber@test.com", "Plumbing", "Plumbing", true, existingAssignments);
+            _testRequestId, "PROP001", "101", _testDate, "plumber@test.com", "Plumbing", "Plumbing", true,
+            existingAssignments);
 
         // Assert
         result.IsValid.Should().BeTrue();
@@ -303,7 +232,7 @@ public class UnitSchedulingServiceTests
         // Arrange
         var existingAssignments = new List<ExistingAssignment>
         {
-            new ExistingAssignment
+            new()
             {
                 TenantRequestId = Guid.NewGuid(),
                 PropertyCode = "PROP001",
@@ -316,7 +245,8 @@ public class UnitSchedulingServiceTests
 
         // Act
         var result = _service.ValidateWorkerAssignment(
-            _testRequestId, "PROP001", "101", _testDate, "plumber@test.com", "Plumbing", "Plumbing", false, existingAssignments);
+            _testRequestId, "PROP001", "101", _testDate, "plumber@test.com", "Plumbing", "Plumbing", false,
+            existingAssignments);
 
         // Assert
         result.IsValid.Should().BeTrue();
@@ -328,7 +258,7 @@ public class UnitSchedulingServiceTests
         // Arrange
         var existingAssignments = new List<ExistingAssignment>
         {
-            new ExistingAssignment
+            new()
             {
                 TenantRequestId = Guid.NewGuid(),
                 PropertyCode = "PROP001",
@@ -337,7 +267,7 @@ public class UnitSchedulingServiceTests
                 ScheduledDate = _testDate,
                 Status = "Scheduled"
             },
-            new ExistingAssignment
+            new()
             {
                 TenantRequestId = Guid.NewGuid(),
                 PropertyCode = "PROP001",
@@ -350,7 +280,8 @@ public class UnitSchedulingServiceTests
 
         // Act
         var result = _service.ValidateWorkerAssignment(
-            _testRequestId, "PROP001", "101", _testDate, "plumber@test.com", "Plumbing", "Plumbing", false, existingAssignments);
+            _testRequestId, "PROP001", "101", _testDate, "plumber@test.com", "Plumbing", "Plumbing", false,
+            existingAssignments);
 
         // Assert
         result.IsValid.Should().BeFalse();
@@ -364,7 +295,7 @@ public class UnitSchedulingServiceTests
         // Arrange
         var existingAssignments = new List<ExistingAssignment>
         {
-            new ExistingAssignment
+            new()
             {
                 TenantRequestId = Guid.NewGuid(),
                 PropertyCode = "PROP001",
@@ -374,7 +305,7 @@ public class UnitSchedulingServiceTests
                 Status = "Scheduled",
                 IsEmergency = false
             },
-            new ExistingAssignment
+            new()
             {
                 TenantRequestId = Guid.NewGuid(),
                 PropertyCode = "PROP001",
@@ -388,7 +319,8 @@ public class UnitSchedulingServiceTests
 
         // Act
         var result = _service.ValidateWorkerAssignment(
-            _testRequestId, "PROP001", "101", _testDate, "plumber@test.com", "Plumbing", "Plumbing", true, existingAssignments);
+            _testRequestId, "PROP001", "101", _testDate, "plumber@test.com", "Plumbing", "Plumbing", true,
+            existingAssignments);
 
         // Assert
         result.IsValid.Should().BeTrue();
@@ -401,7 +333,7 @@ public class UnitSchedulingServiceTests
         // Arrange
         var existingAssignments = new List<ExistingAssignment>
         {
-            new ExistingAssignment
+            new()
             {
                 TenantRequestId = Guid.NewGuid(),
                 PropertyCode = "PROP001",
@@ -411,7 +343,7 @@ public class UnitSchedulingServiceTests
                 Status = "Scheduled",
                 IsEmergency = true
             },
-            new ExistingAssignment
+            new()
             {
                 TenantRequestId = Guid.NewGuid(),
                 PropertyCode = "PROP001",
@@ -425,7 +357,8 @@ public class UnitSchedulingServiceTests
 
         // Act
         var result = _service.ValidateWorkerAssignment(
-            _testRequestId, "PROP001", "101", _testDate, "plumber@test.com", "Plumbing", "Plumbing", true, existingAssignments);
+            _testRequestId, "PROP001", "101", _testDate, "plumber@test.com", "Plumbing", "Plumbing", true,
+            existingAssignments);
 
         // Assert
         result.IsValid.Should().BeTrue();
@@ -443,7 +376,7 @@ public class UnitSchedulingServiceTests
         // Arrange
         var existingAssignments = new List<ExistingAssignment>
         {
-            new ExistingAssignment
+            new()
             {
                 PropertyCode = "PROP001",
                 UnitNumber = "101",
@@ -455,7 +388,8 @@ public class UnitSchedulingServiceTests
 
         // Act
         var result = _service.ValidateWorkerAssignment(
-            _testRequestId, "PROP001", "101", _testDate, "plumber@test.com", "Plumbing", "Plumbing", false, existingAssignments);
+            _testRequestId, "PROP001", "101", _testDate, "plumber@test.com", "Plumbing", "Plumbing", false,
+            existingAssignments);
 
         // Assert
         result.IsValid.Should().BeTrue();
@@ -467,7 +401,7 @@ public class UnitSchedulingServiceTests
         // Arrange
         var existingAssignments = new List<ExistingAssignment>
         {
-            new ExistingAssignment
+            new()
             {
                 PropertyCode = "PROP001",
                 UnitNumber = "101",
@@ -479,7 +413,8 @@ public class UnitSchedulingServiceTests
 
         // Act
         var result = _service.ValidateWorkerAssignment(
-            _testRequestId, "PROP001", "101", _testDate, "plumber@test.com", "Plumbing", "Plumbing", false, existingAssignments);
+            _testRequestId, "PROP001", "101", _testDate, "plumber@test.com", "Plumbing", "Plumbing", false,
+            existingAssignments);
 
         // Assert
         result.IsValid.Should().BeFalse();
@@ -496,7 +431,7 @@ public class UnitSchedulingServiceTests
         // Arrange
         var existingAssignments = new List<ExistingAssignment>
         {
-            new ExistingAssignment
+            new()
             {
                 PropertyCode = "PROP001",
                 UnitNumber = "101",
@@ -508,7 +443,8 @@ public class UnitSchedulingServiceTests
 
         // Act
         var result = _service.ValidateWorkerAssignment(
-            _testRequestId, "PROP001", "101", _testDate, "plumber@test.com", "Plumbing", "Plumbing", false, existingAssignments);
+            _testRequestId, "PROP001", "101", _testDate, "plumber@test.com", "Plumbing", "Plumbing", false,
+            existingAssignments);
 
         // Assert
         result.IsValid.Should().BeTrue();
@@ -526,14 +462,14 @@ public class UnitSchedulingServiceTests
         var requestId2 = Guid.NewGuid();
         var assignmentsToCancel = new List<ExistingAssignment>
         {
-            new ExistingAssignment
+            new()
             {
                 TenantRequestId = requestId1,
                 WorkerEmail = "worker1@test.com",
                 WorkOrderNumber = "WO-001",
                 ScheduledDate = _testDate
             },
-            new ExistingAssignment
+            new()
             {
                 TenantRequestId = requestId2,
                 WorkerEmail = "worker2@test.com",
@@ -549,7 +485,7 @@ public class UnitSchedulingServiceTests
         result.CancelledRequestIds.Should().HaveCount(2);
         result.CancelledRequestIds.Should().Contain(requestId1);
         result.CancelledRequestIds.Should().Contain(requestId2);
-        
+
         result.CancelledAssignments.Should().HaveCount(2);
         result.CancelledAssignments.All(a => a.CancellationReason.Contains("emergency")).Should().BeTrue();
     }
@@ -561,15 +497,14 @@ public class UnitSchedulingServiceTests
     [Fact]
     public void ValidateWorkerAssignment_ComplexEmergencyScenario_ShouldHandleCorrectly()
     {
-        // Arrange: Complex scenario
+        // Arrange: Complex scenario with multiple workers and units
         var normalRequest1 = Guid.NewGuid();
-        var normalRequest2 = Guid.NewGuid(); 
         var emergencyRequest1 = Guid.NewGuid();
-        
+
         var existingAssignments = new List<ExistingAssignment>
         {
             // Same unit: 1 normal, 1 emergency (different workers)
-            new ExistingAssignment
+            new()
             {
                 TenantRequestId = normalRequest1,
                 PropertyCode = "PROP001",
@@ -579,7 +514,7 @@ public class UnitSchedulingServiceTests
                 Status = "Scheduled",
                 IsEmergency = false
             },
-            new ExistingAssignment
+            new()
             {
                 TenantRequestId = emergencyRequest1,
                 PropertyCode = "PROP001",
@@ -588,28 +523,98 @@ public class UnitSchedulingServiceTests
                 ScheduledDate = _testDate,
                 Status = "Scheduled",
                 IsEmergency = true
-            },
-            // Same worker: 1 assignment in different unit (should block)
-            new ExistingAssignment
-            {
-                TenantRequestId = normalRequest2,
-                PropertyCode = "PROP001",
-                UnitNumber = "102",
-                WorkerEmail = "plumber@test.com",
-                ScheduledDate = _testDate,
-                Status = "Scheduled",
-                IsEmergency = false
             }
         };
 
-        // Act: Try to assign plumber to emergency in unit 101
+        // Act: Try to assign plumber to emergency in unit 101 (should revoke normal assignment)
         var result = _service.ValidateWorkerAssignment(
-            _testRequestId, "PROP001", "101", _testDate, "plumber@test.com", "Plumbing", "Plumbing", true, existingAssignments);
+            _testRequestId, "PROP001", "101", _testDate, "plumber@test.com", "Plumbing", "Plumbing", true,
+            existingAssignments);
 
-        // Assert: Should fail due to worker being booked elsewhere
-        result.IsValid.Should().BeFalse();
-        result.ConflictType.Should().Be(SchedulingConflictType.WorkerDoubleBooked);
-        result.ErrorMessage.Should().Contain("assigned elsewhere");
+        // Assert: Should be valid with emergency override, revoking the normal HVAC assignment
+        result.IsValid.Should().BeTrue("Emergency request should be able to revoke normal assignments");
+        result.AssignmentsToCancelForEmergency.Should().HaveCount(1, "Should cancel the normal HVAC assignment");
+        result.AssignmentsToCancelForEmergency.First().WorkerEmail.Should().Be("hvac@test.com");
+        result.HasEmergencyConflicts.Should().BeTrue("Should note conflict with existing emergency");
+        result.EmergencyConflicts.Should().HaveCount(1, "Should report the existing emergency electrician assignment");
+        result.EmergencyConflicts.First().WorkerEmail.Should().Be("electrician@test.com");
+    }
+
+    #endregion
+
+    #region New Tests for Scenario: Same Worker Multiple Times in Unit
+
+    [Fact]
+    public void ValidateWorkerAssignment_SameWorkerTwiceInSameUnit_ShouldBeValid()
+    {
+        // Arrange - Worker already has one assignment in the unit
+        var existingRequestId = Guid.NewGuid();
+        var existingAssignments = new List<ExistingAssignment>
+        {
+            new()
+            {
+                TenantRequestId = existingRequestId,
+                PropertyCode = "PROP001",
+                UnitNumber = "101",
+                WorkerEmail = "plumber@test.com", // Same worker
+                ScheduledDate = _testDate,
+                Status = "Scheduled"
+            }
+        };
+
+        // Act - Try to assign the same worker to the same unit again (should be allowed up to 2 times)
+        var result = _service.ValidateWorkerAssignment(
+            _testRequestId, // Different request ID
+            "PROP001",
+            "101",
+            _testDate,
+            "plumber@test.com", // Same worker as existing assignment
+            "Plumbing",
+            "Plumbing",
+            false,
+            existingAssignments);
+
+        // Assert - Should be valid because same worker can be assigned multiple times to same unit
+        result.IsValid.Should()
+            .BeTrue(
+                "Same worker should be allowed to have multiple assignments in the same unit on the same date (up to the limit of 2)");
+        result.ConflictType.Should().Be(SchedulingConflictType.None);
+    }
+
+    [Fact]
+    public void ValidateWorkerAssignment_DifferentWorkerInSameUnit_ShouldBeInvalid()
+    {
+        // Arrange - A different worker is already assigned to the unit
+        var existingAssignments = new List<ExistingAssignment>
+        {
+            new()
+            {
+                TenantRequestId = Guid.NewGuid(),
+                PropertyCode = "PROP001",
+                UnitNumber = "101",
+                WorkerEmail = "electrician@test.com", // Different worker
+                ScheduledDate = _testDate,
+                Status = "Scheduled"
+            }
+        };
+
+        // Act - Try to assign a different worker to the same unit
+        var result = _service.ValidateWorkerAssignment(
+            _testRequestId,
+            "PROP001",
+            "101",
+            _testDate,
+            "plumber@test.com", // Different worker from existing assignment
+            "Plumbing",
+            "Plumbing",
+            false,
+            existingAssignments);
+
+        // Assert - Should be invalid because a different worker is already assigned
+        result.IsValid.Should().BeFalse("Different workers should not be allowed in the same unit on the same date");
+        result.ErrorMessage.Should().Contain("different worker");
+        result.ErrorMessage.Should().Contain("electrician@test.com");
+        result.ConflictType.Should().Be(SchedulingConflictType.UnitConflict);
     }
 
     #endregion

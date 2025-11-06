@@ -31,8 +31,8 @@ public class PropertyPageIntegrationTests : IClassFixture<WebApplicationTestFact
 
         // Assert - May redirect to login if authentication is required
         response.StatusCode.Should().BeOneOf(
-            HttpStatusCode.OK, 
-            HttpStatusCode.Redirect, 
+            HttpStatusCode.OK,
+            HttpStatusCode.Redirect,
             HttpStatusCode.Found,
             HttpStatusCode.PermanentRedirect);
 
@@ -69,7 +69,7 @@ public class PropertyPageIntegrationTests : IClassFixture<WebApplicationTestFact
             HttpStatusCode.Found,
             HttpStatusCode.PermanentRedirect);
 
-        if (response.StatusCode == HttpStatusCode.Redirect || 
+        if (response.StatusCode == HttpStatusCode.Redirect ||
             response.StatusCode == HttpStatusCode.Found ||
             response.StatusCode == HttpStatusCode.PermanentRedirect)
         {

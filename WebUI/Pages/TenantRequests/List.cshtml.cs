@@ -36,14 +36,14 @@ public class ListModel : PageModel
     public bool HasRequests => Requests.Any();
 
     // Status and urgency filter options
-    public readonly List<string> StatusOptions = new() 
-    { 
-        "All", "Draft", "Submitted", "Scheduled", "InProgress", "Completed", "Closed" 
+    public readonly List<string> StatusOptions = new()
+    {
+        "All", "Draft", "Submitted", "Scheduled", "InProgress", "Completed", "Closed"
     };
-    
-    public readonly List<string> UrgencyOptions = new() 
-    { 
-        "All", "Low", "Normal", "High", "Critical" 
+
+    public readonly List<string> UrgencyOptions = new()
+    {
+        "All", "Low", "Normal", "High", "Critical"
     };
 
     public async Task OnGetAsync(int pageNumber = 1, string? status = null, string? urgency = null)
@@ -57,19 +57,21 @@ public class ListModel : PageModel
             // Extract tenant information from claims
             var tenantEmail = User.FindFirst(ClaimTypes.Email)?.Value ?? User.FindFirst("email")?.Value;
             PropertyName = User.FindFirst("property_name")?.Value ?? "Unknown Property";
-            UnitNumber = User.FindFirst("unit_number")?.Value ?? User.FindFirst(CustomClaims.UnitNumber)?.Value ?? "Unknown Unit";
+            UnitNumber = User.FindFirst("unit_number")?.Value ??
+                         User.FindFirst(CustomClaims.UnitNumber)?.Value ?? "Unknown Unit";
             TenantName = User.Identity?.Name ?? "Tenant";
 
             if (string.IsNullOrEmpty(tenantEmail))
             {
-                _logger.LogWarning("No tenant email found in claims for user {UserId}", User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+                _logger.LogWarning("No tenant email found in claims for user {UserId}",
+                    User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
                 TempData["Error"] = "Unable to identify tenant. Please log in again.";
                 return;
             }
 
             await LoadTenantRequestsAsync(tenantEmail);
-            
-            _logger.LogInformation("Loaded {RequestCount} requests for tenant {TenantEmail} (Page {Page})", 
+
+            _logger.LogInformation("Loaded {RequestCount} requests for tenant {TenantEmail} (Page {Page})",
                 Requests.Count, tenantEmail, CurrentPage);
         }
         catch (Exception ex)
@@ -90,32 +92,28 @@ public class ListModel : PageModel
         };
 
         var allRequests = await _mediator.Send(query);
-        
+
         // Filter requests for this tenant
-        var tenantRequests = allRequests.Where(r => 
-            !string.IsNullOrEmpty(r.TenantEmail) &&
-            r.TenantEmail.Equals(tenantEmail, StringComparison.OrdinalIgnoreCase))
+        var tenantRequests = allRequests.Where(r =>
+                !string.IsNullOrEmpty(r.TenantEmail) &&
+                r.TenantEmail.Equals(tenantEmail, StringComparison.OrdinalIgnoreCase))
             .ToList();
 
         // Apply filters
         if (StatusFilter != "All")
-        {
-            tenantRequests = tenantRequests.Where(r => 
-                r.Status.Equals(StatusFilter, StringComparison.OrdinalIgnoreCase))
+            tenantRequests = tenantRequests.Where(r =>
+                    r.Status.Equals(StatusFilter, StringComparison.OrdinalIgnoreCase))
                 .ToList();
-        }
 
         if (UrgencyFilter != "All")
-        {
-            tenantRequests = tenantRequests.Where(r => 
-                r.UrgencyLevel.Equals(UrgencyFilter, StringComparison.OrdinalIgnoreCase))
+            tenantRequests = tenantRequests.Where(r =>
+                    r.UrgencyLevel.Equals(UrgencyFilter, StringComparison.OrdinalIgnoreCase))
                 .ToList();
-        }
 
         // Calculate pagination
         TotalRequests = tenantRequests.Count;
         TotalPages = (int)Math.Ceiling((double)TotalRequests / pageSize);
-        
+
         // Apply pagination
         var pagedRequests = tenantRequests
             .OrderByDescending(r => r.CreatedDate)

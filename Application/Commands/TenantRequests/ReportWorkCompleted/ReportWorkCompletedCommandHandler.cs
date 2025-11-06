@@ -22,21 +22,20 @@ public class ReportWorkCompletedCommandHandler : IRequestHandler<ReportWorkCompl
             .FirstOrDefaultAsync(tr => tr.Id == request.TenantRequestId, cancellationToken);
 
         if (tenantRequest == null)
-        {
             throw new InvalidOperationException($"Tenant request with ID {request.TenantRequestId} not found");
-        }
 
         // Update the worker assignment
-        if (!string.IsNullOrEmpty(tenantRequest.AssignedWorkerEmail) && !string.IsNullOrEmpty(tenantRequest.WorkOrderNumber))
+        if (!string.IsNullOrEmpty(tenantRequest.AssignedWorkerEmail) &&
+            !string.IsNullOrEmpty(tenantRequest.WorkOrderNumber))
         {
             var worker = await _context.Workers
                 .Include(w => w.Assignments)
-                .FirstOrDefaultAsync(w => w.ContactInfo.EmailAddress == tenantRequest.AssignedWorkerEmail, cancellationToken);
+                .FirstOrDefaultAsync(w => w.ContactInfo.EmailAddress == tenantRequest.AssignedWorkerEmail,
+                    cancellationToken);
 
             if (worker != null)
-            {
-                worker.CompleteWork(tenantRequest.WorkOrderNumber, request.CompletedSuccessfully, request.CompletionNotes);
-            }
+                worker.CompleteWork(tenantRequest.WorkOrderNumber, request.CompletedSuccessfully,
+                    request.CompletionNotes);
         }
 
         // Update the tenant request

@@ -32,4 +32,8 @@
     <ProjectReference Include="..\Infrastructure\RentalRepairs.Infrastructure.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="TestHelpers\" />
+  </ItemGroup>
+
 </Project>

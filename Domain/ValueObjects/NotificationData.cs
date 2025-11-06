@@ -12,7 +12,7 @@ public record NotificationData
     public string RecipientEmail { get; init; } = string.Empty;
     public NotificationType Type { get; init; }
     public NotificationPriority Priority { get; init; } = NotificationPriority.Normal;
-    
+
     public static NotificationData CreateTenantSubmissionNotification(TenantRequest request)
     {
         return new NotificationData
@@ -24,7 +24,7 @@ public record NotificationData
             Priority = request.UrgencyLevel == "Emergency" ? NotificationPriority.High : NotificationPriority.Normal
         };
     }
-    
+
     public static NotificationData CreateSuperintendentNewRequestNotification(TenantRequest request)
     {
         return new NotificationData
@@ -36,7 +36,7 @@ public record NotificationData
             Priority = request.UrgencyLevel == "Emergency" ? NotificationPriority.High : NotificationPriority.Normal
         };
     }
-    
+
     public static NotificationData CreateWorkerAssignmentNotification(TenantRequest request, string workerEmail)
     {
         return new NotificationData
@@ -48,7 +48,7 @@ public record NotificationData
             Priority = request.UrgencyLevel == "Emergency" ? NotificationPriority.High : NotificationPriority.Normal
         };
     }
-    
+
     private static string CreateTenantSubmissionBody(TenantRequest request)
     {
         return $@"Dear {request.TenantFullName},
@@ -72,7 +72,7 @@ Thank you for your patience.
 Best regards,
 Rental Repairs Team";
     }
-    
+
     private static string CreateSuperintendentNewRequestBody(TenantRequest request)
     {
         return $@"Dear {request.SuperintendentFullName},
@@ -96,7 +96,7 @@ You can access the full request details in the system.
 Best regards,
 Rental Repairs System";
     }
-    
+
     private static string CreateWorkerAssignmentBody(TenantRequest request)
     {
         return $@"Dear Worker,

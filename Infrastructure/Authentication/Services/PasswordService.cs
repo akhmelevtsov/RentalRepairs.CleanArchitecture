@@ -40,8 +40,8 @@ public class PasswordService : IPasswordService
     public PasswordService(IHostEnvironment environment)
     {
         // ? PERFORMANCE OPTIMIZATION: Use different work factors by environment
-        _workFactor = environment.IsDevelopment() 
-            ? 8   // Fast for development (~50ms)
+        _workFactor = environment.IsDevelopment()
+            ? 8 // Fast for development (~50ms)
             : 12; // Secure for production (~500ms-2s)
     }
 
@@ -86,7 +86,7 @@ public class PasswordService : IPasswordService
     {
         const string validChars = "ABCDEFGHJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
         var random = new Random();
-        
+
         return new string(Enumerable.Repeat(validChars, length)
             .Select(s => s[random.Next(s.Length)]).ToArray());
     }

@@ -2,7 +2,6 @@ using RentalRepairs.Domain.Common;
 using RentalRepairs.Domain.Enums;
 using RentalRepairs.Domain.Events.Properties;
 using RentalRepairs.Domain.Exceptions;
-using RentalRepairs.Domain.Services;
 using RentalRepairs.Domain.ValueObjects;
 
 namespace RentalRepairs.Domain.Entities;
@@ -81,99 +80,25 @@ public class Tenant : BaseEntity
 
         // Create the request using factory method - starts in Draft status
         var tenantRequest = TenantRequest.CreateNew(
-            code: requestCode,
-            title: title,
-            description: description,
-            urgencyLevel: urgency.GetDisplayName(), // Convert enum to string for backward compatibility
-            tenantId: this.Id,
-            propertyId: this.PropertyId,
-            tenantFullName: ContactInfo.GetFullName(),
-            tenantEmail: ContactInfo.EmailAddress,
-            tenantUnit: UnitNumber,
-            propertyName: "Property Name", // This should come from Property aggregate
-            propertyPhone: "Property Phone", // This should come from Property aggregate
-            superintendentFullName: "Superintendent Name", // This should come from Property aggregate
-            superintendentEmail: "superintendent@example.com" // This should come from Property aggregate
+            requestCode,
+            title,
+            description,
+            urgency.GetDisplayName(), // Convert enum to string for backward compatibility
+            Id,
+            PropertyId,
+            ContactInfo.GetFullName(),
+            ContactInfo.EmailAddress,
+            UnitNumber,
+            "Property Name", // This should come from Property aggregate
+            "Property Phone", // This should come from Property aggregate
+            "Superintendent Name", // This should come from Property aggregate
+            "superintendent@example.com" // This should come from Property aggregate
         );
 
         _requests.Add(tenantRequest);
 
         // Domain event is already raised by TenantRequest.CreateNew factory method
         return tenantRequest;
-    }
-
-    /// <summary>
-    /// Domain method to submit a request, applying business rules via policy service.
-    /// This is where the actual business validation happens using configurable rules.
-    /// </summary>
-    public void SubmitTenantRequest(TenantRequest request, TenantRequestUrgency urgency, ITenantRequestSubmissionPolicy policy)
-    {
-        if (request == null)
-        {
-            throw new ArgumentNullException(nameof(request));
-        }
-
-        if (policy == null)
-        {
-            throw new ArgumentNullException(nameof(policy));
-        }
-
-        if (request.TenantId != this.Id)
-        {
-            throw new TenantRequestDomainException("Request does not belong to this tenant");
-        }
-
-        if (!_requests.Contains(request))
-        {
-            throw new TenantRequestDomainException("Request is not associated with this tenant");
-        }
-
-        // Apply business rules using configurable policy service
-        policy.ValidateCanSubmitRequest(this, urgency);
-
-        // Submit the request
-        request.Submit();
-    }
-
-    /// <summary>
-    /// Domain query method to check if tenant can submit requests using policy service.
-    /// Used for UI context and validation.
-    /// </summary>
-    public bool CanSubmitRequest(TenantRequestUrgency urgency, ITenantRequestSubmissionPolicy policy)
-    {
-        if (policy == null)
-        {
-            throw new ArgumentNullException(nameof(policy));
-        }
-
-        return policy.CanSubmitRequest(this, urgency);
-    }
-
-    /// <summary>
-    /// Gets the next allowed submission time using policy service.
-    /// Returns null if tenant can submit immediately.
-    /// </summary>
-    public DateTime? GetNextAllowedSubmissionTime(ITenantRequestSubmissionPolicy policy)
-    {
-        if (policy == null)
-        {
-            throw new ArgumentNullException(nameof(policy));
-        }
-
-        return policy.GetNextAllowedSubmissionTime(this);
-    }
-
-    /// <summary>
-    /// Gets the remaining emergency requests for the current period using policy service.
-    /// </summary>
-    public int GetRemainingEmergencyRequests(ITenantRequestSubmissionPolicy policy)
-    {
-        if (policy == null)
-        {
-            throw new ArgumentNullException(nameof(policy));
-        }
-
-        return policy.GetRemainingEmergencyRequests(this);
     }
 
     /// <summary>

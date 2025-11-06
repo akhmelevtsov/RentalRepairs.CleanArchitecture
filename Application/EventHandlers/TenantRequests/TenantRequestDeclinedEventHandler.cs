@@ -26,8 +26,8 @@ public class TenantRequestDeclinedEventHandler : INotificationHandler<TenantRequ
         var request = notification.TenantRequest;
         var reason = notification.Reason;
 
-        _logger.LogInformation("Processing TenantRequestDeclinedEvent for request {RequestCode} with reason: {Reason}", 
-            request.Code, 
+        _logger.LogInformation("Processing TenantRequestDeclinedEvent for request {RequestCode} with reason: {Reason}",
+            request.Code,
             reason);
 
         try
@@ -35,12 +35,12 @@ public class TenantRequestDeclinedEventHandler : INotificationHandler<TenantRequ
             // Notify tenant of request declination with reason
             await _notificationService.NotifyTenantOfRequestDeclinationAsync(request, reason, cancellationToken);
 
-            _logger.LogInformation("Successfully processed TenantRequestDeclinedEvent for request {RequestCode}", 
+            _logger.LogInformation("Successfully processed TenantRequestDeclinedEvent for request {RequestCode}",
                 request.Code);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error processing TenantRequestDeclinedEvent for request {RequestCode}", 
+            _logger.LogError(ex, "Error processing TenantRequestDeclinedEvent for request {RequestCode}",
                 request.Code);
             throw;
         }

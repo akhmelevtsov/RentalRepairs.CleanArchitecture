@@ -116,7 +116,8 @@ public class TenantRequestTestDataBuilder
         return request;
     }
 
-    public TenantRequest BuildScheduled(DateTime? scheduledDate = null, string? workerEmail = null, string? workOrder = null)
+    public TenantRequest BuildScheduled(DateTime? scheduledDate = null, string? workerEmail = null,
+        string? workOrder = null)
     {
         var request = BuildSubmitted();
         request.Schedule(
@@ -140,33 +141,51 @@ public class TenantRequestTestDataBuilder
         return request;
     }
 
-    public static TenantRequestTestDataBuilder Default() => new TenantRequestTestDataBuilder();
+    public static TenantRequestTestDataBuilder Default()
+    {
+        return new TenantRequestTestDataBuilder();
+    }
 
-    public static TenantRequestTestDataBuilder ForPlumbingIssue() => new TenantRequestTestDataBuilder()
-        .WithTitle("Leaky Faucet")
-        .WithDescription("Kitchen faucet is dripping constantly")
-        .WithCode("PL-001");
+    public static TenantRequestTestDataBuilder ForPlumbingIssue()
+    {
+        return new TenantRequestTestDataBuilder()
+            .WithTitle("Leaky Faucet")
+            .WithDescription("Kitchen faucet is dripping constantly")
+            .WithCode("PL-001");
+    }
 
-    public static TenantRequestTestDataBuilder ForElectricalIssue() => new TenantRequestTestDataBuilder()
-        .WithTitle("Outlet Not Working")
-        .WithDescription("Bathroom outlet has no power")
-        .WithCode("EL-001");
+    public static TenantRequestTestDataBuilder ForElectricalIssue()
+    {
+        return new TenantRequestTestDataBuilder()
+            .WithTitle("Outlet Not Working")
+            .WithDescription("Bathroom outlet has no power")
+            .WithCode("EL-001");
+    }
 
-    public static TenantRequestTestDataBuilder ForHVACIssue() => new TenantRequestTestDataBuilder()
-        .WithTitle("Heating Not Working")
-        .WithDescription("Unit has no heat")
-        .WithCode("HV-001")
-        .AsCritical();
+    public static TenantRequestTestDataBuilder ForHVACIssue()
+    {
+        return new TenantRequestTestDataBuilder()
+            .WithTitle("Heating Not Working")
+            .WithDescription("Unit has no heat")
+            .WithCode("HV-001")
+            .AsCritical();
+    }
 
-    public static TenantRequestTestDataBuilder ForEmergencyIssue() => new TenantRequestTestDataBuilder()
-        .WithTitle("Gas Leak")
-        .WithDescription("Strong gas smell in kitchen")
-        .WithCode("EM-001")
-        .AsEmergency();
+    public static TenantRequestTestDataBuilder ForEmergencyIssue()
+    {
+        return new TenantRequestTestDataBuilder()
+            .WithTitle("Gas Leak")
+            .WithDescription("Strong gas smell in kitchen")
+            .WithCode("EM-001")
+            .AsEmergency();
+    }
 
-    public static TenantRequestTestDataBuilder ForMaintenanceIssue() => new TenantRequestTestDataBuilder()
-        .WithTitle("Door Handle Loose")
-        .WithDescription("Front door handle needs tightening")
-        .WithCode("MT-001")
-        .AsLow();
+    public static TenantRequestTestDataBuilder ForMaintenanceIssue()
+    {
+        return new TenantRequestTestDataBuilder()
+            .WithTitle("Door Handle Loose")
+            .WithDescription("Front door handle needs tightening")
+            .WithCode("MT-001")
+            .AsLow();
+    }
 }

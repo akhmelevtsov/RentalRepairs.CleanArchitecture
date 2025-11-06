@@ -1,4 +1,3 @@
-using RentalRepairs.Application.ReadModels;
 using RentalRepairs.Domain.Enums;
 using RentalRepairs.WebUI.Helpers;
 
@@ -21,7 +20,8 @@ public class TenantRequestUIHelperTests
     [InlineData(TenantRequestStatus.Failed, "badge bg-danger")]
     [InlineData(TenantRequestStatus.Declined, "badge bg-dark")]
     [InlineData(TenantRequestStatus.Closed, "badge bg-info")]
-    public void GetStatusBadgeClass_WithStatus_ShouldReturnCorrectBadgeClass(TenantRequestStatus status, string expectedClass)
+    public void GetStatusBadgeClass_WithStatus_ShouldReturnCorrectBadgeClass(TenantRequestStatus status,
+        string expectedClass)
     {
         // Act
         var result = TenantRequestUIHelper.GetStatusBadgeClass(status);
@@ -39,7 +39,8 @@ public class TenantRequestUIHelperTests
     [InlineData("Declined", "badge bg-dark")]
     [InlineData("Closed", "badge bg-info")]
     [InlineData("Unknown", "badge bg-secondary")]
-    public void GetStatusBadgeClass_WithDisplayName_ShouldReturnCorrectBadgeClass(string statusDisplayName, string expectedClass)
+    public void GetStatusBadgeClass_WithDisplayName_ShouldReturnCorrectBadgeClass(string statusDisplayName,
+        string expectedClass)
     {
         // Act
         var result = TenantRequestUIHelper.GetStatusBadgeClass(statusDisplayName);
@@ -143,32 +144,10 @@ public class TenantRequestUIHelperTests
     [Fact]
     public void ShouldShowEmergencyAlert_WithEmergencyRequest_ShouldReturnTrue()
     {
-        // Arrange - Create request with High urgency (which makes IsEmergency true)
-        var request = new TenantRequestDetailsReadModel
-        {
-            UrgencyLevel = "High",
-            Status = Domain.Enums.TenantRequestStatus.Submitted
-        };
-
         // Act
-        var result = TenantRequestUIHelper.ShouldShowEmergencyAlert(request);
-
-        // Assert
-        result.Should().BeTrue();
-    }
-
-    [Fact]
-    public void ShouldShowEmergencyAlert_WithEmergencyUrgencyRequest_ShouldReturnTrue()
-    {
-        // Arrange - Create request with Emergency urgency
-        var request = new TenantRequestDetailsReadModel
-        {
-            UrgencyLevel = "Emergency",
-            Status = Domain.Enums.TenantRequestStatus.Submitted
-        };
-
-        // Act
-        var result = TenantRequestUIHelper.ShouldShowEmergencyAlert(request);
+        var result = TenantRequestUIHelper.ShouldShowEmergencyAlert(
+            true,
+            TenantRequestStatus.Submitted);
 
         // Assert
         result.Should().BeTrue();
@@ -177,15 +156,10 @@ public class TenantRequestUIHelperTests
     [Fact]
     public void ShouldShowEmergencyAlert_WithNonEmergencyRequest_ShouldReturnFalse()
     {
-        // Arrange - Create request with Normal urgency (which makes IsEmergency false)
-        var request = new TenantRequestDetailsReadModel
-        {
-            UrgencyLevel = "Normal",
-            Status = Domain.Enums.TenantRequestStatus.Submitted
-        };
-
         // Act
-        var result = TenantRequestUIHelper.ShouldShowEmergencyAlert(request);
+        var result = TenantRequestUIHelper.ShouldShowEmergencyAlert(
+            false,
+            TenantRequestStatus.Submitted);
 
         // Assert
         result.Should().BeFalse();
@@ -194,15 +168,10 @@ public class TenantRequestUIHelperTests
     [Fact]
     public void ShouldShowEmergencyAlert_WithCompletedEmergencyRequest_ShouldReturnFalse()
     {
-        // Arrange - Even emergency requests don't show alert when completed
-        var request = new TenantRequestDetailsReadModel
-        {
-            UrgencyLevel = "Emergency",
-            Status = Domain.Enums.TenantRequestStatus.Done
-        };
-
         // Act
-        var result = TenantRequestUIHelper.ShouldShowEmergencyAlert(request);
+        var result = TenantRequestUIHelper.ShouldShowEmergencyAlert(
+            true,
+            TenantRequestStatus.Done);
 
         // Assert
         result.Should().BeFalse();
@@ -211,15 +180,10 @@ public class TenantRequestUIHelperTests
     [Fact]
     public void ShouldShowOverdueWarning_WithOverdueRequest_ShouldReturnTrue()
     {
-        // Arrange - Create request with overdue scheduled date
-        var request = new TenantRequestDetailsReadModel
-        {
-            ScheduledDate = DateTime.Now.AddHours(-2), // Overdue
-            Status = Domain.Enums.TenantRequestStatus.Scheduled
-        };
-
         // Act
-        var result = TenantRequestUIHelper.ShouldShowOverdueWarning(request);
+        var result = TenantRequestUIHelper.ShouldShowOverdueWarning(
+            DateTime.Now.AddHours(-2),
+            TenantRequestStatus.Scheduled);
 
         // Assert
         result.Should().BeTrue();
@@ -228,15 +192,10 @@ public class TenantRequestUIHelperTests
     [Fact]
     public void ShouldShowOverdueWarning_WithFutureScheduledRequest_ShouldReturnFalse()
     {
-        // Arrange - Create request with future scheduled date
-        var request = new TenantRequestDetailsReadModel
-        {
-            ScheduledDate = DateTime.Now.AddHours(2), // Future
-            Status = Domain.Enums.TenantRequestStatus.Scheduled
-        };
-
         // Act
-        var result = TenantRequestUIHelper.ShouldShowOverdueWarning(request);
+        var result = TenantRequestUIHelper.ShouldShowOverdueWarning(
+            DateTime.Now.AddHours(2),
+            TenantRequestStatus.Scheduled);
 
         // Assert
         result.Should().BeFalse();
@@ -245,15 +204,10 @@ public class TenantRequestUIHelperTests
     [Fact]
     public void ShouldShowOverdueWarning_WithCompletedRequest_ShouldReturnFalse()
     {
-        // Arrange - Completed requests don't show overdue warning
-        var request = new TenantRequestDetailsReadModel
-        {
-            ScheduledDate = DateTime.Now.AddHours(-2), // Would be overdue
-            Status = Domain.Enums.TenantRequestStatus.Done // But completed
-        };
-
         // Act
-        var result = TenantRequestUIHelper.ShouldShowOverdueWarning(request);
+        var result = TenantRequestUIHelper.ShouldShowOverdueWarning(
+            DateTime.Now.AddHours(-2),
+            TenantRequestStatus.Done);
 
         // Assert
         result.Should().BeFalse();
@@ -263,7 +217,7 @@ public class TenantRequestUIHelperTests
     public void CanEditRequest_WithDraftStatus_ShouldReturnTrue()
     {
         // Act
-        var result = TenantRequestUIHelper.CanEditRequest(Domain.Enums.TenantRequestStatus.Draft);
+        var result = TenantRequestUIHelper.CanEditRequest(TenantRequestStatus.Draft);
 
         // Assert
         result.Should().BeTrue();
@@ -273,7 +227,7 @@ public class TenantRequestUIHelperTests
     public void CanEditRequest_WithNonDraftStatus_ShouldReturnFalse()
     {
         // Act
-        var result = TenantRequestUIHelper.CanEditRequest(Domain.Enums.TenantRequestStatus.Submitted);
+        var result = TenantRequestUIHelper.CanEditRequest(TenantRequestStatus.Submitted);
 
         // Assert
         result.Should().BeFalse();
@@ -282,14 +236,8 @@ public class TenantRequestUIHelperTests
     [Fact]
     public void ShouldShowWorkAssignment_WithAssignedWorker_ShouldReturnTrue()
     {
-        // Arrange
-        var request = new TenantRequestDetailsReadModel
-        {
-            AssignedWorkerEmail = "worker@test.com"
-        };
-
         // Act
-        var result = TenantRequestUIHelper.ShouldShowWorkAssignment(request);
+        var result = TenantRequestUIHelper.ShouldShowWorkAssignment("worker@test.com");
 
         // Assert
         result.Should().BeTrue();
@@ -298,14 +246,8 @@ public class TenantRequestUIHelperTests
     [Fact]
     public void ShouldShowWorkAssignment_WithoutAssignedWorker_ShouldReturnFalse()
     {
-        // Arrange
-        var request = new TenantRequestDetailsReadModel
-        {
-            AssignedWorkerEmail = null
-        };
-
         // Act
-        var result = TenantRequestUIHelper.ShouldShowWorkAssignment(request);
+        var result = TenantRequestUIHelper.ShouldShowWorkAssignment(null);
 
         // Assert
         result.Should().BeFalse();

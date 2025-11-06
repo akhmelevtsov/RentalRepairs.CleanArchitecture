@@ -10,12 +10,12 @@ public interface ICurrentUserService
     /// Primary user identifier - typically email or unique user ID
     /// </summary>
     string? UserId { get; }
-    
+
     /// <summary>
     /// Display name for the current user
     /// </summary>
     string? UserName { get; }
-    
+
     /// <summary>
     /// Whether the current user is authenticated
     /// </summary>

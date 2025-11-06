@@ -28,7 +28,7 @@ public class DatabaseAuditingTests
     {
         // Arrange
         using var context = CreateTestContext();
-        
+
         var property = new Property(
             "Test Property",
             "TP001",
@@ -45,7 +45,8 @@ public class DatabaseAuditingTests
         // Assert - Property creation might save additional related entities and trigger domain events
         result.Should().BeGreaterThanOrEqualTo(1, "At least the property should be saved");
         property.CreatedBy.Should().NotBeNullOrEmpty("CreatedBy should be populated during audit");
-        property.CreatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromMinutes(1), "CreatedAt should be set to current time");
+        property.CreatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromMinutes(1),
+            "CreatedAt should be set to current time");
         property.IsDeleted.Should().BeFalse("New entities should not be marked as deleted");
 
         _output.WriteLine($"Creation audit applied: CreatedBy={property.CreatedBy}, CreatedAt={property.CreatedAt}");
@@ -88,7 +89,8 @@ public class DatabaseAuditingTests
         property.UpdatedBy.Should().NotBeNullOrEmpty("UpdatedBy should be populated during modification");
         property.UpdatedAt.Should().NotBeNull("UpdatedAt should be set during modification");
 
-        _output.WriteLine($"Modification audit applied: UpdatedBy={property.UpdatedBy}, UpdatedAt={property.UpdatedAt}");
+        _output.WriteLine(
+            $"Modification audit applied: UpdatedBy={property.UpdatedBy}, UpdatedAt={property.UpdatedAt}");
         _output.WriteLine($"Creation audit preserved: CreatedBy={property.CreatedBy}, CreatedAt={property.CreatedAt}");
     }
 
@@ -128,7 +130,7 @@ public class DatabaseAuditingTests
     {
         // Arrange
         using var context = CreateTestContext();
-        
+
         var activeProperty = new Property(
             "Active Property",
             "AP001",
@@ -160,7 +162,8 @@ public class DatabaseAuditingTests
         visibleProperties.Should().HaveCount(1, "Only non-deleted entities should be visible");
         visibleProperties[0].Code.Should().Be("AP001", "The active property should be visible");
 
-        _output.WriteLine($"Query filter working: {visibleProperties.Count} active properties visible, soft-deleted entities excluded");
+        _output.WriteLine(
+            $"Query filter working: {visibleProperties.Count} active properties visible, soft-deleted entities excluded");
     }
 
     [Fact]
@@ -168,7 +171,7 @@ public class DatabaseAuditingTests
     {
         // Arrange - Use a simpler entity (Worker) for basic auditing test
         using var context = CreateTestContext();
-        
+
         var workerContact = new PersonContactInfo("Test", "Worker", "test@worker.com", "555-1234");
         var worker = new Worker(workerContact);
 
@@ -179,7 +182,8 @@ public class DatabaseAuditingTests
         // Assert
         result.Should().BeGreaterThanOrEqualTo(1, "At least the worker should be saved");
         worker.CreatedBy.Should().NotBeNullOrEmpty("CreatedBy should be populated during audit");
-        worker.CreatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromMinutes(1), "CreatedAt should be set to current time");
+        worker.CreatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromMinutes(1),
+            "CreatedAt should be set to current time");
 
         _output.WriteLine($"Basic auditing working: CreatedBy={worker.CreatedBy}");
         _output.WriteLine($"Total entities saved: {result}");
@@ -190,7 +194,7 @@ public class DatabaseAuditingTests
     {
         // Arrange
         using var context = CreateTestContext();
-        
+
         var workerContact = new PersonContactInfo("Alice", "Johnson", "alice@worker.com", "555-5678");
         var worker = new Worker(workerContact);
 
@@ -201,10 +205,12 @@ public class DatabaseAuditingTests
         // Assert - Worker creation might trigger domain events that create additional entities
         result.Should().BeGreaterThanOrEqualTo(1, "At least the worker should be saved");
         worker.CreatedBy.Should().NotBeNullOrEmpty("CreatedBy should be populated during audit");
-        worker.CreatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromMinutes(1), "CreatedAt should be set to current time");
+        worker.CreatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromMinutes(1),
+            "CreatedAt should be set to current time");
         worker.IsDeleted.Should().BeFalse("New entities should not be marked as deleted");
 
-        _output.WriteLine($" Worker creation audit applied: CreatedBy={worker.CreatedBy}, CreatedAt={worker.CreatedAt}");
+        _output.WriteLine(
+            $" Worker creation audit applied: CreatedBy={worker.CreatedBy}, CreatedAt={worker.CreatedAt}");
         _output.WriteLine($" Total entities saved: {result}");
     }
 
@@ -213,7 +219,7 @@ public class DatabaseAuditingTests
     {
         // Arrange
         using var context = CreateTestContext();
-        
+
         var workerContact = new PersonContactInfo("Bob", "Smith", "bob@worker.com", "555-9999");
         var worker = new Worker(workerContact);
 
@@ -228,7 +234,7 @@ public class DatabaseAuditingTests
         await Task.Delay(100);
 
         // Modify worker
-        worker.SetSpecialization("Electrical");
+        worker.SetSpecialization(Domain.Enums.WorkerSpecialization.Electrical);
         await context.SaveChangesAsync();
 
         // Assert
@@ -247,7 +253,7 @@ public class DatabaseAuditingTests
     private ApplicationDbContext CreateTestContext()
     {
         var options = new DbContextOptionsBuilder<ApplicationDbContext>()
-            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .EnableSensitiveDataLogging()
             .Options;
 
@@ -286,7 +292,7 @@ public class AuditConfigurationTests
 
         // Assert
         propertyEntityType.Should().NotBeNull();
-        
+
         var createdAtProperty = propertyEntityType!.FindProperty(nameof(IAuditableEntity.CreatedAt));
         var createdByProperty = propertyEntityType.FindProperty(nameof(IAuditableEntity.CreatedBy));
         var isDeletedProperty = propertyEntityType.FindProperty(nameof(ISoftDeletableEntity.IsDeleted));
@@ -309,7 +315,7 @@ public class AuditConfigurationTests
     private static ApplicationDbContext CreateConfigurationTestContext()
     {
         var options = new DbContextOptionsBuilder<ApplicationDbContext>()
-            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .Options;
 
         using var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());

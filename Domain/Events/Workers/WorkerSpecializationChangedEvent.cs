@@ -1,21 +1,26 @@
 using RentalRepairs.Domain.Common;
 using RentalRepairs.Domain.Entities;
+using RentalRepairs.Domain.Enums;
 
 namespace RentalRepairs.Domain.Events.Workers;
 
 /// <summary>
 /// Domain event raised when a worker's specialization is changed.
+/// Phase 2: Now uses WorkerSpecialization enum.
 /// </summary>
 public class WorkerSpecializationChangedEvent : BaseEvent
 {
-    public WorkerSpecializationChangedEvent(Worker worker, string? oldSpecialization, string newSpecialization)
+    public WorkerSpecializationChangedEvent(
+        Worker worker,
+        WorkerSpecialization oldSpecialization,
+        WorkerSpecialization newSpecialization)
     {
         Worker = worker ?? throw new ArgumentNullException(nameof(worker));
         OldSpecialization = oldSpecialization;
-        NewSpecialization = newSpecialization ?? throw new ArgumentNullException(nameof(newSpecialization));
+        NewSpecialization = newSpecialization;
     }
 
     public Worker Worker { get; }
-    public string? OldSpecialization { get; }
-    public string NewSpecialization { get; }
+    public WorkerSpecialization OldSpecialization { get; }
+    public WorkerSpecialization NewSpecialization { get; }
 }

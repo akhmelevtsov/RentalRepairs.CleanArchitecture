@@ -10,17 +10,17 @@ public interface IAuthenticationService
     /// Unified authentication method - determines user role and parameters automatically
     /// </summary>
     Task<AuthenticationResult> AuthenticateAsync(string email, string password);
-    
+
     /// <summary>
     /// Validate user credentials without full authentication
     /// </summary>
     Task<bool> ValidateCredentialsAsync(string email, string password);
-    
+
     /// <summary>
     /// Validate authentication token
     /// </summary>
     Task<bool> ValidateTokenAsync(string token);
-    
+
     /// <summary>
     /// Sign out current user
     /// </summary>
@@ -45,7 +45,8 @@ public interface IDemoUserService
     /// <summary>
     /// Register a new demo user (if enabled)
     /// </summary>
-    Task<bool> RegisterDemoUserAsync(string email, string password, string displayName, List<string> roles, Dictionary<string, string>? claims = null);
+    Task<bool> RegisterDemoUserAsync(string email, string password, string displayName, List<string> roles,
+        Dictionary<string, string>? claims = null);
 
     /// <summary>
     /// Get all available demo users for display
@@ -82,26 +83,27 @@ public class AuthenticationResult
     public DateTime ExpiresAt { get; set; }
     public string? ErrorMessage { get; set; }
     public Dictionary<string, object> Claims { get; set; } = new();
-    
+
     // Security features
     public bool IsLockedOut { get; set; }
     public DateTime? LockoutEndTime { get; set; }
     public int? RemainingAttempts { get; set; }
     public bool RequiresPasswordChange { get; set; }
     public string? SecurityMessage { get; set; }
-    
+
     // Role-based dashboard routing
     public string DashboardUrl { get; set; } = "/";
     public string PrimaryRole { get; set; } = string.Empty;
-    
+
     // Role-specific parameters (extracted from claims)
     public string? PropertyCode { get; set; }
     public string? PropertyName { get; set; }
     public string? UnitNumber { get; set; }
     public string? WorkerSpecialization { get; set; }
-    
+
     // Factory methods for easy creation
-    public static AuthenticationResult Success(string userId, string email, string displayName, List<string> roles, Dictionary<string, object>? claims = null)
+    public static AuthenticationResult Success(string userId, string email, string displayName, List<string> roles,
+        Dictionary<string, object>? claims = null)
     {
         var result = new AuthenticationResult
         {
@@ -114,25 +116,23 @@ public class AuthenticationResult
             ExpiresAt = DateTime.UtcNow.AddHours(8),
             PrimaryRole = roles.FirstOrDefault() ?? ""
         };
-        
+
         if (claims != null)
         {
-            foreach (var claim in claims)
-            {
-                result.Claims[claim.Key] = claim.Value;
-            }
-            
+            foreach (var claim in claims) result.Claims[claim.Key] = claim.Value;
+
             // Extract role-specific parameters
             ExtractRoleParameters(result, claims);
         }
-        
+
         // Set dashboard URL based on primary role
         result.DashboardUrl = GetDashboardUrlForRole(result.PrimaryRole);
-        
+
         return result;
     }
-    
-    public static AuthenticationResult Failure(string errorMessage, bool isLockedOut = false, DateTime? lockoutEndTime = null)
+
+    public static AuthenticationResult Failure(string errorMessage, bool isLockedOut = false,
+        DateTime? lockoutEndTime = null)
     {
         return new AuthenticationResult
         {
@@ -142,22 +142,22 @@ public class AuthenticationResult
             LockoutEndTime = lockoutEndTime
         };
     }
-    
+
     private static void ExtractRoleParameters(AuthenticationResult result, Dictionary<string, object> claims)
     {
         if (claims.TryGetValue("property_code", out var propertyCode))
             result.PropertyCode = propertyCode?.ToString();
-            
+
         if (claims.TryGetValue("property_name", out var propertyName))
             result.PropertyName = propertyName?.ToString();
-            
+
         if (claims.TryGetValue("unit_number", out var unitNumber))
             result.UnitNumber = unitNumber?.ToString();
-            
+
         if (claims.TryGetValue("worker_specialization", out var specialization))
             result.WorkerSpecialization = specialization?.ToString();
     }
-    
+
     private static string GetDashboardUrlForRole(string role)
     {
         return role switch
@@ -183,7 +183,7 @@ public class DemoUserInfo
     public Dictionary<string, string> Claims { get; set; } = new();
     public bool IsActive { get; set; } = true;
     public string? Description { get; set; }
-    
+
     // Additional properties that WebUI might expect
     public string Role => Roles.FirstOrDefault() ?? "";
     public Dictionary<string, string> AdditionalClaims => Claims;
@@ -199,7 +199,7 @@ public class DemoUserValidationResult
     public bool IsLockedOut { get; set; }
     public DateTime? LockoutEndTime { get; set; }
     public DemoUserCredential? User { get; set; }
-    
+
     public static DemoUserValidationResult Success(DemoUserCredential user)
     {
         return new DemoUserValidationResult
@@ -208,8 +208,9 @@ public class DemoUserValidationResult
             User = user
         };
     }
-    
-    public static DemoUserValidationResult Failure(string errorMessage, bool isLockedOut = false, DateTime? lockoutEndTime = null)
+
+    public static DemoUserValidationResult Failure(string errorMessage, bool isLockedOut = false,
+        DateTime? lockoutEndTime = null)
     {
         return new DemoUserValidationResult
         {

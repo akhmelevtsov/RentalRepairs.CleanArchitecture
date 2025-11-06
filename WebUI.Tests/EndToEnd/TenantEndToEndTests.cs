@@ -35,16 +35,17 @@ public class TenantEndToEndTests : IClassFixture<WebApplicationTestFactory<Progr
 
         // Step 2: Access maintenance request submission form
         var submitResponse = await _client.GetAsync("/TenantRequests/Submit");
-        submitResponse.StatusCode.Should().BeOneOf(HttpStatusCode.OK, HttpStatusCode.Redirect, HttpStatusCode.Found, HttpStatusCode.PermanentRedirect);
-        
+        submitResponse.StatusCode.Should().BeOneOf(HttpStatusCode.OK, HttpStatusCode.Redirect, HttpStatusCode.Found,
+            HttpStatusCode.PermanentRedirect);
+
         if (submitResponse.StatusCode == HttpStatusCode.OK)
         {
             var submitContent = await submitResponse.Content.ReadAsStringAsync();
             var token = ExtractAntiforgeryToken(submitContent);
-            
+
             // Verify form shows tenant information pre-populated
             submitContent.Should().ContainAny("Submit", "Request", "Maintenance");
-            
+
             _output.WriteLine("Maintenance request form accessible");
 
             // Step 3: Submit maintenance request
@@ -56,7 +57,8 @@ public class TenantEndToEndTests : IClassFixture<WebApplicationTestFactory<Progr
                 new("TenantRequest.TenantLastName", "Smith"),
                 new("TenantRequest.TenantEmail", "tenant.smith@domain.com"),
                 new("TenantRequest.TenantPhone", "555-0123"),
-                new("TenantRequest.ProblemDescription", "Kitchen faucet dripping constantly - needs immediate attention"),
+                new("TenantRequest.ProblemDescription",
+                    "Kitchen faucet dripping constantly - needs immediate attention"),
                 new("TenantRequest.UrgencyLevel", "High"),
                 new("TenantRequest.PreferredContactTime", "Morning (8 AM - 12 PM)"),
                 new("__RequestVerificationToken", token)
@@ -64,14 +66,15 @@ public class TenantEndToEndTests : IClassFixture<WebApplicationTestFactory<Progr
 
             var requestFormContent = new FormUrlEncodedContent(requestData);
             var requestPostResponse = await _client.PostAsync("/TenantRequests/Submit", requestFormContent);
-            
+
             // Should redirect after successful submission
-            requestPostResponse.StatusCode.Should().BeOneOf(HttpStatusCode.Redirect, HttpStatusCode.Found, HttpStatusCode.OK, HttpStatusCode.PermanentRedirect);
-            
+            requestPostResponse.StatusCode.Should().BeOneOf(HttpStatusCode.Redirect, HttpStatusCode.Found,
+                HttpStatusCode.OK, HttpStatusCode.PermanentRedirect);
+
             _output.WriteLine("Maintenance request submitted successfully");
 
             // Step 4: Verify request was created (follow redirect if applicable)
-            if (requestPostResponse.StatusCode == HttpStatusCode.Redirect || 
+            if (requestPostResponse.StatusCode == HttpStatusCode.Redirect ||
                 requestPostResponse.StatusCode == HttpStatusCode.Found ||
                 requestPostResponse.StatusCode == HttpStatusCode.PermanentRedirect)
             {
@@ -79,14 +82,15 @@ public class TenantEndToEndTests : IClassFixture<WebApplicationTestFactory<Progr
                 if (!string.IsNullOrEmpty(location))
                 {
                     var resultResponse = await _client.GetAsync(location);
-                    resultResponse.StatusCode.Should().BeOneOf(HttpStatusCode.OK, HttpStatusCode.Redirect, HttpStatusCode.Found, HttpStatusCode.PermanentRedirect);
-                    
+                    resultResponse.StatusCode.Should().BeOneOf(HttpStatusCode.OK, HttpStatusCode.Redirect,
+                        HttpStatusCode.Found, HttpStatusCode.PermanentRedirect);
+
                     if (resultResponse.StatusCode == HttpStatusCode.OK)
                     {
                         var resultContent = await resultResponse.Content.ReadAsStringAsync();
                         resultContent.Should().NotBeNullOrEmpty();
                     }
-                    
+
                     _output.WriteLine("Request submission confirmed");
                 }
             }
@@ -107,13 +111,14 @@ public class TenantEndToEndTests : IClassFixture<WebApplicationTestFactory<Progr
 
         // Step 2: Access maintenance request submission form
         var submitResponse = await _client.GetAsync("/TenantRequests/Submit");
-        submitResponse.StatusCode.Should().BeOneOf(HttpStatusCode.OK, HttpStatusCode.Redirect, HttpStatusCode.Found, HttpStatusCode.PermanentRedirect);
-        
+        submitResponse.StatusCode.Should().BeOneOf(HttpStatusCode.OK, HttpStatusCode.Redirect, HttpStatusCode.Found,
+            HttpStatusCode.PermanentRedirect);
+
         if (submitResponse.StatusCode == HttpStatusCode.OK)
         {
             var submitContent = await submitResponse.Content.ReadAsStringAsync();
             var token = ExtractAntiforgeryToken(submitContent);
-            
+
             _output.WriteLine("Emergency request form accessible");
 
             // Step 3: Submit emergency maintenance request
@@ -125,7 +130,8 @@ public class TenantEndToEndTests : IClassFixture<WebApplicationTestFactory<Progr
                 new("TenantRequest.TenantLastName", "Smith"),
                 new("TenantRequest.TenantEmail", "tenant.smith@domain.com"),
                 new("TenantRequest.TenantPhone", "555-0123"),
-                new("TenantRequest.ProblemDescription", "Water heater completely failed - no hot water for family with small children"),
+                new("TenantRequest.ProblemDescription",
+                    "Water heater completely failed - no hot water for family with small children"),
                 new("TenantRequest.UrgencyLevel", "Critical"),
                 new("TenantRequest.PreferredContactTime", "Anytime"),
                 new("__RequestVerificationToken", token)
@@ -133,10 +139,11 @@ public class TenantEndToEndTests : IClassFixture<WebApplicationTestFactory<Progr
 
             var emergencyFormContent = new FormUrlEncodedContent(emergencyRequestData);
             var emergencyPostResponse = await _client.PostAsync("/TenantRequests/Submit", emergencyFormContent);
-            
+
             // Should handle emergency request appropriately
-            emergencyPostResponse.StatusCode.Should().BeOneOf(HttpStatusCode.Redirect, HttpStatusCode.Found, HttpStatusCode.OK, HttpStatusCode.PermanentRedirect);
-            
+            emergencyPostResponse.StatusCode.Should().BeOneOf(HttpStatusCode.Redirect, HttpStatusCode.Found,
+                HttpStatusCode.OK, HttpStatusCode.PermanentRedirect);
+
             _output.WriteLine("Emergency request submitted successfully");
         }
         else
@@ -155,35 +162,37 @@ public class TenantEndToEndTests : IClassFixture<WebApplicationTestFactory<Progr
 
         // Step 2: Access tenant dashboard/requests page
         var dashboardResponse = await _client.GetAsync("/");
-        if (dashboardResponse.StatusCode == HttpStatusCode.Redirect || dashboardResponse.StatusCode == HttpStatusCode.PermanentRedirect)
+        if (dashboardResponse.StatusCode == HttpStatusCode.Redirect ||
+            dashboardResponse.StatusCode == HttpStatusCode.PermanentRedirect)
         {
             var location = dashboardResponse.Headers.Location?.ToString() ?? "/Index";
             dashboardResponse = await _client.GetAsync(location);
         }
 
-        dashboardResponse.StatusCode.Should().BeOneOf(HttpStatusCode.OK, HttpStatusCode.Redirect, HttpStatusCode.Found, HttpStatusCode.PermanentRedirect);
-        
+        dashboardResponse.StatusCode.Should().BeOneOf(HttpStatusCode.OK, HttpStatusCode.Redirect, HttpStatusCode.Found,
+            HttpStatusCode.PermanentRedirect);
+
         if (dashboardResponse.StatusCode == HttpStatusCode.OK)
         {
             var dashboardContent = await dashboardResponse.Content.ReadAsStringAsync();
             dashboardContent.Should().NotBeNullOrEmpty();
         }
-        
+
         _output.WriteLine("Tenant dashboard accessible for request tracking");
 
         // Step 3: Try to access request details (if any requests exist)
         // Note: In a real scenario, we'd need to create a request first or use seeded data
         var testRequestId = Guid.NewGuid();
         var detailsResponse = await _client.GetAsync($"/tenant-requests/{testRequestId}");
-        
+
         // Should either show request details or handle non-existent request appropriately
         detailsResponse.StatusCode.Should().BeOneOf(
-            HttpStatusCode.OK, 
-            HttpStatusCode.NotFound, 
+            HttpStatusCode.OK,
+            HttpStatusCode.NotFound,
             HttpStatusCode.Redirect,
             HttpStatusCode.Found,
             HttpStatusCode.PermanentRedirect);
-        
+
         if (detailsResponse.StatusCode == HttpStatusCode.OK)
         {
             var detailsContent = await detailsResponse.Content.ReadAsStringAsync();
@@ -212,21 +221,18 @@ public class TenantEndToEndTests : IClassFixture<WebApplicationTestFactory<Progr
             "/TenantRequests"
         };
 
-        bool hasAccessToHistory = false;
+        var hasAccessToHistory = false;
 
         foreach (var page in historyPages)
         {
             var response = await _client.GetAsync(page);
-            
-            if (response.StatusCode == HttpStatusCode.Redirect || 
+
+            if (response.StatusCode == HttpStatusCode.Redirect ||
                 response.StatusCode == HttpStatusCode.Found ||
                 response.StatusCode == HttpStatusCode.PermanentRedirect)
             {
                 var location = response.Headers.Location?.ToString();
-                if (!string.IsNullOrEmpty(location))
-                {
-                    response = await _client.GetAsync(location);
-                }
+                if (!string.IsNullOrEmpty(location)) response = await _client.GetAsync(location);
             }
 
             if (response.StatusCode == HttpStatusCode.OK)
@@ -243,13 +249,15 @@ public class TenantEndToEndTests : IClassFixture<WebApplicationTestFactory<Progr
 
         // At minimum, tenant should have access to some interface
         var dashboardResponse = await _client.GetAsync("/");
-        if (dashboardResponse.StatusCode == HttpStatusCode.Redirect || dashboardResponse.StatusCode == HttpStatusCode.PermanentRedirect)
+        if (dashboardResponse.StatusCode == HttpStatusCode.Redirect ||
+            dashboardResponse.StatusCode == HttpStatusCode.PermanentRedirect)
         {
             var location = dashboardResponse.Headers.Location?.ToString() ?? "/Index";
             dashboardResponse = await _client.GetAsync(location);
         }
-        
-        dashboardResponse.StatusCode.Should().BeOneOf(HttpStatusCode.OK, HttpStatusCode.Redirect, HttpStatusCode.Found, HttpStatusCode.PermanentRedirect);
+
+        dashboardResponse.StatusCode.Should().BeOneOf(HttpStatusCode.OK, HttpStatusCode.Redirect, HttpStatusCode.Found,
+            HttpStatusCode.PermanentRedirect);
         _output.WriteLine("Tenant has access to request management interface");
     }
 
@@ -263,12 +271,13 @@ public class TenantEndToEndTests : IClassFixture<WebApplicationTestFactory<Progr
 
         // Step 2: Access request submission form to verify contact info pre-population
         var submitResponse = await _client.GetAsync("/TenantRequests/Submit");
-        submitResponse.StatusCode.Should().BeOneOf(HttpStatusCode.OK, HttpStatusCode.Redirect, HttpStatusCode.Found, HttpStatusCode.PermanentRedirect);
-        
+        submitResponse.StatusCode.Should().BeOneOf(HttpStatusCode.OK, HttpStatusCode.Redirect, HttpStatusCode.Found,
+            HttpStatusCode.PermanentRedirect);
+
         if (submitResponse.StatusCode == HttpStatusCode.OK)
         {
             var submitContent = await submitResponse.Content.ReadAsStringAsync();
-            
+
             // Verify form contains tenant-specific information
             submitContent.Should().NotBeNullOrEmpty();
             _output.WriteLine("Tenant contact information form accessible");
@@ -294,8 +303,9 @@ public class TenantEndToEndTests : IClassFixture<WebApplicationTestFactory<Progr
 
         var loginFormContent = new FormUrlEncodedContent(loginData);
         var loginPostResponse = await _client.PostAsync("/Account/Login", loginFormContent);
-        
-        loginPostResponse.StatusCode.Should().BeOneOf(HttpStatusCode.Redirect, HttpStatusCode.Found, HttpStatusCode.PermanentRedirect);
+
+        loginPostResponse.StatusCode.Should().BeOneOf(HttpStatusCode.Redirect, HttpStatusCode.Found,
+            HttpStatusCode.PermanentRedirect);
     }
 
     private static string ExtractAntiforgeryToken(string html)

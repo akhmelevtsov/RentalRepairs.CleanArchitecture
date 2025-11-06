@@ -1,6 +1,6 @@
 # Development Test Credentials
 
-*Generated on: 2025-10-21 10:14:57*
+*Generated on: 2025-11-05 12:40:32*
 
 ## ?? System Administrators
 - **Email**: `admin@demo.com`
@@ -29,55 +29,55 @@
 
 ## ?? Maintenance Workers
 
-- **`appliancerepair.davis@workers.com`** / `Demo123!`
-  - Name: Anna Davis
-  - Specialization: Appliance Repair
-  - Phone: (575) 507-3265
+- **`generalmaintenance.brown@workers.com`** / `Demo123!`
+  - Name: Lisa Brown
+  - Specialization: GeneralMaintenance
+  - Phone: (666) 460-1446
 
-- **`carpenter.garcia@workers.com`** / `Demo123!`
-  - Name: Emma Garcia
-  - Specialization: Carpenter
-  - Phone: (890) 431-4351
+- **`plumber.smith@workers.com`** / `Demo123!`
+  - Name: Mike Smith
+  - Specialization: Plumbing
+  - Phone: (252) 687-2646
+
+- **`plumber.rodriguez@workers.com`** / `Demo123!`
+  - Name: Robert Rodriguez
+  - Specialization: Plumbing
+  - Phone: (775) 626-9036
 
 - **`electrician.martinez@workers.com`** / `Demo123!`
   - Name: Jessica Martinez
-  - Specialization: Electrician
-  - Phone: (279) 986-5130
+  - Specialization: Electrical
+  - Phone: (724) 785-5745
 
 - **`electrician.johnson@workers.com`** / `Demo123!`
   - Name: Sarah Johnson
-  - Specialization: Electrician
-  - Phone: (676) 211-8051
-
-- **`generalmaintenance.brown@workers.com`** / `Demo123!`
-  - Name: Lisa Brown
-  - Specialization: General Maintenance
-  - Phone: (274) 272-5430
+  - Specialization: Electrical
+  - Phone: (570) 684-4589
 
 - **`hvac.williams@workers.com`** / `Demo123!`
   - Name: Tom Williams
   - Specialization: HVAC
-  - Phone: (492) 316-3197
+  - Phone: (509) 693-1437
+
+- **`carpenter.garcia@workers.com`** / `Demo123!`
+  - Name: Emma Garcia
+  - Specialization: Carpentry
+  - Phone: (814) 311-8414
+
+- **`painter.jones@workers.com`** / `Demo123!`
+  - Name: David Jones
+  - Specialization: Painting
+  - Phone: (498) 329-2036
 
 - **`locksmith.miller@workers.com`** / `Demo123!`
   - Name: James Miller
   - Specialization: Locksmith
-  - Phone: (417) 256-7619
+  - Phone: (923) 250-6659
 
-- **`painter.jones@workers.com`** / `Demo123!`
-  - Name: David Jones
-  - Specialization: Painter
-  - Phone: (464) 570-5504
-
-- **`plumber.smith@workers.com`** / `Demo123!`
-  - Name: Mike Smith
-  - Specialization: Plumber
-  - Phone: (592) 212-4400
-
-- **`plumber.rodriguez@workers.com`** / `Demo123!`
-  - Name: Robert Rodriguez
-  - Specialization: Plumber
-  - Phone: (987) 973-8793
+- **`appliancerepair.davis@workers.com`** / `Demo123!`
+  - Name: Anna Davis
+  - Specialization: ApplianceRepair
+  - Phone: (779) 431-7614
 
 ---
 

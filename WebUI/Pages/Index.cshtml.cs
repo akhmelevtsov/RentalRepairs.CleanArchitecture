@@ -25,11 +25,9 @@ public class IndexModel : PageModel
 
     public DashboardViewModel Dashboard { get; set; } = new();
 
-    [TempData]
-    public string? SuccessMessage { get; set; }
-    
-    [TempData] 
-    public string? ErrorMessage { get; set; }
+    [TempData] public string? SuccessMessage { get; set; }
+
+    [TempData] public string? ErrorMessage { get; set; }
 
     public async Task<IActionResult> OnGetAsync()
     {
@@ -85,26 +83,26 @@ public class IndexModel : PageModel
 
             // Calculate comprehensive system statistics from all properties
             var allProperties = allPropertiesResult.Items.ToList();
-            
+
             Dashboard.TotalSystemProperties = allPropertiesResult.TotalCount;
             Dashboard.TotalSystemRequests = requestsResult.Count;
-            
+
             // Calculate system-wide unit and occupancy statistics
             Dashboard.TotalSystemUnits = allProperties.Sum(p => p.Units?.Count ?? 0);
             Dashboard.TotalOccupiedUnits = allProperties.Sum(p => p.Tenants?.Count ?? 0);
             Dashboard.TotalVacantUnits = Dashboard.TotalSystemUnits - Dashboard.TotalOccupiedUnits;
-            Dashboard.SystemOccupancyRate = Dashboard.TotalSystemUnits > 0 
-                ? (double)Dashboard.TotalOccupiedUnits / Dashboard.TotalSystemUnits * 100 
+            Dashboard.SystemOccupancyRate = Dashboard.TotalSystemUnits > 0
+                ? (double)Dashboard.TotalOccupiedUnits / Dashboard.TotalSystemUnits * 100
                 : 0;
-            
+
             // Calculate request statistics - this is a simple count for now
             // In a real system, you might want to get more detailed request data
-            Dashboard.ActiveSystemRequests = requestsResult.Count(r => 
+            Dashboard.ActiveSystemRequests = requestsResult.Count(r =>
                 r.Status.Equals("Submitted", StringComparison.OrdinalIgnoreCase) ||
                 r.Status.Equals("Scheduled", StringComparison.OrdinalIgnoreCase) ||
                 r.Status.Equals("InProgress", StringComparison.OrdinalIgnoreCase));
             Dashboard.TotalSystemRequestsAllTime = requestsResult.Count;
-            
+
             // Map recent properties with their statistics for display
             Dashboard.RecentProperties = allProperties
                 .OrderByDescending(p => p.CreatedDate)
@@ -119,20 +117,22 @@ public class IndexModel : PageModel
                     TotalUnits = p.Units?.Count ?? 0,
                     OccupiedUnits = p.Tenants?.Count ?? 0,
                     VacantUnits = (p.Units?.Count ?? 0) - (p.Tenants?.Count ?? 0),
-                    OccupancyRate = (p.Units?.Count ?? 0) > 0 
-                        ? (double)(p.Tenants?.Count ?? 0) / (p.Units?.Count ?? 0) * 100 
+                    OccupancyRate = (p.Units?.Count ?? 0) > 0
+                        ? (double)(p.Tenants?.Count ?? 0) / (p.Units?.Count ?? 0) * 100
                         : 0,
                     TenantCount = p.Tenants?.Count ?? 0,
                     ActiveRequestsCount = 0, // TODO: Calculate from requests when available
                     SuperintendentName = $"{p.Superintendent?.FirstName} {p.Superintendent?.LastName}".Trim()
                 })
                 .ToList();
-            
+
             // Recent requests for admin overview
             Dashboard.RecentRequests = requestsResult.Adapt<List<TenantRequestSummaryViewModel>>();
 
-            _logger.LogInformation("System Admin dashboard loaded - Properties: {Properties}, Units: {Units}, Occupancy: {Occupancy:F1}%, Active Requests: {ActiveRequests}", 
-                Dashboard.TotalSystemProperties, Dashboard.TotalSystemUnits, Dashboard.SystemOccupancyRate, Dashboard.ActiveSystemRequests);
+            _logger.LogInformation(
+                "System Admin dashboard loaded - Properties: {Properties}, Units: {Units}, Occupancy: {Occupancy:F1}%, Active Requests: {ActiveRequests}",
+                Dashboard.TotalSystemProperties, Dashboard.TotalSystemUnits, Dashboard.SystemOccupancyRate,
+                Dashboard.ActiveSystemRequests);
         }
         catch (Exception ex)
         {
@@ -146,14 +146,15 @@ public class IndexModel : PageModel
         try
         {
             var userEmail = Dashboard.UserEmail;
-            
+
             // SECURITY FIX: Get superintendent's property from claims
             var propertyCode = User.FindFirst("property_code")?.Value;
             var propertyName = User.FindFirst("property_name")?.Value;
-            
-            _logger.LogInformation("Loading superintendent dashboard for email: {Email}, Property: {PropertyCode} ({PropertyName})", 
+
+            _logger.LogInformation(
+                "Loading superintendent dashboard for email: {Email}, Property: {PropertyCode} ({PropertyName})",
                 userEmail, propertyCode, propertyName);
-            
+
             if (string.IsNullOrEmpty(propertyCode))
             {
                 _logger.LogWarning("Property code not found in claims for superintendent {Email}", userEmail);
@@ -172,7 +173,8 @@ public class IndexModel : PageModel
                 if (property != null)
                 {
                     propertyId = property.Id;
-                    _logger.LogInformation("Found property ID {PropertyId} for code {PropertyCode}", propertyId, propertyCode);
+                    _logger.LogInformation("Found property ID {PropertyId} for code {PropertyCode}", propertyId,
+                        propertyCode);
                 }
                 else
                 {
@@ -185,26 +187,27 @@ public class IndexModel : PageModel
             }
 
             // SECURITY FIX: Filter requests by superintendent's property only
-            var requestsQuery = new GetTenantRequestsQuery 
-            { 
+            var requestsQuery = new GetTenantRequestsQuery
+            {
                 PropertyId = propertyId, // CRITICAL: Only show requests for superintendent's property
                 PageSize = 100,
                 PageNumber = 1
             };
             var requestsResult = await _mediator.Send(requestsQuery);
-            
-            _logger.LogInformation("Retrieved {TotalCount} requests for property {PropertyCode} (ID: {PropertyId}) for superintendent analysis", 
+
+            _logger.LogInformation(
+                "Retrieved {TotalCount} requests for property {PropertyCode} (ID: {PropertyId}) for superintendent analysis",
                 requestsResult.Count, propertyCode, propertyId);
-            
+
             var allRequests = requestsResult.ToList();
-            
+
             // Count requests using clean string comparisons
-            Dashboard.PendingRequests = allRequests.Count(r => 
+            Dashboard.PendingRequests = allRequests.Count(r =>
                 r.Status.Equals("Draft", StringComparison.OrdinalIgnoreCase) ||
                 r.Status.Equals("Submitted", StringComparison.OrdinalIgnoreCase));
-            
+
             // Emergency requests should exclude completed/closed/done requests
-            Dashboard.EmergencyRequests = allRequests.Count(r => 
+            Dashboard.EmergencyRequests = allRequests.Count(r =>
                 (r.UrgencyLevel.Equals("High", StringComparison.OrdinalIgnoreCase) ||
                  r.UrgencyLevel.Equals("Critical", StringComparison.OrdinalIgnoreCase) ||
                  r.UrgencyLevel.Equals("Emergency", StringComparison.OrdinalIgnoreCase) ||
@@ -212,13 +215,14 @@ public class IndexModel : PageModel
                 !r.Status.Equals("Completed", StringComparison.OrdinalIgnoreCase) &&
                 !r.Status.Equals("Closed", StringComparison.OrdinalIgnoreCase) &&
                 !r.Status.Equals("Done", StringComparison.OrdinalIgnoreCase));
-            
+
             Dashboard.RecentRequests = allRequests
                 .OrderByDescending(r => r.CreatedDate)
                 .Take(10)
                 .Adapt<List<TenantRequestSummaryViewModel>>();
-            
-            _logger.LogInformation("Superintendent dashboard loaded for {PropertyCode} - Pending: {Pending}, Emergency: {Emergency}, Recent: {Recent}", 
+
+            _logger.LogInformation(
+                "Superintendent dashboard loaded for {PropertyCode} - Pending: {Pending}, Emergency: {Emergency}, Recent: {Recent}",
                 propertyCode, Dashboard.PendingRequests, Dashboard.EmergencyRequests, Dashboard.RecentRequests.Count);
         }
         catch (Exception ex)
@@ -240,9 +244,7 @@ public class IndexModel : PageModel
         var propertyCode = User.FindFirst("property_code")?.Value ?? User.FindFirst(CustomClaims.PropertyId)?.Value;
 
         if (string.IsNullOrEmpty(propertyName) && !string.IsNullOrEmpty(propertyCode))
-        {
             propertyName = GetPropertyNameFromCode(propertyCode);
-        }
 
         Dashboard.PropertyName = propertyName ?? "Unknown Property";
         Dashboard.UnitNumber = unitNumber ?? "Unknown Unit";
@@ -251,45 +253,46 @@ public class IndexModel : PageModel
         try
         {
             var tenantEmail = User.FindFirst(ClaimTypes.Email)?.Value ?? User.FindFirst("email")?.Value;
-            
+
             if (!string.IsNullOrEmpty(tenantEmail))
             {
                 _logger.LogInformation("Loading requests for tenant email: {TenantEmail}", tenantEmail);
-                
+
                 // Use a fresh query to get the latest data (no caching)
-                var allRequestsQuery = new GetTenantRequestsQuery 
-                { 
+                var allRequestsQuery = new GetTenantRequestsQuery
+                {
                     PageSize = 200, // Increased to ensure we get all tenant requests
                     PageNumber = 1,
                     SortBy = "CreatedDate",
                     SortDescending = true // Get most recent first
                 };
                 var allRequestsResult = await _mediator.Send(allRequestsQuery);
-                
-                _logger.LogInformation("Retrieved {TotalRequests} total requests, filtering for tenant {TenantEmail}", 
+
+                _logger.LogInformation("Retrieved {TotalRequests} total requests, filtering for tenant {TenantEmail}",
                     allRequestsResult.Count, tenantEmail);
-                
+
                 var tenantRequests = allRequestsResult.Where(r => // ? allRequestsResult is already a List<T>
-                    !string.IsNullOrEmpty(r.TenantEmail) &&
-                    r.TenantEmail.Equals(tenantEmail, StringComparison.OrdinalIgnoreCase))
+                        !string.IsNullOrEmpty(r.TenantEmail) &&
+                        r.TenantEmail.Equals(tenantEmail, StringComparison.OrdinalIgnoreCase))
                     .OrderByDescending(r => r.CreatedDate)
                     .Take(10)
                     .ToList();
-                
-                _logger.LogInformation("Found {TenantRequestCount} requests for tenant {TenantEmail}", 
+
+                _logger.LogInformation("Found {TenantRequestCount} requests for tenant {TenantEmail}",
                     tenantRequests.Count, tenantEmail);
 
                 // Debug log the request details
                 foreach (var request in tenantRequests.Take(3))
                 {
-                    var descriptionPreview = request.Description?.Length > 50 
-                        ? request.Description.Substring(0, 50) 
+                    var descriptionPreview = request.Description?.Length > 50
+                        ? request.Description.Substring(0, 50)
                         : request.Description ?? "No description";
-                    
-                    _logger.LogInformation("Request: ID={RequestId}, CreatedDate={CreatedDate}, Status={Status}, Description={Description}", 
+
+                    _logger.LogInformation(
+                        "Request: ID={RequestId}, CreatedDate={CreatedDate}, Status={Status}, Description={Description}",
                         request.Id, request.CreatedDate, request.Status, descriptionPreview);
                 }
-                
+
                 // ? Use global Mapster configuration
                 Dashboard.MyRequests = tenantRequests.Adapt<List<TenantRequestSummaryViewModel>>();
             }
@@ -310,7 +313,7 @@ public class IndexModel : PageModel
         {
             var workerEmail = User.FindFirst(ClaimTypes.Email)?.Value ?? User.FindFirst("email")?.Value;
             _logger.LogInformation("Loading worker dashboard for email: {WorkerEmail}", workerEmail);
-            
+
             if (!string.IsNullOrEmpty(workerEmail))
             {
                 var requestsQuery = new GetWorkerRequestsQuery(workerEmail)
@@ -321,20 +324,23 @@ public class IndexModel : PageModel
                 var requestsResult = await _mediator.Send(requestsQuery);
 
                 Dashboard.AssignedRequests = requestsResult.TotalCount;
-                
-                Dashboard.CompletedThisMonth = requestsResult.Items.Count(r => 
-                    r.Status == "Done" && 
-                    r.CompletedDate?.Month == DateTime.Now.Month && 
+
+                Dashboard.CompletedThisMonth = requestsResult.Items.Count(r =>
+                    r.Status == "Done" &&
+                    r.CompletedDate?.Month == DateTime.Now.Month &&
                     r.CompletedDate?.Year == DateTime.Now.Year);
-                
+
                 // ? Include ALL scheduled work (today, future, and overdue) in UpcomingWork
                 Dashboard.UpcomingWork = requestsResult.Items
-                    .Where(r => r.Status.Equals("Scheduled", StringComparison.OrdinalIgnoreCase) && r.ScheduledDate.HasValue)
+                    .Where(r => r.Status.Equals("Scheduled", StringComparison.OrdinalIgnoreCase) &&
+                                r.ScheduledDate.HasValue)
                     .OrderBy(r => r.ScheduledDate)
                     .Adapt<List<TenantRequestSummaryViewModel>>();
 
-                _logger.LogInformation("Worker dashboard loaded - Total Assigned: {Assigned}, Active Scheduled: {ActiveScheduled}, Completed This Month: {Completed}, All Upcoming Work: {Upcoming}", 
-                    Dashboard.AssignedRequests, Dashboard.UpcomingWork.Count, Dashboard.CompletedThisMonth, Dashboard.UpcomingWork.Count);
+                _logger.LogInformation(
+                    "Worker dashboard loaded - Total Assigned: {Assigned}, Active Scheduled: {ActiveScheduled}, Completed This Month: {Completed}, All Upcoming Work: {Upcoming}",
+                    Dashboard.AssignedRequests, Dashboard.UpcomingWork.Count, Dashboard.CompletedThisMonth,
+                    Dashboard.UpcomingWork.Count);
             }
             else
             {
@@ -357,7 +363,7 @@ public class IndexModel : PageModel
         return propertyCode?.ToUpperInvariant() switch
         {
             "SUN001" => "Sunset Apartments",
-            "MAP001" => "Maple Grove Condos", 
+            "MAP001" => "Maple Grove Condos",
             "OAK001" => "Oak Hill Residences",
             "PIN001" => "Pine Valley Apartments",
             _ => null

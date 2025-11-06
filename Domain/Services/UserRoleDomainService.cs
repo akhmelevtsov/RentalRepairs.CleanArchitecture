@@ -13,37 +13,35 @@ public class UserRoleDomainService
     public UserRoleDomainService()
     {
         // Business rules for valid roles
-        _validRoles = new List<string>
-        {
-            "SystemAdmin",
-            "PropertySuperintendent", 
-            "Worker",
-            "Tenant"
-        };
+        _validRoles = new List<string> { "SystemAdmin", "PropertySuperintendent", "Worker", "Tenant" };
 
         // Business rules for role permissions
         _rolePermissions = new Dictionary<string, List<string>>
         {
-            ["SystemAdmin"] = new List<string>
+            ["SystemAdmin"] = new()
             {
-                "ViewAllRequests", "EditAllRequests", "DeleteRequests", 
-                "ManageUsers", "ManageProperties", "ViewReports",
-                "DeclineRequests", "AssignWorkers", "ApproveRequests"
+                "ViewAllRequests",
+                "EditAllRequests",
+                "DeleteRequests",
+                "ManageUsers",
+                "ManageProperties",
+                "ViewReports",
+                "DeclineRequests",
+                "AssignWorkers",
+                "ApproveRequests"
             },
-            ["PropertySuperintendent"] = new List<string>
-            {
-                "ViewPropertyRequests", "AssignWorkers", "ApproveRequests",
-                "ViewPropertyReports", "ManageProperty", "DeclineRequests"
-            },
-            ["Worker"] = new List<string>
-            {
-                "ViewAssignedRequests", "UpdateWorkStatus", "CompleteWork",
-                "ViewSchedule"
-            },
-            ["Tenant"] = new List<string>
-            {
-                "CreateRequest", "ViewOwnRequests", "UpdateOwnRequests"
-            }
+            ["PropertySuperintendent"] =
+                new()
+                {
+                    "ViewPropertyRequests",
+                    "AssignWorkers",
+                    "ApproveRequests",
+                    "ViewPropertyReports",
+                    "ManageProperty",
+                    "DeclineRequests"
+                },
+            ["Worker"] = new() { "ViewAssignedRequests", "UpdateWorkStatus", "CompleteWork", "ViewSchedule" },
+            ["Tenant"] = new() { "CreateRequest", "ViewOwnRequests", "UpdateOwnRequests" }
         };
     }
 
@@ -63,7 +61,7 @@ public class UserRoleDomainService
             return new List<string>();
         }
 
-        return _rolePermissions.ContainsKey(role) 
+        return _rolePermissions.ContainsKey(role)
             ? new List<string>(_rolePermissions[role])
             : new List<string>();
     }
@@ -119,7 +117,7 @@ public class UserRoleDomainService
     {
         int fromPriority = GetRolePriority(fromRole);
         int toPriority = GetRolePriority(toRole);
-        
+
         return toPriority > fromPriority; // Can only escalate to higher priority roles
     }
 
@@ -137,9 +135,11 @@ public class UserRoleDomainService
     public bool CanRoleDeclineRequests(string role)
     {
         if (string.IsNullOrWhiteSpace(role))
+        {
             return false;
+        }
 
-        var permissions = GetPermissionsForRole(role);
+        List<string> permissions = GetPermissionsForRole(role);
         return permissions.Contains("DeclineRequests");
     }
 
@@ -149,9 +149,11 @@ public class UserRoleDomainService
     public bool RoleHasPermission(string role, string permission)
     {
         if (string.IsNullOrWhiteSpace(role) || string.IsNullOrWhiteSpace(permission))
+        {
             return false;
+        }
 
-        var permissions = GetPermissionsForRole(role);
+        List<string> permissions = GetPermissionsForRole(role);
         return permissions.Contains(permission);
     }
 }

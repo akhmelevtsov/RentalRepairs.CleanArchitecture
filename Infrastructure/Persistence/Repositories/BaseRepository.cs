@@ -89,10 +89,7 @@ public abstract class BaseRepository<T> : IRepository<T> where T : BaseEntity
     {
         var query = Context.Set<T>().AsQueryable();
 
-        if (specification.Criteria != null)
-        {
-            query = query.Where(specification.Criteria);
-        }
+        if (specification.Criteria != null) query = query.Where(specification.Criteria);
 
         // Apply includes
         query = specification.Includes.Aggregate(query, (current, include) => current.Include(include));
@@ -102,13 +99,9 @@ public abstract class BaseRepository<T> : IRepository<T> where T : BaseEntity
 
         // Apply ordering
         if (specification.OrderBy != null)
-        {
             query = query.OrderBy(specification.OrderBy);
-        }
         else if (specification.OrderByDescending != null)
-        {
             query = query.OrderByDescending(specification.OrderByDescending);
-        }
 
         return query;
     }

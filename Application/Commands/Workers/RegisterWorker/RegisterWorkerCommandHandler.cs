@@ -3,26 +3,34 @@ using RentalRepairs.Domain.Entities;
 using RentalRepairs.Domain.ValueObjects;
 using RentalRepairs.Domain.Exceptions;
 using RentalRepairs.Domain.Repositories;
+using RentalRepairs.Domain.Services;
 
 namespace RentalRepairs.Application.Commands.Workers.RegisterWorker;
 
+/// <summary>
+/// Command handler for registering new workers.
+/// Phase 2: Now uses SpecializationDeterminationService to parse string specializations to enum.
+/// </summary>
 public class RegisterWorkerCommandHandler : ICommandHandler<RegisterWorkerCommand, Guid>
 {
     private readonly IWorkerRepository _workerRepository;
+    private readonly SpecializationDeterminationService _specializationService;
 
-    public RegisterWorkerCommandHandler(IWorkerRepository workerRepository)
+    public RegisterWorkerCommandHandler(
+        IWorkerRepository workerRepository,
+        SpecializationDeterminationService specializationService)
     {
         _workerRepository = workerRepository;
+        _specializationService = specializationService;
     }
 
     public async Task<Guid> Handle(RegisterWorkerCommand request, CancellationToken cancellationToken)
     {
         // Check if worker with same email already exists
-        var existingWorker = await _workerRepository.GetByEmailAsync(request.ContactInfo.EmailAddress, cancellationToken);
+        var existingWorker =
+            await _workerRepository.GetByEmailAsync(request.ContactInfo.EmailAddress, cancellationToken);
         if (existingWorker != null)
-        {
             throw new WorkerDomainException($"Worker with email '{request.ContactInfo.EmailAddress}' already exists");
-        }
 
         // Create contact info value object
         var contactInfo = new PersonContactInfo(
@@ -37,7 +45,8 @@ public class RegisterWorkerCommandHandler : ICommandHandler<RegisterWorkerComman
         // Set specialization if provided
         if (!string.IsNullOrEmpty(request.Specialization))
         {
-            worker.SetSpecialization(request.Specialization);
+            var specializationEnum = _specializationService.ParseSpecialization(request.Specialization);
+            worker.SetSpecialization(specializationEnum);
         }
 
         // Save to repository

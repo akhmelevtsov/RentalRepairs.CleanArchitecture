@@ -20,11 +20,11 @@ public class TenantRequest : BaseEntity
     public TenantRequestStatus Status { get; private set; } = TenantRequestStatus.Draft;
     public string UrgencyLevel { get; private set; } = "Normal";
     public bool IsEmergency { get; private set; } = false;
-    
+
     // Relationships
     public Guid TenantId { get; private set; }
     public Guid PropertyId { get; private set; }
-    
+
     // Denormalized fields for performance (read-only)
     public string TenantFullName { get; private set; } = string.Empty;
     public string TenantEmail { get; private set; } = string.Empty;
@@ -33,7 +33,7 @@ public class TenantRequest : BaseEntity
     public string PropertyPhone { get; private set; } = string.Empty;
     public string SuperintendentFullName { get; private set; } = string.Empty;
     public string SuperintendentEmail { get; private set; } = string.Empty;
-    
+
     // Service work information
     public DateTime? ScheduledDate { get; private set; }
     public string? AssignedWorkerEmail { get; private set; }
@@ -43,7 +43,7 @@ public class TenantRequest : BaseEntity
     public string? CompletionNotes { get; private set; }
     public string? ClosureNotes { get; private set; }
     public bool? WorkCompletedSuccessfully { get; private set; }
-    
+
     // Tenant preferences
     public string? PreferredContactTime { get; private set; } = null;
 
@@ -86,9 +86,9 @@ public class TenantRequest : BaseEntity
     {
         var request = new TenantRequest();
         request.InitializeNewRequest(code, title, description, urgencyLevel, tenantId, propertyId,
-            tenantFullName, tenantEmail, tenantUnit, propertyName, propertyPhone, 
+            tenantFullName, tenantEmail, tenantUnit, propertyName, propertyPhone,
             superintendentFullName, superintendentEmail, preferredContactTime);
-        
+
         request.AddDomainEvent(new TenantRequestCreatedEvent(request));
         return request;
     }
@@ -118,7 +118,7 @@ public class TenantRequest : BaseEntity
     public void SubmitForReview()
     {
         ValidateCanBeSubmitted();
-        
+
         Status = TenantRequestStatus.Submitted;
         AddDomainEvent(new TenantRequestSubmittedEvent(this));
     }
@@ -126,29 +126,36 @@ public class TenantRequest : BaseEntity
     /// <summary>
     /// Backward compatibility method - maps to new method name.
     /// </summary>
-    public void Submit() => SubmitForReview();
+    public void Submit()
+    {
+        SubmitForReview();
+    }
 
     /// <summary>
     /// Business operation with complex validation.
     /// </summary>
-    public void ScheduleWork(DateTime scheduledDate, string workerEmail, string workOrderNumber, string? workerName = null)
+    public void ScheduleWork(DateTime scheduledDate, string workerEmail, string workOrderNumber,
+        string? workerName = null)
     {
         ValidateCanBeScheduled(scheduledDate, workerEmail, workOrderNumber);
-        
+
         ScheduledDate = scheduledDate;
         AssignedWorkerEmail = workerEmail;
         AssignedWorkerName = workerName;
         WorkOrderNumber = workOrderNumber;
         Status = TenantRequestStatus.Scheduled;
-        
-        AddDomainEvent(new TenantRequestScheduledEvent(this, new ServiceWorkScheduleInfo(scheduledDate, workerEmail, workOrderNumber, 1)));
+
+        AddDomainEvent(new TenantRequestScheduledEvent(this,
+            new ServiceWorkScheduleInfo(scheduledDate, workerEmail, workOrderNumber, 1)));
     }
 
     /// <summary>
     /// Backward compatibility method - maps to new method name.
     /// </summary>
-    public void Schedule(DateTime scheduledDate, string workerEmail, string workOrderNumber, string? workerName = null) => 
+    public void Schedule(DateTime scheduledDate, string workerEmail, string workOrderNumber, string? workerName = null)
+    {
         ScheduleWork(scheduledDate, workerEmail, workOrderNumber, workerName);
+    }
 
     /// <summary>
     /// Business operation with validation.
@@ -156,12 +163,12 @@ public class TenantRequest : BaseEntity
     public void ReportWorkCompleted(bool successful, string? completionNotes = null)
     {
         ValidateCanBeCompleted();
-        
+
         Status = successful ? TenantRequestStatus.Done : TenantRequestStatus.Failed;
         CompletedDate = DateTime.UtcNow;
         WorkCompletedSuccessfully = successful;
         CompletionNotes = completionNotes;
-        
+
         AddDomainEvent(new TenantRequestCompletedEvent(this, completionNotes ?? ""));
     }
 
@@ -171,7 +178,7 @@ public class TenantRequest : BaseEntity
     public void DeclineRequest(string reason)
     {
         ValidateCanBeDeclined();
-        
+
         Status = TenantRequestStatus.Declined;
         AddDomainEvent(new TenantRequestDeclinedEvent(this, reason));
     }
@@ -184,7 +191,7 @@ public class TenantRequest : BaseEntity
     public void FailDueToEmergencyOverride(string reason)
     {
         ValidateCanBeFailed();
-        
+
         Status = TenantRequestStatus.Failed;
         CompletionNotes = $"Work cancelled due to emergency override: {reason}";
 
@@ -192,15 +199,16 @@ public class TenantRequest : BaseEntity
         string? previousWorker = AssignedWorkerEmail;
         string? previousWorkOrder = WorkOrderNumber;
         DateTime? previousScheduledDate = ScheduledDate;
-        
+
         AssignedWorkerEmail = null;
         WorkOrderNumber = null;
         ScheduledDate = null;
         AssignedWorkerName = null;
-        
+
         // Store audit information in closure notes
-        ClosureNotes = $"Emergency override cancelled assignment: {previousWorker} ({previousWorkOrder}) on {previousScheduledDate:yyyy-MM-dd}";
-        
+        ClosureNotes =
+            $"Emergency override cancelled assignment: {previousWorker} ({previousWorkOrder}) on {previousScheduledDate:yyyy-MM-dd}";
+
         AddDomainEvent(new TenantRequestCompletedEvent(this, CompletionNotes));
     }
 
@@ -211,22 +219,26 @@ public class TenantRequest : BaseEntity
     public void Close(string closureNotes)
     {
         ValidateCanBeClosed();
-        
+
         Status = TenantRequestStatus.Closed;
         ClosureNotes = closureNotes;
-        
+
         AddDomainEvent(new TenantRequestClosedEvent(this, closureNotes));
     }
 
     /// <summary>
     /// Backward compatibility method - maps to new method name.
     /// </summary>
-    public void Decline(string reason) => DeclineRequest(reason);
+    public void Decline(string reason)
+    {
+        DeclineRequest(reason);
+    }
 
     /// <summary>
     /// Enhanced method for updating tenant information with business validation.
     /// </summary>
-    public void UpdateTenantInformation(string tenantFullName, string tenantEmail, string tenantUnit, string propertyName)
+    public void UpdateTenantInformation(string tenantFullName, string tenantEmail, string tenantUnit,
+        string propertyName)
     {
         // Business rule: Cannot update tenant info for completed or closed requests
         if (Status is TenantRequestStatus.Done or TenantRequestStatus.Failed or TenantRequestStatus.Closed)
@@ -242,54 +254,7 @@ public class TenantRequest : BaseEntity
         AddDomainEvent(new TenantRequestTenantInfoUpdatedEvent(this));
     }
 
- 
- 
-
-
-
-
-
     #region Private Initialization Methods
-
-
-
-    /// <summary>
-    /// FIXED: Initialize from aggregate IDs - reduces parameter coupling.
-    /// </summary>
-    private void InitializeFromAggregateIds(
-        string code,
-        string title,
-        string description,
-        string urgencyLevel,
-        Guid tenantId,
-        Guid propertyId,
-        string tenantFullName,
-        string tenantEmail,
-        string tenantUnit,
-        string propertyName,
-        string propertyPhone,
-        string superintendentFullName,
-        string superintendentEmail)
-    {
-        Code = ValidateCode(code);
-        Title = ValidateTitle(title);
-        Description = ValidateDescription(description);
-        UrgencyLevel = ValidateUrgencyLevel(urgencyLevel);
-        IsEmergency = DetermineIfEmergency(urgencyLevel);
-        
-        ValidateTenantId(tenantId);
-        ValidatePropertyId(propertyId);
-        
-        TenantId = tenantId;
-        PropertyId = propertyId;
-        TenantFullName = ValidateRequiredString(tenantFullName, nameof(tenantFullName));
-        TenantEmail = ValidateEmail(tenantEmail);
-        TenantUnit = ValidateRequiredString(tenantUnit, nameof(tenantUnit));
-        PropertyName = ValidateRequiredString(propertyName, nameof(propertyName));
-        PropertyPhone = ValidateRequiredString(propertyPhone, nameof(propertyPhone));
-        SuperintendentFullName = ValidateRequiredString(superintendentFullName, nameof(superintendentFullName));
-        SuperintendentEmail = ValidateEmail(superintendentEmail);
-    }
 
     private void InitializeNewRequest(
         string code,
@@ -312,10 +277,10 @@ public class TenantRequest : BaseEntity
         Description = ValidateDescription(description);
         UrgencyLevel = ValidateUrgencyLevel(urgencyLevel);
         IsEmergency = DetermineIfEmergency(urgencyLevel);
-        
+
         ValidateTenantId(tenantId);
         ValidatePropertyId(propertyId);
-        
+
         TenantId = tenantId;
         PropertyId = propertyId;
         TenantFullName = ValidateRequiredString(tenantFullName, nameof(tenantFullName));
@@ -341,14 +306,14 @@ public class TenantRequest : BaseEntity
         {
             throw new TenantRequestDomainException("Request code cannot be empty");
         }
-            
+
         code = code.Trim();
-        
+
         if (code.Length > _maxCodeLength)
         {
             throw new TenantRequestDomainException($"Request code cannot exceed {_maxCodeLength} characters");
         }
-            
+
         return code;
     }
 
@@ -361,14 +326,14 @@ public class TenantRequest : BaseEntity
         {
             throw new TenantRequestDomainException("Request title cannot be empty");
         }
-            
+
         title = title.Trim();
-        
+
         if (title.Length > _maxTitleLength)
         {
             throw new TenantRequestDomainException($"Request title cannot exceed {_maxTitleLength} characters");
         }
-            
+
         return title;
     }
 
@@ -378,12 +343,13 @@ public class TenantRequest : BaseEntity
     private static string ValidateDescription(string description)
     {
         description = description?.Trim() ?? string.Empty;
-        
+
         if (description.Length > _maxDescriptionLength)
         {
-            throw new TenantRequestDomainException($"Request description cannot exceed {_maxDescriptionLength} characters");
+            throw new TenantRequestDomainException(
+                $"Request description cannot exceed {_maxDescriptionLength} characters");
         }
-            
+
         return description;
     }
 
@@ -396,12 +362,13 @@ public class TenantRequest : BaseEntity
         {
             throw new TenantRequestDomainException("Urgency level cannot be empty");
         }
-            
+
         if (!_validUrgencyLevels.Contains(urgencyLevel))
         {
-            throw new TenantRequestDomainException($"Invalid urgency level '{urgencyLevel}'. Valid values: {string.Join(", ", _validUrgencyLevels)}");
+            throw new TenantRequestDomainException(
+                $"Invalid urgency level '{urgencyLevel}'. Valid values: {string.Join(", ", _validUrgencyLevels)}");
         }
-            
+
         return urgencyLevel;
     }
 
@@ -420,14 +387,15 @@ public class TenantRequest : BaseEntity
     {
         if (Status != TenantRequestStatus.Draft)
         {
-            throw new TenantRequestDomainException($"Request can only be submitted from Draft status. Current status: {Status}");
+            throw new TenantRequestDomainException(
+                $"Request can only be submitted from Draft status. Current status: {Status}");
         }
-            
+
         if (string.IsNullOrWhiteSpace(Title))
         {
             throw new TenantRequestDomainException("Request title is required for submission");
         }
-            
+
         if (string.IsNullOrWhiteSpace(Description))
         {
             throw new TenantRequestDomainException("Request description is required for submission");
@@ -437,6 +405,7 @@ public class TenantRequest : BaseEntity
     /// <summary>
     /// Domain validation - business rules for scheduling.
     /// Updated to allow rescheduling of Failed requests since failed work should be reschedulable.
+    /// Phase 3 FIX: Use .Date comparison to allow scheduling for today or future dates.
     /// </summary>
     public void ValidateCanBeScheduled(DateTime scheduledDate, string workerEmail, string workOrderNumber)
     {
@@ -444,19 +413,21 @@ public class TenantRequest : BaseEntity
         // Failed requests should be reschedulable since the work didn't complete successfully
         if (Status != TenantRequestStatus.Submitted && Status != TenantRequestStatus.Failed)
         {
-            throw new TenantRequestDomainException($"Request can only be scheduled from Submitted or Failed status. Current status: {Status}");
+            throw new TenantRequestDomainException(
+                $"Request can only be scheduled from Submitted or Failed status. Current status: {Status}");
         }
-            
-        if (scheduledDate <= DateTime.UtcNow)
+
+        // Phase 3 FIX: Use .Date comparison to allow scheduling for today or future dates
+        if (scheduledDate.Date < DateTime.Today)
         {
-            throw new TenantRequestDomainException("Scheduled date must be in the future");
+            throw new TenantRequestDomainException("Scheduled date must be today or in the future");
         }
-            
+
         if (string.IsNullOrWhiteSpace(workerEmail))
         {
             throw new TenantRequestDomainException("Worker email is required for scheduling");
         }
-            
+
         if (string.IsNullOrWhiteSpace(workOrderNumber))
         {
             throw new TenantRequestDomainException("Work order number is required for scheduling");
@@ -467,7 +438,8 @@ public class TenantRequest : BaseEntity
     {
         if (Status != TenantRequestStatus.Scheduled)
         {
-            throw new TenantRequestDomainException($"Request can only be completed from Scheduled status. Current status: {Status}");
+            throw new TenantRequestDomainException(
+                $"Request can only be completed from Scheduled status. Current status: {Status}");
         }
     }
 
@@ -475,7 +447,8 @@ public class TenantRequest : BaseEntity
     {
         if (Status != TenantRequestStatus.Submitted)
         {
-            throw new TenantRequestDomainException($"Request can only be declined from Submitted status. Current status: {Status}");
+            throw new TenantRequestDomainException(
+                $"Request can only be declined from Submitted status. Current status: {Status}");
         }
     }
 
@@ -483,9 +456,10 @@ public class TenantRequest : BaseEntity
     {
         if (Status != TenantRequestStatus.Scheduled)
         {
-            throw new TenantRequestDomainException($"Request can only be failed from Scheduled status. Current status: {Status}");
+            throw new TenantRequestDomainException(
+                $"Request can only be failed from Scheduled status. Current status: {Status}");
         }
-        
+
         if (string.IsNullOrWhiteSpace(AssignedWorkerEmail))
         {
             throw new TenantRequestDomainException("Cannot fail request - no worker assignment found");
@@ -496,7 +470,8 @@ public class TenantRequest : BaseEntity
     {
         if (Status is not (TenantRequestStatus.Done or TenantRequestStatus.Failed))
         {
-            throw new TenantRequestDomainException($"Request can only be closed from Done or Failed status. Current status: {Status}");
+            throw new TenantRequestDomainException(
+                $"Request can only be closed from Done or Failed status. Current status: {Status}");
         }
     }
 
@@ -522,6 +497,7 @@ public class TenantRequest : BaseEntity
         {
             throw new TenantRequestDomainException($"{fieldName} cannot be empty");
         }
+
         return value.Trim();
     }
 
@@ -531,13 +507,13 @@ public class TenantRequest : BaseEntity
         {
             throw new TenantRequestDomainException("Email address cannot be empty");
         }
-            
+
         // Basic email validation
         if (!email.Contains("@"))
         {
             throw new TenantRequestDomainException("Email address must be valid");
         }
-            
+
         return email.Trim().ToLowerInvariant();
     }
 
@@ -571,7 +547,10 @@ public class TenantRequest : BaseEntity
     /// Domain method to check if request is currently active.
     /// Used by business rules for pending request validation.
     /// </summary>
-    public bool IsActive() => Status is TenantRequestStatus.Submitted or TenantRequestStatus.Scheduled;
+    public bool IsActive()
+    {
+        return Status is TenantRequestStatus.Submitted or TenantRequestStatus.Scheduled;
+    }
 
     /// <summary>
     /// Sets the tenant's preferred contact time (public method for command handlers)
@@ -588,7 +567,7 @@ public class TenantRequest : BaseEntity
     public bool IsOverdue(TenantRequestStatusPolicy? statusPolicy = null)
     {
         TenantRequestStatusPolicy policy = statusPolicy ?? new TenantRequestStatusPolicy();
-        
+
         if (policy.IsCompletedStatus(Status))
         {
             return false;
@@ -611,7 +590,7 @@ public class TenantRequest : BaseEntity
 
         double actualHours = (CompletedDate.Value - CreatedAt).TotalHours;
         int expectedHours = GetExpectedResolutionHours();
-        
+
         if (actualHours <= expectedHours)
         {
             return 100; // On time = perfect score
@@ -628,7 +607,7 @@ public class TenantRequest : BaseEntity
     public int CalculateUrgencyPriority()
     {
         int priority = 0;
-        
+
         if (IsEmergency)
         {
             priority += 100;
@@ -670,11 +649,11 @@ public class TenantRequest : BaseEntity
     public string GetAgeCategory()
     {
         int days = GetAgeInDays();
-        
+
         return days switch
         {
             <= 1 => "0-1 days",
-            <= 3 => "1-3 days", 
+            <= 3 => "1-3 days",
             <= 7 => "3-7 days",
             _ => "7+ days"
         };
@@ -686,7 +665,7 @@ public class TenantRequest : BaseEntity
     public string DetermineCategoryFromDescription()
     {
         string text = Description.ToLowerInvariant();
-        
+
         if (text.Contains("plumb") || text.Contains("water") || text.Contains("leak"))
         {
             return "Plumbing";
@@ -728,7 +707,7 @@ public class TenantRequest : BaseEntity
 
         TimeSpan resolutionTime = CompletedDate.Value - CreatedAt;
         int expectedHours = GetExpectedResolutionHours();
-        
+
         return resolutionTime.TotalHours <= expectedHours;
     }
 

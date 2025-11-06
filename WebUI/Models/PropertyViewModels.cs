@@ -104,7 +104,7 @@ public class PropertySummaryViewModel
     public int TenantCount { get; set; }
     public int ActiveRequestsCount { get; set; }
     public string SuperintendentName { get; set; } = string.Empty;
-    
+
     // Enhanced properties for dashboard statistics
     public int TotalUnits { get; set; }
     public int OccupiedUnits { get; set; }

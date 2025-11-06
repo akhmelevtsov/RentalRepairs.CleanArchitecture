@@ -36,7 +36,6 @@ public class ApplicationHealthCheck : IHealthCheck
 
             // Check database connectivity if available
             if (_context != null)
-            {
                 try
                 {
                     await _context.SaveChangesAsync(cancellationToken);
@@ -46,11 +45,8 @@ public class ApplicationHealthCheck : IHealthCheck
                 {
                     checks["database_connection"] = "unavailable";
                 }
-            }
             else
-            {
                 checks["database_connection"] = "not_configured";
-            }
 
             // Check application services
             if (_currentUserService != null)
@@ -67,19 +63,19 @@ public class ApplicationHealthCheck : IHealthCheck
             checks["application_services"] = "healthy";
 
             _logger.LogInformation("Application health check completed successfully");
-            
+
             return HealthCheckResult.Healthy("Application is running normally", checks);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Application health check failed");
-            
+
             var errorData = new Dictionary<string, object>
             {
                 ["error"] = ex.Message,
                 ["timestamp"] = DateTime.UtcNow
             };
-            
+
             return HealthCheckResult.Unhealthy("Application health check failed", ex, errorData);
         }
     }

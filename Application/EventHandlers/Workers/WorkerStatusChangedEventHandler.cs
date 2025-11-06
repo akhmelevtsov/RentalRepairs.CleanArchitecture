@@ -8,7 +8,7 @@ namespace RentalRepairs.Application.EventHandlers.Workers;
 /// <summary>
 /// Handles WorkerActivatedEvent and WorkerDeactivatedEvent to manage worker status
 /// </summary>
-public class WorkerStatusChangedEventHandler : 
+public class WorkerStatusChangedEventHandler :
     INotificationHandler<WorkerActivatedEvent>,
     INotificationHandler<WorkerDeactivatedEvent>
 {

@@ -9,8 +9,7 @@ namespace RentalRepairs.WebUI.Models;
 public class SubmitTenantRequestPageViewModel
 {
     // Phone is now read-only from tenant profile - no validation needed
-    [Display(Name = "Phone Number")]
-    public string TenantPhone { get; set; } = string.Empty;
+    [Display(Name = "Phone Number")] public string TenantPhone { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Problem description is required")]
     [StringLength(1000, MinimumLength = 10, ErrorMessage = "Description must be between 10 and 1000 characters")]

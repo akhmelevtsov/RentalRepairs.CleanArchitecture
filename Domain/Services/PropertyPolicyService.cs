@@ -106,14 +106,12 @@ public class PropertyPolicyService
         }
 
         var availableUnits = property.GetAvailableUnits().ToList();
-        
+
         if (!availableUnits.Any())
         {
             return new UnitAssignmentStrategy
             {
-                IsAssignmentPossible = false,
-                Reason = "No available units",
-                RecommendedUnits = new List<string>()
+                IsAssignmentPossible = false, Reason = "No available units", RecommendedUnits = new List<string>()
             };
         }
 
@@ -130,12 +128,12 @@ public class PropertyPolicyService
 
         // Business logic: Recommend based on property characteristics
         var sortedUnits = availableUnits.OrderBy(u => u).ToList();
-        
+
         return new UnitAssignmentStrategy
         {
             IsAssignmentPossible = true,
             RecommendedUnits = sortedUnits,
-            Reason = preferredUnit != null 
+            Reason = preferredUnit != null
                 ? $"Preferred unit '{preferredUnit}' not available, showing alternatives"
                 : "Available units sorted by unit number"
         };
@@ -155,10 +153,11 @@ public class PropertyPolicyService
         }
 
         DateTime cutoffDate = DateTime.UtcNow - analysisWindow;
-        List<TenantRequest> relevantRequests = recentRequests?.Where(r => r.CreatedAt >= cutoffDate).ToList() ?? new List<TenantRequest>();
+        List<TenantRequest> relevantRequests =
+            recentRequests?.Where(r => r.CreatedAt >= cutoffDate).ToList() ?? new List<TenantRequest>();
 
         PropertyMetrics baseMetrics = property.CalculateMetrics();
-        
+
         return new PropertyPerformanceMetrics
         {
             BaseMetrics = baseMetrics,
@@ -195,15 +194,15 @@ public class PropertyPolicyService
 
     private bool IsValidUnitNumber(string unitNumber)
     {
-        return !string.IsNullOrWhiteSpace(unitNumber) && 
-               unitNumber.Length <= 10 && 
+        return !string.IsNullOrWhiteSpace(unitNumber) &&
+               unitNumber.Length <= 10 &&
                System.Text.RegularExpressions.Regex.IsMatch(unitNumber, @"^[A-Za-z0-9\-\s]+$");
     }
 
     private TimeSpan CalculateAverageResolutionTime(List<TenantRequest> requests)
     {
         var completedRequests = requests.Where(r => r.CompletedDate.HasValue).ToList();
-        
+
         if (!completedRequests.Any())
         {
             return TimeSpan.Zero;
@@ -211,7 +210,7 @@ public class PropertyPolicyService
 
         double totalTime = completedRequests
             .Sum(r => (r.CompletedDate!.Value - r.CreatedAt).TotalHours);
-        
+
         return TimeSpan.FromHours(totalTime / completedRequests.Count);
     }
 
@@ -220,7 +219,7 @@ public class PropertyPolicyService
         double occupancyScore = baseMetrics.OccupancyRate * 40; // 40% weight
         double maintenanceScore = CalculateMaintenanceScore(requests) * 35; // 35% weight
         double responseScore = CalculateResponseScore(requests) * 25; // 25% weight
-        
+
         return occupancyScore + maintenanceScore + responseScore;
     }
 
@@ -233,7 +232,7 @@ public class PropertyPolicyService
 
         var completedRequests = requests.Where(r => r.CompletedDate.HasValue).ToList();
         double successRate = (double)completedRequests.Count(r => r.WorkCompletedSuccessfully == true) / requests.Count;
-        
+
         return successRate * 100;
     }
 
@@ -245,7 +244,7 @@ public class PropertyPolicyService
         }
 
         int onTimeCount = requests.Count(r => r.WasResolvedOnTime());
-        return ((double)onTimeCount / requests.Count) * 100;
+        return (double)onTimeCount / requests.Count * 100;
     }
 
     private List<string> GeneratePropertyRecommendations(PropertyMetrics metrics, List<TenantRequest> requests)
@@ -262,8 +261,9 @@ public class PropertyPolicyService
             recommendations.Add("High number of emergency requests - review preventive maintenance");
         }
 
-        double failedRequestRate = requests.Any() ? 
-            (double)requests.Count(r => r.Status == Domain.Enums.TenantRequestStatus.Failed) / requests.Count : 0;
+        double failedRequestRate = requests.Any()
+            ? (double)requests.Count(r => r.Status == Enums.TenantRequestStatus.Failed) / requests.Count
+            : 0;
 
         if (failedRequestRate > 0.1) // More than 10% failure rate
         {

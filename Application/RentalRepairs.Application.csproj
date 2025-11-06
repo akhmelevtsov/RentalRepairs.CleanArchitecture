@@ -47,7 +47,15 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Commands\TenantRequests\CreateAndSubmitTenantRequest\" />
     <Folder Include="Common\Extensions\" />
+    <Folder Include="Queries\Properties\CheckUnitAvailability\" />
+    <Folder Include="Queries\Properties\GetAllProperties\" />
+    <Folder Include="Queries\Properties\GetAvailableUnits\" />
+    <Folder Include="Queries\Properties\GetPropertyStatistics\" />
+    <Folder Include="Queries\Properties\GetPropertySummary\" />
+    <Folder Include="Queries\TenantRequests\GetRequestsByProperty\" />
+    <Folder Include="ReadModels\" />
   </ItemGroup>
 
 </Project>

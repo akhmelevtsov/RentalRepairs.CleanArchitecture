@@ -35,25 +35,23 @@ public class CreateTenantRequestCommandHandler : IRequestHandler<CreateTenantReq
         {
             // Get the tenant from the repository with proper includes
             var tenant = await _tenantRepository.GetByIdAsync(request.TenantId, cancellationToken);
-            if (tenant == null)
-            {
-                throw new ArgumentException($"Tenant with ID {request.TenantId} not found");
-            }
+            if (tenant == null) throw new ArgumentException($"Tenant with ID {request.TenantId} not found");
 
             // Convert urgency level string to enum
             var urgencyEnum = TenantRequestUrgencyExtensions.FromString(request.UrgencyLevel);
+
+            // Validate submission policy BEFORE creating request
+            _submissionPolicy.ValidateCanSubmitRequest(tenant, urgencyEnum);
 
             // Use the tenant's domain method to create the request
             var tenantRequest = tenant.SubmitRequest(request.Title, request.Description, urgencyEnum);
 
             // Set the preferred contact time if provided
             if (!string.IsNullOrWhiteSpace(request.PreferredContactTime))
-            {
                 tenantRequest.SetPreferredContactTime(request.PreferredContactTime);
-            }
 
-            // Submit the request with configurable policy validation
-            tenant.SubmitTenantRequest(tenantRequest, urgencyEnum, _submissionPolicy);
+            // Submit the request (transitions to Submitted status)
+            tenantRequest.SubmitForReview();
 
             // Save changes to the database
             await _context.SaveChangesAsync(cancellationToken);

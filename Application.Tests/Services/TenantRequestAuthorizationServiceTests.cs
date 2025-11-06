@@ -14,7 +14,7 @@ public class ApplicationLayerEssentialTests
     public void DTOs_Should_Have_Required_Properties()
     {
         // Test that essential DTOs have expected structure
-        
+
         var tenantRequestDto = new TenantRequestDto();
         var tenantDto = new TenantDto();
         var propertyDto = new PropertyDto();
@@ -23,27 +23,24 @@ public class ApplicationLayerEssentialTests
         tenantRequestDto.Should().NotBeNull();
         tenantDto.Should().NotBeNull();
         propertyDto.Should().NotBeNull();
-        
+
         // Test property assignment
         tenantRequestDto.Title = "Test Title";
         tenantRequestDto.Title.Should().Be("Test Title");
-        
+
         tenantDto.ContactInfo = new PersonContactInfoDto();
         tenantDto.ContactInfo.Should().NotBeNull();
-        
+
         propertyDto.Name = "Test Property";
         propertyDto.Name.Should().Be("Test Property");
     }
-
-
-
 
 
     [Fact]
     public void Essential_DTOs_Should_Support_Property_Assignment()
     {
         // Test that DTOs support basic property operations
-        
+
         var tenantRequestDto = new TenantRequestDto
         {
             Title = "Test Request",

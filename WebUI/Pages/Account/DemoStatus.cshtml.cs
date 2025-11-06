@@ -29,11 +29,11 @@ public class DemoStatusModel : PageModel
         try
         {
             IsDemoModeEnabled = _demoUserService.IsDemoModeEnabled();
-            
+
             if (IsDemoModeEnabled)
             {
                 var demoUsers = await _demoUserService.GetDemoUsersForDisplayAsync();
-                
+
                 DemoAccounts = demoUsers.Select(u => new WebUIDemoUserInfo
                 {
                     Email = u.Email,
@@ -44,7 +44,8 @@ public class DemoStatusModel : PageModel
                 }).ToList();
 
                 StatusMessage = $"Concurrent login support enabled - {DemoAccounts.Count} demo accounts available";
-                _logger.LogInformation("Demo status page loaded - concurrent logins supported for {Count} accounts", DemoAccounts.Count);
+                _logger.LogInformation("Demo status page loaded - concurrent logins supported for {Count} accounts",
+                    DemoAccounts.Count);
             }
             else
             {

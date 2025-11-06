@@ -4,7 +4,8 @@ using RentalRepairs.Application.DTOs;
 namespace RentalRepairs.Application.Queries.Workers.GetWorkerByEmail;
 
 /// <summary>
-/// Query handler to get worker by email using direct projection
+/// Query handler to get worker by email using direct projection.
+/// Phase 2: Convert enum to string for DTO.
 /// </summary>
 public class GetWorkerByEmailQueryHandler : IQueryHandler<GetWorkerByEmailQuery, WorkerDto?>
 {
@@ -17,7 +18,7 @@ public class GetWorkerByEmailQueryHandler : IQueryHandler<GetWorkerByEmailQuery,
 
     public async Task<WorkerDto?> Handle(GetWorkerByEmailQuery request, CancellationToken cancellationToken)
     {
-        // ? Direct EF projection with filtering
+        // Direct EF projection with filtering
         var workerDto = await Task.FromResult(_context.Workers
             .Where(w => w.ContactInfo.EmailAddress == request.Email)
             .Select(w => new WorkerDto
@@ -31,11 +32,11 @@ public class GetWorkerByEmailQueryHandler : IQueryHandler<GetWorkerByEmailQuery,
                     MobilePhone = w.ContactInfo.MobilePhone,
                     FullName = w.ContactInfo.GetFullName()
                 },
-                Specialization = w.Specialization,
+                // Convert enum to string for DTO
+                Specialization = w.Specialization.ToString(),
                 IsActive = w.IsActive,
                 Notes = w.Notes,
                 RegistrationDate = w.CreatedAt
-                // ? DisplayName is computed property, don't assign to it
             })
             .FirstOrDefault());
 

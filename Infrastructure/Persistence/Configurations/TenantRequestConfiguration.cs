@@ -11,7 +11,7 @@ public class TenantRequestConfiguration : IEntityTypeConfiguration<TenantRequest
         builder.ToTable("TenantRequests");
 
         builder.HasKey(tr => tr.Id);
-        
+
         // Configure Guid ID
         builder.Property(tr => tr.Id)
             .IsRequired()
@@ -48,7 +48,7 @@ public class TenantRequestConfiguration : IEntityTypeConfiguration<TenantRequest
         // Configure explicit foreign key properties
         builder.Property(tr => tr.TenantId)
             .IsRequired();
-            
+
         builder.Property(tr => tr.PropertyId)
             .IsRequired();
 

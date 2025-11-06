@@ -29,16 +29,24 @@ public class AuthenticationEndToEndTests
         // Setup mock behaviors
         mockDemoUserService.Setup(x => x.IsDemoModeEnabled()).Returns(true);
         mockDemoUserService.Setup(x => x.InitializeDemoUsersAsync()).Returns(Task.CompletedTask);
-        
+
         var mockDemoUsers = new List<DemoUserInfo>
         {
-            new() { Email = "admin@demo.com", DisplayName = "System Admin", Roles = new List<string> { UserRoles.SystemAdmin } },
-            new() { Email = "tenant@demo.com", DisplayName = "Test Tenant", Roles = new List<string> { UserRoles.Tenant } }
+            new()
+            {
+                Email = "admin@demo.com", DisplayName = "System Admin",
+                Roles = new List<string> { UserRoles.SystemAdmin }
+            },
+            new()
+            {
+                Email = "tenant@demo.com", DisplayName = "Test Tenant", Roles = new List<string> { UserRoles.Tenant }
+            }
         };
-        
+
         mockDemoUserService.Setup(x => x.GetDemoUsersForDisplayAsync()).ReturnsAsync(mockDemoUsers);
 
-        var authResult = AuthenticationResult.Success("admin", "admin@demo.com", "System Admin", new List<string> { UserRoles.SystemAdmin });
+        var authResult = AuthenticationResult.Success("admin", "admin@demo.com", "System Admin",
+            new List<string> { UserRoles.SystemAdmin });
         mockAuthService.Setup(x => x.AuthenticateAsync("admin@demo.com", "Demo123!")).ReturnsAsync(authResult);
 
         // Act & Assert
@@ -64,7 +72,7 @@ public class AuthenticationEndToEndTests
         // Test basic authentication
         var testUser = demoUsers.First();
         var testAuthResult = await mockAuthService.Object.AuthenticateAsync(testUser.Email, "Demo123!");
-        
+
         Assert.True(testAuthResult.IsSuccess);
         Assert.Equal(testUser.Email, testAuthResult.Email);
         _output.WriteLine($"Mock authentication successful for {testUser.Email}");
@@ -93,21 +101,22 @@ public class AuthenticationEndToEndTests
         foreach (var user in mockUsers)
         {
             var role = user.Roles.First();
-            var authResult = AuthenticationResult.Success(user.Email, user.Email, user.Email, new List<string> { role });
+            var authResult =
+                AuthenticationResult.Success(user.Email, user.Email, user.Email, new List<string> { role });
             mockAuthService.Setup(x => x.AuthenticateAsync(user.Email, "Demo123!")).ReturnsAsync(authResult);
         }
 
         // Act & Assert - Test each role
         var demoUsers = await mockDemoUserService.Object.GetDemoUsersForDisplayAsync();
-        
+
         foreach (var user in demoUsers)
         {
             var authResult = await mockAuthService.Object.AuthenticateAsync(user.Email, "Demo123!");
             var expectedRole = user.Roles.First();
-            
+
             Assert.True(authResult.IsSuccess);
             Assert.Contains(expectedRole, authResult.Roles);
-            
+
             _output.WriteLine($"{expectedRole} authentication: SUCCESS");
         }
 
@@ -126,18 +135,16 @@ public class AuthenticationEndToEndTests
         var hasInfrastructureReference = referencedAssemblies.Any(a => a.Name == "RentalRepairs.Infrastructure");
 
         Assert.True(hasApplicationReference, "WebUI should reference Application layer");
-        
+
         // Note: WebUI does reference Infrastructure for composition root (Program.cs)
         // This is acceptable in Clean Architecture as long as it's only used for DI setup
         if (hasInfrastructureReference)
-        {
             _output.WriteLine(" WebUI references Infrastructure - this is OK only for composition root in Program.cs");
-        }
 
         _output.WriteLine("Clean Architecture boundaries verified:");
         _output.WriteLine($"   WebUI ? Application: {hasApplicationReference}");
         _output.WriteLine($"   WebUI ? Infrastructure: {hasInfrastructureReference} (for DI composition root only)");
-        
+
         // The test passes regardless of Infrastructure reference since it's needed for composition root
         Assert.True(true, "Architecture boundaries are appropriate for Clean Architecture with composition root");
     }

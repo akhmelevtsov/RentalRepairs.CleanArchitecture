@@ -1,64 +1,82 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using MediatR;
+using FluentValidation;
 using RentalRepairs.Application.Interfaces;
 using RentalRepairs.Application.Common.Exceptions;
+using RentalRepairs.Application.Commands.TenantRequests.ScheduleServiceWork;
 
 namespace RentalRepairs.WebUI.Pages.TenantRequests;
 
 /// <summary>
-/// Simplified AssignWorker page model using consolidated IWorkerService
-/// CSRF PROTECTED: POST operations validate antiforgery tokens
-/// Updated to use the consolidated service architecture
+/// Page model for assigning workers to tenant requests.
+/// Uses CQRS directly - calls command via MediatR (no service wrapper).
+/// CSRF PROTECTED: POST operations validate antiforgery tokens.
 /// </summary>
 [Authorize(Roles = "PropertySuperintendent,SystemAdmin")]
 [ValidateAntiForgeryToken]
 public class AssignWorkerModel : PageModel
 {
     private readonly IWorkerService _workerService;
+    private readonly IMediator _mediator;
     private readonly ILogger<AssignWorkerModel> _logger;
 
     public AssignWorkerModel(
         IWorkerService workerService,
+        IMediator mediator,
         ILogger<AssignWorkerModel> logger)
     {
         _workerService = workerService;
+        _mediator = mediator;
         _logger = logger;
     }
 
     // View model properties
     public WorkerAssignmentContextDto? AssignmentContext { get; set; }
-    
-    [BindProperty]
-    public AssignWorkerRequestDto AssignmentRequest { get; set; } = new();
 
-    [TempData]
-    public string? SuccessMessage { get; set; }
-    
-    [TempData] 
-    public string? ErrorMessage { get; set; }
+    [BindProperty] public Guid RequestId { get; set; }
+
+    [BindProperty] public string WorkerEmail { get; set; } = string.Empty;
+
+    [BindProperty] public DateTime ScheduledDate { get; set; }
+
+    [BindProperty] public string WorkOrderNumber { get; set; } = string.Empty;
+
+    [TempData] public string? SuccessMessage { get; set; }
+
+    [TempData] public string? ErrorMessage { get; set; }
+
+    public DateTime DataLoadedAt { get; set; }
+    public bool IsDataStale => (DateTime.UtcNow - DataLoadedAt).TotalMinutes > 5;
 
     /// <summary>
-    /// Load worker assignment context
+    /// Load worker assignment context.
     /// </summary>
     public async Task<IActionResult> OnGetAsync(Guid requestId, string? returnUrl = null)
     {
         try
         {
+            _logger.LogInformation("Loading worker assignment context for request {RequestId}", requestId);
+
             AssignmentContext = await _workerService.GetAssignmentContextAsync(requestId);
-            
-            // Initialize the form with the request ID
-            AssignmentRequest.RequestId = requestId;
-            
-            // Store return URL for navigation after assignment
-            ViewData["ReturnUrl"] = returnUrl;
-            
+
+            // Initialize form properties
+            RequestId = requestId;
+            DataLoadedAt = DateTime.UtcNow;
+
             // Pre-populate scheduled date with first suggested date for better UX
             if (AssignmentContext?.SuggestedDates?.Any() == true)
-            {
-                AssignmentRequest.ScheduledDate = AssignmentContext.SuggestedDates.First();
-            }
-            
+                ScheduledDate = AssignmentContext.SuggestedDates.First();
+
+            ViewData["ReturnUrl"] = returnUrl;
+
+            _logger.LogInformation(
+                "Loaded {WorkerCount} workers for request {RequestId}, emergency={IsEmergency}",
+                AssignmentContext?.AvailableWorkers?.Count ?? 0,
+                requestId,
+                AssignmentContext?.IsEmergencyRequest ?? false);
+
             return Page();
         }
         catch (NotFoundException)
@@ -75,141 +93,115 @@ public class AssignWorkerModel : PageModel
     }
 
     /// <summary>
-    /// Handle worker assignment with CSRF protection
+    /// Handle worker assignment with CSRF protection.
+    /// Uses CQRS directly - calls command via MediatR.
     /// </summary>
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> OnPostAsync(string? returnUrl = null)
     {
         try
         {
-            _logger.LogInformation("Processing worker assignment for request {RequestId}. WorkerEmail: {WorkerEmail}", 
-                AssignmentRequest.RequestId, AssignmentRequest.WorkerEmail);
+            // Convert local date to UTC for consistent timezone handling
+            var localDate = ScheduledDate.Date;
+            var utcDate = DateTime.SpecifyKind(localDate, DateTimeKind.Utc);
 
+            _logger.LogInformation(
+                "Processing worker assignment: Request={RequestId}, Worker={WorkerEmail}, Date={ScheduledDate}",
+                RequestId, WorkerEmail, utcDate);
+
+            // Validate model state
             if (!ModelState.IsValid)
             {
-                _logger.LogWarning("Model state is invalid for request {RequestId}. Errors: {Errors}", 
-                    AssignmentRequest.RequestId, string.Join(", ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage)));
+                _logger.LogWarning(
+                    "Model state is invalid for request {RequestId}. Errors: {Errors}",
+                    RequestId,
+                    string.Join(", ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage)));
 
                 ErrorMessage = "Please correct the validation errors below and try again.";
-                ViewData["ReturnUrl"] = returnUrl; // Preserve ReturnUrl on error
+                ViewData["ReturnUrl"] = returnUrl;
                 await ReloadAssignmentContext();
                 return Page();
             }
 
-            // Assign worker using consolidated service
-            var result = await _workerService.AssignWorkerToRequestAsync(AssignmentRequest);
-            
-            if (result.IsSuccess)
+            // Create and send command via MediatR (TRUE CQRS)
+            var command = new ScheduleServiceWorkCommand
             {
-                SuccessMessage = result.SuccessMessage ?? "Worker assigned successfully.";
-                _logger.LogInformation("Worker assignment successful for request {RequestId}", AssignmentRequest.RequestId);
-                
-                // Pass ReturnUrl to Details page so it knows where to navigate back
-                object routeValues = new { id = AssignmentRequest.RequestId };
-                if (!string.IsNullOrEmpty(returnUrl))
-                {
-                    routeValues = new { id = AssignmentRequest.RequestId, returnUrl = returnUrl };
-                }
-                
-                return RedirectToPage("/TenantRequests/Details", routeValues);
-            }
+                TenantRequestId = RequestId,
+                WorkerEmail = WorkerEmail,
+                ScheduledDate = utcDate,
+                WorkOrderNumber = WorkOrderNumber
+            };
+
+            await _mediator.Send(command);
+
+            // Success - set message and redirect
+            TempData.Remove("ErrorMessage"); // Clear any previous errors
+            SuccessMessage = $"Work successfully assigned to {WorkerEmail} for {utcDate:yyyy-MM-dd}";
+
+            _logger.LogInformation(
+                "Worker assignment successful for request {RequestId}",
+                RequestId);
+
+            // Navigate to details page
+            object routeValues;
+            if (!string.IsNullOrEmpty(returnUrl))
+                routeValues = new { id = RequestId, returnUrl = returnUrl };
             else
-            {
-                ErrorMessage = result.ErrorMessage ?? "Failed to assign worker.";
-                ModelState.AddModelError(string.Empty, ErrorMessage);
-                ViewData["ReturnUrl"] = returnUrl; // Preserve ReturnUrl on error
-                await ReloadAssignmentContext();
-                return Page();
-            }
+                routeValues = new { id = RequestId };
+
+            return RedirectToPage("/TenantRequests/Details", routeValues);
+        }
+        catch (FluentValidation.ValidationException ex)
+        {
+            // FluentValidation errors
+            var errors = string.Join(", ", ex.Errors.Select(e => e.ErrorMessage));
+            _logger.LogWarning(
+                "Validation failed for request {RequestId}: {Errors}",
+                RequestId, errors);
+
+            ErrorMessage = $"Validation failed: {errors}";
+            ViewData["ReturnUrl"] = returnUrl;
+            await ReloadAssignmentContext();
+            return Page();
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error assigning worker for request {RequestId}", AssignmentRequest.RequestId);
-            ErrorMessage = $"An error occurred while assigning the worker: {ex.Message}";
-            ModelState.AddModelError(string.Empty, ex.Message);
-            
-            ViewData["ReturnUrl"] = returnUrl; // Preserve ReturnUrl on error
+            _logger.LogError(ex, "Error assigning worker for request {RequestId}", RequestId);
+            ErrorMessage = "An error occurred while assigning the worker. Please try again.";
+            ViewData["ReturnUrl"] = returnUrl;
             await ReloadAssignmentContext();
             return Page();
         }
     }
 
-    /// <summary>
-    /// AJAX endpoint to check if worker is available on the selected date
-    /// </summary>
-    public async Task<IActionResult> OnGetWorkerAvailabilityAsync(string workerEmail, DateTime date)
-    {
-        try
-        {
-            _logger.LogInformation("Checking worker availability for worker {WorkerEmail}, date {Date}", 
-                workerEmail, date);
-
-            if (string.IsNullOrWhiteSpace(workerEmail))
-            {
-                return new JsonResult(new { available = false, message = "Worker email is required" });
-            }
-
-            if (date.Date < DateTime.Today)
-            {
-                return new JsonResult(new { available = false, message = "Date must be in the future" });
-            }
-
-            // Check worker availability using consolidated service
-            var isAvailable = await _workerService.IsWorkerAvailableAsync(workerEmail, date);
-            
-            return new JsonResult(new { 
-                available = isAvailable,
-                message = isAvailable 
-                    ? "Worker is available on this date"
-                    : "Worker is not available on this date (may already have maximum daily assignments)"
-            });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error checking worker availability for worker {WorkerEmail} on {Date}", 
-                workerEmail, date);
-            return new JsonResult(new { available = false, message = $"Error checking availability: {ex.Message}" });
-        }
-    }
-
     #region Private Helper Methods
 
-    /// <summary>
-    /// Redirect to appropriate page based on user role
-    /// </summary>
     private IActionResult RedirectToPageBasedOnRole()
     {
         if (User.IsInRole("PropertySuperintendent"))
-        {
             return RedirectToPage("/TenantRequests/Manage");
-        }
-        else if (User.IsInRole("SystemAdmin"))
-        {
+        if (User.IsInRole("SystemAdmin"))
             return RedirectToPage("/Index");
-        }
-        else if (User.IsInRole("Worker"))
-        {
+        if (User.IsInRole("Worker"))
             return RedirectToPage("/Index");
-        }
-        else
-        {
-            return RedirectToPage("/Index");
-        }
+
+        return RedirectToPage("/Index");
     }
 
-    /// <summary>
-    /// Reload assignment context when errors occur
-    /// </summary>
     private async Task ReloadAssignmentContext()
     {
         try
         {
-            AssignmentContext = await _workerService.GetAssignmentContextAsync(AssignmentRequest.RequestId);
+            var previousLoadTime = DataLoadedAt;
+            AssignmentContext = await _workerService.GetAssignmentContextAsync(RequestId);
+
+            // Preserve original load time (don't reset staleness timer)
+            DataLoadedAt = previousLoadTime != default ? previousLoadTime : DateTime.UtcNow;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error reloading assignment context for request {RequestId}", AssignmentRequest.RequestId);
-            // Don't throw here - let the original error be displayed
+            _logger.LogError(ex, "Error reloading assignment context for request {RequestId}", RequestId);
+            // Don't throw - let original error be displayed
         }
     }
 

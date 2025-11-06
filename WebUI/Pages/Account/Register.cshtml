@@ -39,14 +39,14 @@
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label asp-for="Register.Email" class="form-label">Email Address</label>
-                                    <input asp-for="Register.Email" class="form-control" placeholder="user@company.com" />
+                                    <input asp-for="Register.Email" class="form-control" placeholder="user@company.com"/>
                                     <span asp-validation-for="Register.Email" class="text-danger"></span>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label asp-for="Register.DisplayName" class="form-label">Display Name</label>
-                                    <input asp-for="Register.DisplayName" class="form-control" placeholder="John Doe" />
+                                    <input asp-for="Register.DisplayName" class="form-control" placeholder="John Doe"/>
                                     <span asp-validation-for="Register.DisplayName" class="text-danger"></span>
                                 </div>
                             </div>
@@ -56,14 +56,14 @@
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label asp-for="Register.Password" class="form-label">Password</label>
-                                    <input asp-for="Register.Password" class="form-control" type="password" />
+                                    <input asp-for="Register.Password" class="form-control" type="password"/>
                                     <span asp-validation-for="Register.Password" class="text-danger"></span>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label asp-for="Register.ConfirmPassword" class="form-label">Confirm Password</label>
-                                    <input asp-for="Register.ConfirmPassword" class="form-control" type="password" />
+                                    <input asp-for="Register.ConfirmPassword" class="form-control" type="password"/>
                                     <span asp-validation-for="Register.ConfirmPassword" class="text-danger"></span>
                                 </div>
                             </div>
@@ -87,19 +87,19 @@
                                 <div class="col-md-4">
                                     <div class="mb-3">
                                         <label asp-for="Register.PropertyCode" class="form-label">Property Code</label>
-                                        <input asp-for="Register.PropertyCode" class="form-control" placeholder="SUN001" />
+                                        <input asp-for="Register.PropertyCode" class="form-control" placeholder="SUN001"/>
                                     </div>
                                 </div>
                                 <div class="col-md-4">
                                     <div class="mb-3">
                                         <label asp-for="Register.PropertyName" class="form-label">Property Name</label>
-                                        <input asp-for="Register.PropertyName" class="form-control" placeholder="Sunset Apartments" />
+                                        <input asp-for="Register.PropertyName" class="form-control" placeholder="Sunset Apartments"/>
                                     </div>
                                 </div>
                                 <div class="col-md-4">
                                     <div class="mb-3">
                                         <label asp-for="Register.UnitNumber" class="form-label">Unit Number</label>
-                                        <input asp-for="Register.UnitNumber" class="form-control" placeholder="101" />
+                                        <input asp-for="Register.UnitNumber" class="form-control" placeholder="101"/>
                                     </div>
                                 </div>
                             </div>
@@ -127,13 +127,13 @@
                                 <div class="col-md-6">
                                     <div class="mb-3">
                                         <label asp-for="Register.PropertyCode" class="form-label">Property Code</label>
-                                        <input asp-for="Register.PropertyCode" class="form-control" placeholder="SUN001" />
+                                        <input asp-for="Register.PropertyCode" class="form-control" placeholder="SUN001"/>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
                                     <div class="mb-3">
                                         <label asp-for="Register.PropertyName" class="form-label">Property Name</label>
-                                        <input asp-for="Register.PropertyName" class="form-control" placeholder="Sunset Apartments" />
+                                        <input asp-for="Register.PropertyName" class="form-control" placeholder="Sunset Apartments"/>
                                     </div>
                                 </div>
                             </div>
@@ -145,7 +145,7 @@
                             <i class="fas fa-arrow-left"></i>
                             Back to Login
                         </a>
-                        <button type="submit" 
+                        <button type="submit"
                                 class="btn btn-primary @(Model.IsRegistrationDisabled ? "disabled" : "")"
                                 @(Model.IsRegistrationDisabled ? "disabled" : "")>
                             <i class="fas fa-user-plus"></i>
@@ -172,33 +172,35 @@
                     <div class="table-responsive">
                         <table class="table table-sm">
                             <thead>
-                                <tr>
-                                    <th>Email</th>
-                                    <th>Display Name</th>
-                                    <th>Role</th>
-                                    <th>Description</th>
-                                </tr>
+                            <tr>
+                                <th>Email</th>
+                                <th>Display Name</th>
+                                <th>Role</th>
+                                <th>Description</th>
+                            </tr>
                             </thead>
                             <tbody>
-                                @foreach (var user in Model.ExistingDemoUsers)
-                                {
-                                    <tr>
-                                        <td><code>@user.Email</code></td>
-                                        <td>@user.DisplayName</td>
-                                        <td>
-                                            @foreach (var role in user.Roles)
-                                            {
-                                                <span class="badge bg-secondary me-1">@role</span>
-                                            }
-                                        </td>
-                                        <td>
-                                            @if (!string.IsNullOrWhiteSpace(user.Description))
-                                            {
-                                                <small class="text-muted">@user.Description</small>
-                                            }
-                                        </td>
-                                    </tr>
-                                }
+                            @foreach (var user in Model.ExistingDemoUsers)
+                            {
+                                <tr>
+                                    <td>
+                                        <code>@user.Email</code>
+                                    </td>
+                                    <td>@user.DisplayName</td>
+                                    <td>
+                                        @foreach (var role in user.Roles)
+                                        {
+                                            <span class="badge bg-secondary me-1">@role</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (!string.IsNullOrWhiteSpace(user.Description))
+                                        {
+                                            <small class="text-muted">@user.Description</small>
+                                        }
+                                    </td>
+                                </tr>
+                            }
                             </tbody>
                         </table>
                     </div>
@@ -209,8 +211,8 @@
 </div>
 
 @section Scripts {
-    <partial name="_ValidationScriptsPartial" />
-    
+    <partial name="_ValidationScriptsPartial"/>
+
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const roleSelect = document.getElementById('roleSelect');

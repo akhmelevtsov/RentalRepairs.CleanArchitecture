@@ -31,8 +31,8 @@ public sealed class WorkAssignment : ValueObject
 
     // Private constructor for creating completed work assignments
     private WorkAssignment(
-        string workOrderNumber, 
-        DateTime scheduledDate, 
+        string workOrderNumber,
+        DateTime scheduledDate,
         string? notes,
         DateTime assignedDate,
         bool isCompleted,
@@ -56,25 +56,25 @@ public sealed class WorkAssignment : ValueObject
 
     /// <summary>Gets the work order number (immutable)</summary>
     public string WorkOrderNumber { get; private init; }
-    
+
     /// <summary>Gets the scheduled date (immutable)</summary>
     public DateTime ScheduledDate { get; private init; }
-    
+
     /// <summary>Gets the assignment notes (immutable, optional)</summary>
     public string? Notes { get; private init; }
-    
+
     /// <summary>Gets the date when the work was assigned (immutable)</summary>
     public DateTime AssignedDate { get; private init; }
-    
+
     /// <summary>Gets whether the work is completed (immutable)</summary>
     public bool IsCompleted { get; private init; }
-    
+
     /// <summary>Gets the completion date (immutable, null if not completed)</summary>
     public DateTime? CompletedDate { get; private init; }
-    
+
     /// <summary>Gets whether the work was completed successfully (immutable, null if not completed)</summary>
     public bool? CompletedSuccessfully { get; private init; }
-    
+
     /// <summary>Gets the completion notes (immutable, null if not completed)</summary>
     public string? CompletionNotes { get; private init; }
 
@@ -84,11 +84,15 @@ public sealed class WorkAssignment : ValueObject
 
     /// <summary>Creates a new instance with updated scheduled date</summary>
     public WorkAssignment WithScheduledDate(DateTime scheduledDate)
-        => new(WorkOrderNumber, scheduledDate, Notes);
+    {
+        return new WorkAssignment(WorkOrderNumber, scheduledDate, Notes);
+    }
 
     /// <summary>Creates a new instance with updated notes</summary>
     public WorkAssignment WithNotes(string? notes)
-        => new(WorkOrderNumber, ScheduledDate, notes);
+    {
+        return new WorkAssignment(WorkOrderNumber, ScheduledDate, notes);
+    }
 
     /// <summary>Creates a new completed work assignment</summary>
     public WorkAssignment Complete(bool successful, string? completionNotes = null)
@@ -103,10 +107,10 @@ public sealed class WorkAssignment : ValueObject
             ScheduledDate,
             Notes,
             AssignedDate,
-            isCompleted: true,
-            completedDate: DateTime.UtcNow,
-            completedSuccessfully: successful,
-            completionNotes: ValidateAndNormalizeCompletionNotes(completionNotes));
+            true,
+            DateTime.UtcNow,
+            successful,
+            ValidateAndNormalizeCompletionNotes(completionNotes));
     }
 
     /// <summary>Checks if this assignment overlaps with the specified date and duration</summary>
@@ -121,16 +125,28 @@ public sealed class WorkAssignment : ValueObject
     }
 
     /// <summary>Gets the number of days until the scheduled date (negative if past)</summary>
-    public int DaysUntilScheduled() => (ScheduledDate.Date - DateTime.Today).Days;
+    public int DaysUntilScheduled()
+    {
+        return (ScheduledDate.Date - DateTime.Today).Days;
+    }
 
     /// <summary>Checks if the assignment is scheduled for today</summary>
-    public bool IsScheduledForToday() => ScheduledDate.Date == DateTime.Today;
+    public bool IsScheduledForToday()
+    {
+        return ScheduledDate.Date == DateTime.Today;
+    }
 
     /// <summary>Checks if the assignment is overdue</summary>
-    public bool IsOverdue() => !IsCompleted && ScheduledDate < DateTime.UtcNow;
+    public bool IsOverdue()
+    {
+        return !IsCompleted && ScheduledDate < DateTime.UtcNow;
+    }
 
     /// <summary>Gets the duration since assignment (or until completion if completed)</summary>
-    public TimeSpan GetDuration() => (CompletedDate ?? DateTime.UtcNow) - AssignedDate;
+    public TimeSpan GetDuration()
+    {
+        return (CompletedDate ?? DateTime.UtcNow) - AssignedDate;
+    }
 
     #endregion
 
@@ -229,10 +245,12 @@ public sealed class WorkAssignment : ValueObject
 
     public override string ToString()
     {
-        string status = IsCompleted 
+        string status = IsCompleted
             ? CompletedSuccessfully == true ? "Completed Successfully" : "Completed with Issues"
-            : IsOverdue() ? "Overdue" : "Pending";
-            
+            : IsOverdue()
+                ? "Overdue"
+                : "Pending";
+
         return $"Work Order {WorkOrderNumber} scheduled for {ScheduledDate:yyyy-MM-dd} - {status}";
     }
 

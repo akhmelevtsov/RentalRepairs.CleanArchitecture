@@ -25,7 +25,7 @@ public class DashboardModel : PageModel
         WorkerName = User.Identity?.Name ?? "Worker";
         Specialization = User.FindFirst("worker_specialization")?.Value ?? "General";
 
-        _logger.LogInformation("Worker dashboard accessed by {WorkerName} with specialization {Specialization}", 
+        _logger.LogInformation("Worker dashboard accessed by {WorkerName} with specialization {Specialization}",
             WorkerName, Specialization);
     }
 }

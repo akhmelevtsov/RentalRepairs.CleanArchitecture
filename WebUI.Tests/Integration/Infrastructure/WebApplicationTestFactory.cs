@@ -20,20 +20,20 @@ public class WebApplicationTestFactory<TProgram> : WebApplicationFactory<TProgra
         {
             // Remove existing database registrations
             RemoveDbContextRegistrations(services);
-            
+
             // Add in-memory database for testing
             AddInMemoryDatabase(services);
-            
+
             // Configure logging for tests (reduce noise)
             ConfigureTestLogging(services);
-            
+
             // Add required services for testing
             AddRequiredTestServices(services);
         });
 
         // Set test environment
         builder.UseEnvironment("Testing");
-        
+
         // Build and initialize test database
         builder.ConfigureServices(services =>
         {
@@ -46,14 +46,11 @@ public class WebApplicationTestFactory<TProgram> : WebApplicationFactory<TProgra
     {
         var descriptors = services
             .Where(d => d.ServiceType == typeof(DbContextOptions<ApplicationDbContext>) ||
-                       d.ServiceType == typeof(IApplicationDbContext) ||
-                       d.ServiceType == typeof(ApplicationDbContext))
+                        d.ServiceType == typeof(IApplicationDbContext) ||
+                        d.ServiceType == typeof(ApplicationDbContext))
             .ToList();
 
-        foreach (var descriptor in descriptors)
-        {
-            services.Remove(descriptor);
-        }
+        foreach (var descriptor in descriptors) services.Remove(descriptor);
     }
 
     private static void AddInMemoryDatabase(IServiceCollection services)
@@ -62,25 +59,25 @@ public class WebApplicationTestFactory<TProgram> : WebApplicationFactory<TProgra
         {
             options.UseInMemoryDatabase($"WebUITests_{Guid.NewGuid()}");
             options.EnableSensitiveDataLogging();
-            options.ConfigureWarnings(warnings => 
+            options.ConfigureWarnings(warnings =>
                 warnings.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.InMemoryEventId.TransactionIgnoredWarning));
         });
 
-        services.AddScoped<IApplicationDbContext>(provider => 
+        services.AddScoped<IApplicationDbContext>(provider =>
             provider.GetRequiredService<ApplicationDbContext>());
     }
 
     private static void ConfigureTestLogging(IServiceCollection services)
     {
         // Configure minimal logging for tests to reduce noise
-        services.AddLogging(builder => 
+        services.AddLogging(builder =>
         {
             builder.ClearProviders()
-                   .SetMinimumLevel(LogLevel.Warning)
-                   .AddFilter("Microsoft.EntityFrameworkCore", LogLevel.Error)
-                   .AddFilter("Microsoft.AspNetCore", LogLevel.Error)
-                   .AddFilter("Microsoft.Extensions.Hosting", LogLevel.Error)
-                   .AddConsole();
+                .SetMinimumLevel(LogLevel.Warning)
+                .AddFilter("Microsoft.EntityFrameworkCore", LogLevel.Error)
+                .AddFilter("Microsoft.AspNetCore", LogLevel.Error)
+                .AddFilter("Microsoft.Extensions.Hosting", LogLevel.Error)
+                .AddConsole();
         });
     }
 
@@ -88,14 +85,12 @@ public class WebApplicationTestFactory<TProgram> : WebApplicationFactory<TProgra
     {
         // Add basic health checks (required since Program.cs maps the endpoint)
         services.AddHealthChecks()
-            .AddCheck("test", () => 
+            .AddCheck("test", () =>
                 Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Healthy("Test application is running"));
-        
+
         // Ensure HttpContextAccessor is available for WebUI services
         if (!services.Any(d => d.ServiceType == typeof(IHttpContextAccessor)))
-        {
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
-        }
     }
 
     private static void InitializeTestDatabase(IServiceProvider serviceProvider)
@@ -104,21 +99,17 @@ public class WebApplicationTestFactory<TProgram> : WebApplicationFactory<TProgra
         try
         {
             var context = scope.ServiceProvider.GetService<IApplicationDbContext>();
-            
+
             // Basic initialization - create database structure
-            if (context is ApplicationDbContext dbContext)
-            {
-                dbContext.Database.EnsureCreated();
-                
-                // Don't initialize demo data in tests to avoid conflicts
-                // Tests should set up their own test data as needed
-            }
+            if (context is ApplicationDbContext dbContext) dbContext.Database.EnsureCreated();
+            // Don't initialize demo data in tests to avoid conflicts
+            // Tests should set up their own test data as needed
         }
         catch (Exception ex)
         {
             var logger = scope.ServiceProvider.GetService<ILogger<WebApplicationTestFactory<TProgram>>>();
             logger?.LogWarning(ex, "Warning during test database initialization");
-            
+
             // Don't throw here - some tests may not need database functionality
             // Let the tests handle database requirements individually
         }

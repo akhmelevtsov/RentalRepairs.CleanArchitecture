@@ -14,28 +14,37 @@ public static class UserRoles
     /// <summary>
     /// Get all available roles
     /// </summary>
-    public static List<string> GetAllRoles() => new()
+    public static List<string> GetAllRoles()
     {
-        SystemAdmin,
-        PropertySuperintendent,
-        Tenant,
-        Worker
-    };
+        return new List<string>
+        {
+            SystemAdmin,
+            PropertySuperintendent,
+            Tenant,
+            Worker
+        };
+    }
 
     /// <summary>
     /// Check if role is valid
     /// </summary>
-    public static bool IsValidRole(string role) => GetAllRoles().Contains(role);
+    public static bool IsValidRole(string role)
+    {
+        return GetAllRoles().Contains(role);
+    }
 
     /// <summary>
     /// Get role display name
     /// </summary>
-    public static string GetDisplayName(string role) => role switch
+    public static string GetDisplayName(string role)
     {
-        SystemAdmin => "System Administrator",
-        PropertySuperintendent => "Property Superintendent",
-        Tenant => "Tenant",
-        Worker => "Maintenance Worker",
-        _ => role
-    };
+        return role switch
+        {
+            SystemAdmin => "System Administrator",
+            PropertySuperintendent => "Property Superintendent",
+            Tenant => "Tenant",
+            Worker => "Maintenance Worker",
+            _ => role
+        };
+    }
 }

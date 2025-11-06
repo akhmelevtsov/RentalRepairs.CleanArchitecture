@@ -1,45 +1,29 @@
 using RentalRepairs.Application.DTOs;
+using RentalRepairs.Domain.Enums;
 
 namespace RentalRepairs.Application.Interfaces;
 
 /// <summary>
-/// Consolidated Worker Service Interface  
-/// Absorbs worker assignment functionality for better cohesion
-/// Simple CRUD operations should still use CQRS directly via IMediator.
+/// Worker Service Interface for operations requiring orchestration.
+/// Simple CRUD operations use CQRS directly via IMediator.
+/// Phase 3: Now uses WorkerSpecialization enum for type safety.
 /// </summary>
 public interface IWorkerService
 {
     /// <summary>
-    /// Business logic: Checks if a specific worker is available on a given date.
-    /// </summary>
-    Task<bool> IsWorkerAvailableAsync(string workerEmail, DateTime serviceDate, CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Business logic: Gets distinct specializations from all active workers.
-    /// </summary>
-    Task<List<string>> GetWorkerSpecializationsAsync(CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Business logic: Gets workers available for a specific type of work.
-    /// Consolidated from IWorkerAssignmentService.
+    /// Gets workers available for a specific type of work with emergency support and booking visibility.
+    /// Implements fallback strategy: specialized ? general maintenance ? any available.
     /// </summary>
     Task<List<WorkerOptionDto>> GetAvailableWorkersForRequestAsync(
         Guid requestId,
-        string requiredSpecialization,
+        WorkerSpecialization requiredSpecialization,
         DateTime preferredDate,
+        bool isEmergencyRequest = false,
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Business logic: Validates and assigns worker to a request with business rules.
-    /// Consolidated from IWorkerAssignmentService.
-    /// </summary>
-    Task<WorkerAssignmentResult> AssignWorkerToRequestAsync(
-        AssignWorkerRequestDto request,
-        CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Business logic: Gets assignment context with available workers and scheduling options.
-    /// Consolidated from IWorkerAssignmentService.
+    /// Gets assignment context with available workers and scheduling options.
+    /// Orchestrates query, specialization detection, and date generation.
     /// </summary>
     Task<WorkerAssignmentContextDto> GetAssignmentContextAsync(
         Guid requestId,
@@ -47,40 +31,47 @@ public interface IWorkerService
 }
 
 /// <summary>
-/// Supporting DTOs for consolidated worker service
+/// Worker option DTO with booking visibility data for UI calendar integration.
+/// Phase 3: Now uses WorkerSpecialization enum.
 /// </summary>
 public class WorkerOptionDto
 {
     public Guid Id { get; set; }
     public string Email { get; set; } = string.Empty;
     public string FullName { get; set; } = string.Empty;
-    public string Specialization { get; set; } = string.Empty;
+    public WorkerSpecialization Specialization { get; set; }
     public bool IsAvailable { get; set; }
     public DateTime? NextAvailableDate { get; set; }
     public int ActiveAssignmentsCount { get; set; }
+
+    /// <summary>
+    /// List of dates where worker is fully booked (2/2 slots filled).
+    /// UI should disable/dim these dates for non-emergency requests.
+    /// </summary>
+    public List<DateTime> BookedDates { get; set; } = new();
+
+    /// <summary>
+    /// List of dates where worker is partially booked (1/2 slots filled).
+    /// UI should show warning indicator for these dates.
+    /// </summary>
+    public List<DateTime> PartiallyBookedDates { get; set; } = new();
+
+    /// <summary>
+    /// Availability score for ordering workers (lower = better availability).
+    /// Formula: (DaysUntilNextAvailable * 100) + CurrentWorkload
+    /// </summary>
+    public int AvailabilityScore { get; set; }
 }
 
-public class WorkerAssignmentResult
-{
-    public bool IsSuccess { get; set; }
-    public string? ErrorMessage { get; set; }
-    public string? SuccessMessage { get; set; }
-    public Guid? WorkOrderId { get; set; }
-}
-
-public class AssignWorkerRequestDto
-{
-    public Guid RequestId { get; set; }
-    public string WorkerEmail { get; set; } = string.Empty;
-    public DateTime ScheduledDate { get; set; }
-    public string WorkOrderNumber { get; set; } = string.Empty;
-    public string? Notes { get; set; }
-}
-
+/// <summary>
+/// Assignment context DTO with request details, available workers, and suggested dates.
+/// Phase 3: Now includes determined specialization.
+/// </summary>
 public class WorkerAssignmentContextDto
 {
     public TenantRequestDto Request { get; set; } = new();
     public List<WorkerOptionDto> AvailableWorkers { get; set; } = new();
     public List<DateTime> SuggestedDates { get; set; } = new();
     public bool IsEmergencyRequest { get; set; }
+    public WorkerSpecialization RequiredSpecialization { get; set; }
 }

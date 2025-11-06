@@ -35,14 +35,11 @@ public class RegisterDemoUserViewModel
     public string SelectedRole { get; set; } = string.Empty;
 
     // Tenant-specific fields
-    [Display(Name = "Property Code")]
-    public string? PropertyCode { get; set; }
+    [Display(Name = "Property Code")] public string? PropertyCode { get; set; }
 
-    [Display(Name = "Property Name")]
-    public string? PropertyName { get; set; }
+    [Display(Name = "Property Name")] public string? PropertyName { get; set; }
 
-    [Display(Name = "Unit Number")]
-    public string? UnitNumber { get; set; }
+    [Display(Name = "Unit Number")] public string? UnitNumber { get; set; }
 
     // Worker-specific fields
     [Display(Name = "Worker Specialization")]
@@ -95,11 +92,13 @@ public class RegisterDemoUserViewModel
                     errorMessage = "Property code is required for tenants";
                     return false;
                 }
+
                 if (string.IsNullOrWhiteSpace(UnitNumber))
                 {
                     errorMessage = "Unit number is required for tenants";
                     return false;
                 }
+
                 break;
 
             case UserRoles.Worker:
@@ -108,6 +107,7 @@ public class RegisterDemoUserViewModel
                     errorMessage = "Specialization is required for workers";
                     return false;
                 }
+
                 break;
 
             case UserRoles.PropertySuperintendent:
@@ -116,6 +116,7 @@ public class RegisterDemoUserViewModel
                     errorMessage = "Property code is required for superintendents";
                     return false;
                 }
+
                 break;
         }
 
@@ -148,14 +149,17 @@ public class DemoCredentialsViewModel
         .OrderBy(g => GetRoleOrder(g.RoleName))
         .ToList();
 
-    private static int GetRoleOrder(string role) => role switch
+    private static int GetRoleOrder(string role)
     {
-        UserRoles.SystemAdmin => 1,
-        UserRoles.PropertySuperintendent => 2,
-        UserRoles.Tenant => 3,
-        UserRoles.Worker => 4,
-        _ => 5
-    };
+        return role switch
+        {
+            UserRoles.SystemAdmin => 1,
+            UserRoles.PropertySuperintendent => 2,
+            UserRoles.Tenant => 3,
+            UserRoles.Worker => 4,
+            _ => 5
+        };
+    }
 }
 
 /// <summary>

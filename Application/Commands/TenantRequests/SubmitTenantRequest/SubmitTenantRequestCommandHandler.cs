@@ -8,7 +8,8 @@ namespace RentalRepairs.Application.Commands.TenantRequests.SubmitTenantRequest;
 /// Command handler for submitting tenant requests using direct EF Core access
 /// Handles the Guid-based SubmitTenantRequestCommand (not legacy int-based versions)
 /// </summary>
-public sealed class SubmitTenantRequestCommandHandler : ICommandHandler<SubmitTenantRequestCommand, SubmitTenantRequestResult>
+public sealed class
+    SubmitTenantRequestCommandHandler : ICommandHandler<SubmitTenantRequestCommand, SubmitTenantRequestResult>
 {
     private readonly IApplicationDbContext _context;
 
@@ -17,17 +18,15 @@ public sealed class SubmitTenantRequestCommandHandler : ICommandHandler<SubmitTe
         _context = context ?? throw new ArgumentNullException(nameof(context));
     }
 
-    public async Task<SubmitTenantRequestResult> Handle(SubmitTenantRequestCommand request, CancellationToken cancellationToken)
+    public async Task<SubmitTenantRequestResult> Handle(SubmitTenantRequestCommand request,
+        CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
 
         var tenantRequest = await _context.TenantRequests
             .FirstOrDefaultAsync(tr => tr.Id == request.TenantRequestId, cancellationToken);
 
-        if (tenantRequest == null)
-        {
-            throw new NotFoundException("TenantRequest", request.TenantRequestId);
-        }
+        if (tenantRequest == null) throw new NotFoundException("TenantRequest", request.TenantRequestId);
 
         try
         {
@@ -35,7 +34,7 @@ public sealed class SubmitTenantRequestCommandHandler : ICommandHandler<SubmitTe
             tenantRequest.Submit();
 
             await _context.SaveChangesAsync(cancellationToken);
-            
+
             return new SubmitTenantRequestResult
             {
                 IsSuccess = true,

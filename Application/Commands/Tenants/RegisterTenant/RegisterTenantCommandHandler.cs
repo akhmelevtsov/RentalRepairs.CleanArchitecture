@@ -33,17 +33,14 @@ public class RegisterTenantCommandHandler : IRequestHandler<RegisterTenantComman
     {
         // Data loading (Application layer responsibility)
         var property = await _propertyRepository.GetByIdAsync(request.PropertyId, cancellationToken);
-        if (property == null)
-        {
-            throw new InvalidOperationException($"Property with ID {request.PropertyId} not found");
-        }
+        if (property == null) throw new InvalidOperationException($"Property with ID {request.PropertyId} not found");
 
         // Cross-aggregate validation (Application layer responsibility)
-        var isUnitOccupied = await _tenantRepository.ExistsInUnitAsync(property.Code, request.UnitNumber, cancellationToken);
+        var isUnitOccupied =
+            await _tenantRepository.ExistsInUnitAsync(property.Code, request.UnitNumber, cancellationToken);
         if (isUnitOccupied)
-        {
-            throw new InvalidOperationException($"Unit '{request.UnitNumber}' is already occupied in property '{property.Code}'");
-        }
+            throw new InvalidOperationException(
+                $"Unit '{request.UnitNumber}' is already occupied in property '{property.Code}'");
 
         // Create contact info value object
         var contactInfo = new PersonContactInfo(

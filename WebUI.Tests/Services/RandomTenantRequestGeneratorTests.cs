@@ -18,21 +18,22 @@ public class RandomTenantRequestGeneratorTests
         Assert.False(string.IsNullOrWhiteSpace(result.ProblemDescription));
         Assert.False(string.IsNullOrWhiteSpace(result.UrgencyLevel));
         Assert.False(string.IsNullOrWhiteSpace(result.PreferredContactTime));
-        
+
         // Verify problem description has reasonable length
         Assert.True(result.ProblemDescription.Length >= 50);
         Assert.True(result.ProblemDescription.Length <= 1000);
-        
+
         // Verify urgency level is valid
         var validUrgencyLevels = new[] { "Low", "Normal", "High", "Critical" };
         Assert.Contains(result.UrgencyLevel, validUrgencyLevels);
-        
+
         // Verify contact time is valid
-        var validContactTimes = new[] { 
-            "Morning (8 AM - 12 PM)", 
-            "Afternoon (12 PM - 5 PM)", 
-            "Evening (5 PM - 8 PM)", 
-            "Anytime" 
+        var validContactTimes = new[]
+        {
+            "Morning (8 AM - 12 PM)",
+            "Afternoon (12 PM - 5 PM)",
+            "Evening (5 PM - 8 PM)",
+            "Anytime"
         };
         Assert.Contains(result.PreferredContactTime, validContactTimes);
     }
@@ -74,39 +75,40 @@ public class RandomTenantRequestGeneratorTests
         var result = RandomTenantRequestGenerator.GenerateRandomRequest();
 
         // Assert - problem description should contain maintenance-related keywords
-        var maintenanceKeywords = new[] { 
+        var maintenanceKeywords = new[]
+        {
             // Water/Plumbing related
             "leak", "drip", "broken", "water", "sink", "toilet", "faucet", "drain", "heater", "plumbing",
             "backing up", "pooling", "pressure", "running", "humming", "garbage disposal", "loose", "wobbles",
-            
+
             // Electrical related  
-            "electrical", "outlet", "light", "switch", "sparking", "flicker", "ceiling fan", "grinding", 
+            "electrical", "outlet", "light", "switch", "sparking", "flicker", "ceiling fan", "grinding",
             "tripping", "doorbell", "circuit", "GFCI", "wiring", "buzzing", "sounds",
-            
+
             // HVAC related
             "heating", "cooling", "air conditioning", "heater", "thermostat", "vents", "exhaust fan",
             "temperature", "dusty", "musty", "grinding", "vibrating", "steamy", "blowing",
-            
+
             // General maintenance
-            "not working", "noise", "crack", "damage", "repair", "fix", "replace", "paint", 
+            "not working", "noise", "crack", "damage", "repair", "fix", "replace", "paint",
             "door", "window", "creak", "creaking", "stain", "peeling", "tile", "vinyl", "laminate",
             "buckling", "spongy", "burns", "crooked", "sways", "mounting", "stuck", "jiggled",
             "cloudy", "faulty", "malfunctioning", "treatment", "professional", "safety", "hazard",
-            
+
             // Pest related
             "insects", "pest", "ants", "cockroaches", "mice", "wasps", "spiders", "nest", "droppings",
             "scratching", "fruit flies", "swarming", "buzzing",
-            
+
             // Structural issues
             "ceiling", "roof", "floor", "wall", "foundation", "structural", "sagging", "cracked",
             "discolored", "condensation", "flaking", "tiles", "insulation", "attic"
         };
-        
+
         var descriptionLower = result.ProblemDescription.ToLowerInvariant();
-        var containsMaintenanceKeyword = maintenanceKeywords.Any(keyword => 
+        var containsMaintenanceKeyword = maintenanceKeywords.Any(keyword =>
             descriptionLower.Contains(keyword));
-        
-        Assert.True(containsMaintenanceKeyword, 
+
+        Assert.True(containsMaintenanceKeyword,
             $"Problem description should contain maintenance-related keywords. Description: {result.ProblemDescription}");
     }
 

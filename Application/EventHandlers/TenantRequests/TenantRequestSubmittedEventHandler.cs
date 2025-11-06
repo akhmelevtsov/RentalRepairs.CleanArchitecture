@@ -25,8 +25,9 @@ public class TenantRequestSubmittedEventHandler : INotificationHandler<TenantReq
     {
         var request = notification.TenantRequest;
 
-        _logger.LogInformation("Processing TenantRequestSubmittedEvent for request {RequestCode} urgency {UrgencyLevel}", 
-            request.Code, 
+        _logger.LogInformation(
+            "Processing TenantRequestSubmittedEvent for request {RequestCode} urgency {UrgencyLevel}",
+            request.Code,
             request.UrgencyLevel);
 
         try
@@ -37,20 +38,16 @@ public class TenantRequestSubmittedEventHandler : INotificationHandler<TenantReq
             // Alert superintendent for review based on urgency
             if (request.UrgencyLevel.Equals("Emergency", StringComparison.OrdinalIgnoreCase) ||
                 request.UrgencyLevel.Equals("High", StringComparison.OrdinalIgnoreCase))
-            {
                 await _notificationService.NotifySuperintendentOfUrgentRequestAsync(request, cancellationToken);
-            }
             else
-            {
                 await _notificationService.NotifySuperintendentOfPendingRequestAsync(request, cancellationToken);
-            }
 
-            _logger.LogInformation("Successfully processed TenantRequestSubmittedEvent for request {RequestCode}", 
+            _logger.LogInformation("Successfully processed TenantRequestSubmittedEvent for request {RequestCode}",
                 request.Code);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error processing TenantRequestSubmittedEvent for request {RequestCode}", 
+            _logger.LogError(ex, "Error processing TenantRequestSubmittedEvent for request {RequestCode}",
                 request.Code);
             throw;
         }

@@ -22,7 +22,8 @@ public class GetTenantByPropertyAndUnitQueryHandler : IRequestHandler<GetTenantB
     {
         var tenant = await _context.Tenants
             .Include(t => t.Requests)
-            .FirstOrDefaultAsync(t => t.PropertyId == request.PropertyId && t.UnitNumber == request.UnitNumber, cancellationToken);
+            .FirstOrDefaultAsync(t => t.PropertyId == request.PropertyId && t.UnitNumber == request.UnitNumber,
+                cancellationToken);
 
         return tenant?.Adapt<TenantDto>();
     }
