@@ -27,6 +27,8 @@ dotnet run --project src/WebUI/
 - **Tenant**: tenant1.unit101@sunset.com / Demo123!
 - **Worker**: plumber.smith@workers.com / Demo123!
 
+> **Note:** Demo credentials are dynamically generated on first run and saved to `src/WebUI/development-credentials.md`. The credentials shown above are examples. If they don't work, check the generated credentials file in your local environment for the actual usernames and passwords.
+
 ## What You'll See
 
 ### Admin Dashboard

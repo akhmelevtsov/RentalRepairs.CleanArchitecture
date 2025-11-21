@@ -1,0 +1,69 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "appName": {
+      "value": "rentalrepairs"
+    },
+    "environment": {
+      "value": "dev"
+    },
+    "location": {
+      "value": "canadacentral"
+    },
+    "appServiceSku": {
+      "value": "F1"
+    },
+    "sqlAdminUsername": {
+      "value": "sqladmin"
+    },
+    "sqlAdminPassword": {
+      "value": "YOUR_SECURE_PASSWORD_HERE"
+    },
+    "sqlDatabaseSku": {
+      "value": "GP_S_Gen5"
+    },
+    "sqlAutoPauseDelay": {
+      "value": 60
+    },
+    "sqlMinCapacity": {
+      "value": 1
+    },
+    "sqlMaxCapacity": {
+      "value": 2
+    },
+    "sqlMaxSizeGb": {
+      "value": 2
+    },
+    "sqlAadAdminLogin": {
+      "value": ""
+    },
+    "sqlAadAdminObjectId": {
+      "value": ""
+    },
+    "allowAzureServices": {
+      "value": true
+    },
+    "allowLocalIp": {
+      "value": false
+    },
+    "localIpAddress": {
+      "value": ""
+    },
+    "appInsightsRetentionDays": {
+      "value": 30
+    },
+    "enableStaticWebsite": {
+      "value": true
+    },
+    "keyVaultAdminObjectId": {
+      "value": ""
+    },
+    "tags": {
+      "value": {
+        "Project": "RentalRepairs",
+        "Owner": "Development Team"
+      }
+    }
+  }
+}

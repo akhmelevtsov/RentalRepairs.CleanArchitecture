@@ -4,6 +4,8 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Disable auto-generation of web.config since we provide our own -->
+    <IsTransformWebConfigDisabled>true</IsTransformWebConfigDisabled>
   </PropertyGroup>
 
   <ItemGroup>
@@ -20,6 +22,7 @@
     <PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="8.0.11" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.11" />
     <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks" Version="8.0.11" />
+    <PackageReference Include="Microsoft.Extensions.Logging.AzureAppServices" Version="10.0.0" />
     <PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
   </ItemGroup>
 
@@ -31,5 +34,17 @@
   <ItemGroup>
     <Folder Include="logs\" />
   </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="web.config">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+  </ItemGroup>
+
+  <!-- Force our web.config to be used and prevent auto-generation -->
+  <Target Name="PreventWebConfigTransform" AfterTargets="Publish">
+    <Copy SourceFiles="web.config" DestinationFiles="$(PublishDir)web.config" OverwriteReadOnlyFiles="true" />
+  </Target>
 
 </Project>

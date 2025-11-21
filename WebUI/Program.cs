@@ -5,15 +5,37 @@ using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configure Serilog with basic configuration
+// Configure Serilog with environment-aware logging
 builder.Host.UseSerilog((context, configuration) =>
 {
     configuration
         .ReadFrom.Configuration(context.Configuration)
         .WriteTo.Console()
-        .WriteTo.File("logs/rentalrepairs-.txt", rollingInterval: RollingInterval.Day)
         .Enrich.FromLogContext();
+
+    // Detect if running locally (not on Azure App Service)
+    var isRunningOnAzure = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("WEBSITE_SITE_NAME"));
+
+    if (!isRunningOnAzure)
+    {
+        // Local development - log to file for easy debugging
+        configuration.WriteTo.File("logs/rentalrepairs-.txt", rollingInterval: RollingInterval.Day);
+    }
+    // Note: On Azure, console logs are automatically captured by Azure App Service diagnostics
 });
+
+// Enable Azure App Services logging integration when running on Azure
+var websiteName = Environment.GetEnvironmentVariable("WEBSITE_SITE_NAME");
+if (!string.IsNullOrEmpty(websiteName))
+{
+    builder.Logging.AddAzureWebAppDiagnostics();
+    Console.WriteLine($"=== AZURE LOGGING ENABLED FOR: {websiteName} ===");
+    Console.WriteLine($"=== HOME PATH: {Environment.GetEnvironmentVariable("HOME")} ===");
+}
+else
+{
+    Console.WriteLine("=== RUNNING LOCALLY - File logging enabled ===");
+}
 
 // ✅ COMPOSITION ROOT: Clean Architecture compliant service registration
 // This replaces direct Infrastructure calls with proper abstraction
@@ -98,10 +120,18 @@ using (var scope = app.Services.CreateScope())
 {
     try
     {
+        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+
+        // Log environment information for diagnostics
+        logger.LogWarning("=== APPLICATION STARTING ===");
+        logger.LogWarning("Environment: {Environment}", app.Environment.EnvironmentName);
+        logger.LogWarning("Website Name: {WebsiteName}", Environment.GetEnvironmentVariable("WEBSITE_SITE_NAME") ?? "LOCAL");
+        logger.LogWarning("Home Path: {HomePath}", Environment.GetEnvironmentVariable("HOME") ?? "NOT SET");
+
         await ApplicationCompositionRoot.InitializeApplicationAsync(scope.ServiceProvider);
 
-        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
         logger.LogInformation("Application initialization completed successfully");
+        logger.LogWarning("=== APPLICATION READY ===");
     }
     catch (Exception ex)
     {

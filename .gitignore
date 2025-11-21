@@ -58,6 +58,14 @@ nunit-*.xml
 [Rr]eleasePS/
 dlldata.c
 
+# Bicep - sensitive parameters and local overrides
+bicep/parameters.json
+bicep/parameters.*.json
+!bicep/parameters.example.json
+
+# Azure service dependencies - local deployment profiles
+WebUI/Properties/ServiceDependencies/
+
 # Benchmark Results
 BenchmarkDotNet.Artifacts/
 
@@ -189,6 +197,10 @@ publish/
 # but database connection strings (with potential passwords) will be unencrypted
 *.pubxml
 *.publishproj
+
+# Published and deployment output
+**/publish-output/
+**/publish-test/
 
 # Microsoft Azure Web App publish settings. Comment the next line if you want to
 # checkin your Azure Web App publish settings, but sensitive information contained
@@ -408,3 +420,7 @@ FodyWeavers.xsd
 Thumbs.db
 ehthumbs.db
 Desktop.ini
+/diagnose-keyvault.sh
+/diagnose-keyvault.ps1
+/bicep/verify-deployment.ps1
+/bicep/verify-post-deployment.ps1

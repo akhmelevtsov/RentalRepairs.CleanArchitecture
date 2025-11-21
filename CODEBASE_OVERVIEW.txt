@@ -1,0 +1,192 @@
+RENTALREPAIRSMODERNIZED - CODEBASE OVERVIEW
+============================================
+
+PROJECT STATISTICS
+- Total C# Files: 417
+- Test Files: 83 (20% coverage)
+- Projects: 9 (4 Core + 4 Test + 1 Composition Root)
+- Aggregates: 4 (Property, Tenant, TenantRequest, Worker)
+- Value Objects: 15+
+- Domain Events: 20+
+- CQRS Handlers: 45+
+
+ARCHITECTURE LAYERS
+1. Domain Layer - Pure business logic (417 files include tests)
+2. Application Layer - CQRS handlers, orchestration
+3. Infrastructure Layer - Data access, external services
+4. CompositionRoot - Dependency injection configuration
+5. WebUI Layer - Razor Pages presentation
+6. Test Projects - 83 comprehensive test files
+
+MAIN PATTERNS USED
+1. Clean Architecture - Layered, dependency inversion
+2. Domain-Driven Design - Rich entities, value objects, services, events
+3. CQRS - Separate read/write operations
+4. Event-Driven - Domain events for loose coupling
+5. Repository Pattern - Data abstraction layer
+6. Specification Pattern - Complex query encapsulation
+
+TECHNOLOGY STACK
+.NET 8.0 | C# 12
+Entity Framework Core 8.0.11
+MediatR 12.2.0 (CQRS)
+FluentValidation 11.8.0
+Mapster 7.4.0 (Object mapping)
+ASP.NET Core Identity 8.0.0
+BCrypt.Net-Next 4.0.3 (Password hashing)
+xUnit 2.6.2 (Testing)
+Moq 4.20.69 (Mocking)
+FluentAssertions 6.12.0
+SendGrid 9.29.3 (Email)
+
+CORE BUSINESS DOMAIN
+Multi-tenant property maintenance workflow:
+- Tenants submit maintenance requests
+- Superintendents review and assign workers
+- Workers complete work and report results
+- All parties receive notifications
+
+Business Rules:
+- Rate limiting: Max 5 requests per 24 hours
+- Emergency handling: Max 2 emergency per 7 days
+- Worker assignment: Skill matching, availability checking
+- Status workflow: Draft → Submitted → Scheduled → Done → Closed
+
+KEY COMPONENTS
+Domain Layer:
+- 5 Core Entities: Property, Tenant, TenantRequest, Worker, User
+- 15+ Value Objects
+- 9 Domain Services
+- 20+ Domain Events
+- Repository interfaces
+- FluentValidation validators
+
+Application Layer:
+- 10+ Commands (Create, Submit, Schedule, Complete, Decline, Close)
+- 6+ Queries (GetById, GetAll, GetForProperty, GetSummary, etc.)
+- MediatR Handlers
+- DTOs (Immutable records)
+- Notification Services
+- Event Handlers
+- Pipeline Behaviors (Exception, Validation, Performance)
+
+Infrastructure Layer:
+- ApplicationDbContext with EF Core
+- 4 Repository implementations
+- Authentication & Password services
+- Domain Event Publishing
+- Auditing Service
+- Email Services (Mock & SendGrid)
+- Database Migrations
+- Seeding Services
+
+WebUI Layer:
+- Razor Pages (Account, Dashboard, TenantRequests, Worker)
+- Page Models with MediatR
+- GlobalExceptionFilter
+- Security Headers
+- Cookie Authentication
+
+TESTING SETUP
+4 Test Projects:
+- Domain.Tests: Unit tests for pure business logic
+- Application.Tests: Integration tests for handlers
+- Infrastructure.Tests: Data access & service tests
+- WebUI.Tests: Page model integration tests
+
+Testing Technologies:
+- xUnit 2.6.2
+- Moq 4.20.69
+- FluentAssertions 6.12.0
+- coverlet.collector 6.0.0 (Code coverage)
+
+TEST COVERAGE AREAS:
+- Entity creation and business rules
+- Status transitions and workflows
+- Domain service logic
+- Command/query handler execution
+- Repository operations (with in-memory EF)
+- Authentication and authorization
+- Event publishing
+- Error handling
+
+DATABASE DESIGN
+Features:
+- Audit Trail: CreatedAt, CreatedBy, UpdatedAt, UpdatedBy
+- Soft Deletes: IsDeleted, DeletedAt, DeletedBy (with query filters)
+- Concurrency: RowVersion tokens
+- Migrations: EF Core Code-First
+- Seeding: Demo data on startup
+
+SECURITY IMPLEMENTATION
+Authentication:
+- Cookie-based sessions (8 hours)
+- HTTPS required in production
+- HttpOnly, Secure cookies
+- Sliding window expiration
+
+Authorization:
+- Role-based access control
+- Claim-based policies
+- Page-level authorization
+- Property-level filtering
+
+Data Protection:
+- BCrypt password hashing
+- Audit fields track changes
+- Global soft delete filters
+- Security headers (CSP, X-Frame-Options, etc.)
+
+CONFIGURATION
+- appsettings.json: Base configuration
+- appsettings.Development.json: Dev overrides
+- Database connection strings
+- Business rule thresholds
+- Email service settings
+- Feature flags
+
+DEPENDENCY FLOW
+WebUI → CompositionRoot → Application → Domain
+                              ↓
+                        Infrastructure
+
+Key Principle: Domain has ZERO external dependencies
+
+ARCHITECTURE STRENGTHS
+1. Clean separation of concerns with clear boundaries
+2. Rich domain models with encapsulated business logic
+3. CQRS pattern enables independent optimization
+4. Event-driven architecture for loose coupling
+5. Comprehensive test coverage (20% test files)
+6. Audit trail and soft delete support
+7. Security best practices implemented
+8. Extensible design for new features
+
+AREAS FOR ENHANCEMENT
+1. TenantRequest entity is large (25k lines) - consider decomposition
+2. Add more specific exception types
+3. Create more composable validation rules
+4. Consider CQRS read models for complex reports
+
+GETTING STARTED
+Prerequisites:
+- .NET 8 SDK
+- SQL Server (LocalDB or full version)
+- Visual Studio 2022 or VS Code
+
+Running:
+- dotnet restore
+- dotnet run --project src/WebUI
+- Access at https://localhost:5001
+
+Demo Credentials:
+- Admin: admin@demo.com / Demo123!
+- Tenant: tenant1.unit101@sunset.com / Demo123!
+- Worker: plumber.smith@workers.com / Demo123!
+
+Testing:
+- dotnet test
+- dotnet test --collect:"XPlat Code Coverage"
+
+This is a production-ready reference implementation of Clean Architecture
+with Domain-Driven Design and CQRS patterns in .NET 8.

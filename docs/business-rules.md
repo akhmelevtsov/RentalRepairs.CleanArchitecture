@@ -59,60 +59,146 @@ private static bool IsValidUnitNumber(string unitNumber)
 ```mermaid
 graph TB
     subgraph "Submission Validation"
-        A[Tenant Submits Request] --> B{Check 24h Rate Limit}
-        B -->|> 5 requests| E1[Reject: Too Many Requests]
-        B -->|≤ 5 requests| C{Emergency Request?}
-        
-        C -->|Yes| D{Check 7-day Emergency Limit}
-        C -->|No| F[Validate Request Content]
-        
-        D -->|> 2 emergency| E2[Reject: Too Many Emergency]
-        D -->|≤ 2 emergency| F
-        
-        F --> G{Active Request Exists?}
-        G -->|Similar Active| E3[Reject: Duplicate Request]
+        A[Tenant Submits Request] --> B{Check Pending Requests}
+        B -->|≥ 5 pending| E1[Reject: Too Many Pending]
+        B -->|< 5 pending| C{Check Rate Limit}
+
+        C -->|< 1 hour since last| E4[Reject: Too Soon]
+        C -->|≥ 1 hour since last| D{Emergency Request?}
+
+        D -->|Yes| E{Check 30-day Emergency Limit}
+        D -->|No| F[Validate Request Content]
+
+        E -->|≥ 3 emergency| E2[Reject: Too Many Emergency]
+        E -->|< 3 emergency| F
+
+        F --> G{Similar Active Request?}
+        G -->|Duplicate Found| E3[Reject: Duplicate Request]
         G -->|No Duplicates| H[Allow Submission]
     end
-    
-    subgraph "Business Constants"
-        BC1[Max 5 requests per 24h]
-        BC2[Max 2 emergency per 7 days]
-        BC3[No duplicate active requests]
+
+    subgraph "Business Rules (Configurable)"
+        BC1[Max 5 pending requests]
+        BC2[Min 1 hour between submissions]
+        BC3[Max 3 emergency per 30 days]
+        BC4[No duplicate active requests]
     end
 ```
 
 ### Implementation Details
+
+**Configurable Business Rules via appsettings.json**
+
+The system uses a **configurable policy approach** allowing business rules to be adjusted without code changes:
+
 ```csharp
+// Configuration model - values loaded from appsettings.json
+public class TenantRequestPolicyConfiguration
+{
+    public int MaxPendingRequests { get; set; } = 5;
+    public int MinimumHoursBetweenSubmissions { get; set; } = 1;
+    public int MaxEmergencyRequestsPerMonth { get; set; } = 3;
+    public int EmergencyRequestLookbackDays { get; set; } = 30;
+
+    public bool IsRateLimitingEnabled => MinimumHoursBetweenSubmissions > 0;
+    public bool IsEmergencyLimitingEnabled => MaxEmergencyRequestsPerMonth > 0;
+    public TimeSpan RateLimitTimeSpan => TimeSpan.FromHours(MinimumHoursBetweenSubmissions);
+    public TimeSpan EmergencyLookbackTimeSpan => TimeSpan.FromDays(EmergencyRequestLookbackDays);
+}
+
+// Policy implementation using configuration
 public class TenantRequestSubmissionPolicy : ITenantRequestSubmissionPolicy
 {
-    private const int MaxRequestsPer24Hours = 5;
-    private const int MaxEmergencyRequestsPer7Days = 2;
-    
+    private readonly TenantRequestPolicyConfiguration _configuration;
+
+    public TenantRequestSubmissionPolicy(TenantRequestPolicyConfiguration configuration)
+    {
+        _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+    }
+
     public void ValidateCanSubmitRequest(Tenant tenant, TenantRequestUrgency urgency)
     {
-        ValidateRateLimit(tenant);
-        
-        if (urgency.IsEmergency())
+        // Business Rule 1: Maximum pending requests
+        ValidateMaxPendingRequests(tenant);
+
+        // Business Rule 2: Rate limiting between submissions (if enabled)
+        if (_configuration.IsRateLimitingEnabled)
         {
-            ValidateEmergencyLimit(tenant);
+            ValidateRateLimit(tenant);
         }
-        
-        ValidateNoDuplicateActiveRequests(tenant);
+
+        // Business Rule 3: Emergency request limitations (if enabled)
+        if (_configuration.IsEmergencyLimitingEnabled && urgency == TenantRequestUrgency.Emergency)
+        {
+            ValidateEmergencyRequestLimit(tenant);
+        }
     }
-    
+
+    private void ValidateMaxPendingRequests(Tenant tenant)
+    {
+        int activeRequestsCount = tenant.Requests.Count(r =>
+            r.Status is TenantRequestStatus.Submitted or TenantRequestStatus.Scheduled);
+
+        if (activeRequestsCount >= _configuration.MaxPendingRequests)
+        {
+            throw new MaxPendingRequestsExceededException(
+                _configuration.MaxPendingRequests, activeRequestsCount);
+        }
+    }
+
     private void ValidateRateLimit(Tenant tenant)
     {
-        var recentRequests = tenant.Requests.Count(r => 
-            r.WasSubmittedWithinHours(24));
-            
-        if (recentRequests >= MaxRequestsPer24Hours)
+        TenantRequest? lastSubmission = tenant.Requests
+            .Where(r => r.Status != TenantRequestStatus.Draft)
+            .OrderByDescending(r => r.CreatedAt)
+            .FirstOrDefault();
+
+        if (lastSubmission != null)
         {
-            throw new TenantRequestSubmissionPolicyException(
-                $"Tenant has submitted {recentRequests} requests in the last 24 hours. Maximum allowed: {MaxRequestsPer24Hours}");
+            TimeSpan timeSinceLastSubmission = DateTime.UtcNow - lastSubmission.CreatedAt;
+            TimeSpan minimumWaitTime = _configuration.RateLimitTimeSpan;
+
+            if (timeSinceLastSubmission < minimumWaitTime)
+            {
+                TimeSpan waitTime = minimumWaitTime - timeSinceLastSubmission;
+                throw new SubmissionRateLimitExceededException(waitTime);
+            }
+        }
+    }
+
+    private void ValidateEmergencyRequestLimit(Tenant tenant)
+    {
+        int emergencyRequestsInPeriod = tenant.Requests
+            .Count(r => r.UrgencyLevel == "Emergency" &&
+                        r.CreatedAt > DateTime.UtcNow.Subtract(_configuration.EmergencyLookbackTimeSpan));
+
+        if (emergencyRequestsInPeriod >= _configuration.MaxEmergencyRequestsPerMonth)
+        {
+            throw new EmergencyRequestLimitExceededException(
+                _configuration.MaxEmergencyRequestsPerMonth, emergencyRequestsInPeriod);
         }
     }
 }
 ```
+
+**Configuration Example (appsettings.json):**
+```json
+{
+  "TenantRequestSubmission": {
+    "MaxPendingRequests": 5,
+    "MinimumHoursBetweenSubmissions": 1,
+    "MaxEmergencyRequestsPerMonth": 3,
+    "EmergencyRequestLookbackDays": 30
+  }
+}
+```
+
+**Benefits of Configurable Approach:**
+- ✅ Business rules can be adjusted without code deployment
+- ✅ Different rules for different environments (dev, staging, production)
+- ✅ Easy A/B testing of business rule variations
+- ✅ Quick response to changing business requirements
+- ✅ Rules can be disabled by setting values to 0
 
 ## Emergency Request Handling
 
